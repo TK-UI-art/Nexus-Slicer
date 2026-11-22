@@ -140,7 +140,9 @@ static const int default_champer_temp_max = 60;
 
 /* colors */
 static const wxColour STATUS_PANEL_BG     = wxColour(238, 238, 238);
-static const wxColour STATUS_TITLE_BG     = wxColour(248, 248, 248);
+// Nexus: card titles sit on the white card, the page between cards is the sidebar grey.
+static const wxColour STATUS_TITLE_BG     = wxColour(255, 255, 255);
+static const wxColour STATUS_PAGE_BG      = wxColour(NEXUS_SIDEBAR_BG);
 static const wxColour STATIC_BOX_LINE_COL = wxColour(238, 238, 238);
 
 static const wxColour BUTTON_NORMAL1_COL = wxColour(238, 238, 238);
@@ -160,7 +162,7 @@ static const wxColour GROUP_STATIC_LINE_COL = wxColour(206, 206, 206);
 static const wxFont PAGE_TITLE_FONT  = Label::Body_14;
 //static const wxFont GROUP_TITLE_FONT = Label::sysFont(17);
 
-static wxColour PAGE_TITLE_FONT_COL  = wxColour(107, 107, 107);
+static wxColour PAGE_TITLE_FONT_COL  = wxColour(38, 46, 48);
 static wxColour GROUP_TITLE_FONT_COL = wxColour(172, 172, 172);
 static wxColour TEXT_LIGHT_FONT_COL  = wxColour(107, 107, 107);
 
@@ -601,6 +603,7 @@ void PrintingTaskPanel::create_panel(wxWindow* parent)
     m_staticText_printing->Wrap(-1);
     //m_staticText_printing->SetFont(PAGE_TITLE_FONT);
     m_staticText_printing->SetForegroundColour(PAGE_TITLE_FONT_COL);
+    m_staticText_printing->SetFont(Label::Head_14);
 
     bSizer_printing_title->Add(m_staticText_printing, 0, wxALIGN_CENTER_VERTICAL | wxLEFT, PAGE_TITLE_LEFT_MARGIN);
     bSizer_printing_title->Add(0, 0, 1, wxEXPAND, 0);
@@ -1388,19 +1391,19 @@ StatusBasePanel::StatusBasePanel(wxWindow *parent, wxWindowID id, const wxPoint 
 
     init_bitmaps();
 
-    this->SetBackgroundColour(wxColour(0xEE, 0xEE, 0xEE));
+    this->SetBackgroundColour(STATUS_PAGE_BG);
 
     wxBoxSizer *bSizer_status = new wxBoxSizer(wxVERTICAL);
 
     auto m_panel_separotor_top = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxSize(-1, PAGE_SPACING), wxTAB_TRAVERSAL);
-    m_panel_separotor_top->SetBackgroundColour(STATUS_PANEL_BG);
+    m_panel_separotor_top->SetBackgroundColour(STATUS_PAGE_BG);
 
     bSizer_status->Add(m_panel_separotor_top, 0, wxEXPAND | wxALL, 0);
 
     wxBoxSizer *bSizer_status_below = new wxBoxSizer(wxHORIZONTAL);
 
     auto m_panel_separotor_left = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
-    m_panel_separotor_left->SetBackgroundColour(STATUS_PANEL_BG);
+    m_panel_separotor_left->SetBackgroundColour(STATUS_PAGE_BG);
     m_panel_separotor_left->SetMinSize(wxSize(PAGE_SPACING, -1));
 
     bSizer_status_below->Add(m_panel_separotor_left, 0, wxEXPAND | wxALL, 0);
@@ -1413,14 +1416,15 @@ StatusBasePanel::StatusBasePanel(wxWindow *parent, wxWindowID id, const wxPoint 
         bSizer_left->Add(m_monitoring_sizer, 1, wxEXPAND | wxALL, 0);
 
         auto m_panel_separotor1 = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
-        m_panel_separotor1->SetBackgroundColour(STATUS_PANEL_BG);
+        m_panel_separotor1->SetBackgroundColour(STATUS_PAGE_BG);
         m_panel_separotor1->SetMinSize(wxSize(-1, PAGE_SPACING));
         m_panel_separotor1->SetMaxSize(wxSize(-1, PAGE_SPACING));
         m_monitoring_sizer->Add(m_panel_separotor1, 0, wxEXPAND, 0);
 
         m_project_task_panel = new PrintingTaskPanel(this, PrintingTaskType::PRINGINT);
         m_project_task_panel->init_bitmaps();
-        m_monitoring_sizer->Add(m_project_task_panel, 0, wxALL | wxEXPAND , 0);
+        track_nexus_card(m_project_task_panel);
+        m_monitoring_sizer->Add(m_project_task_panel, 0, wxALL | wxEXPAND, FromDIP(NEXUS_CARD_PAD));
     });
 
 //    auto m_panel_separotor2 = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
@@ -1431,7 +1435,7 @@ StatusBasePanel::StatusBasePanel(wxWindow *parent, wxWindowID id, const wxPoint 
     bSizer_status_below->Add(bSizer_left, 1, wxALL | wxEXPAND, 0);
 
     auto m_panel_separator_middle = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_NONE | wxTAB_TRAVERSAL);
-    m_panel_separator_middle->SetBackgroundColour(STATUS_PANEL_BG);
+    m_panel_separator_middle->SetBackgroundColour(STATUS_PAGE_BG);
     m_panel_separator_middle->SetMinSize(wxSize(PAGE_SPACING, -1));
 
     bSizer_status_below->Add(m_panel_separator_middle, 0, wxEXPAND | wxALL, 0);
@@ -1446,17 +1450,21 @@ StatusBasePanel::StatusBasePanel(wxWindow *parent, wxWindowID id, const wxPoint 
         m_machine_control->Fit(m_machine_ctrl_panel);
     });
 
-    bSizer_status_below->Add(m_machine_ctrl_panel, 0, wxALL, 0);
+    bSizer_status_below->Add(m_machine_ctrl_panel, 0, wxALL, FromDIP(NEXUS_CARD_PAD));
+
+    // Nexus: Web-Slicer cards. Camera, print progress and control are painted as rounded cards
+    // behind their windows; the windows keep their parents, the sizers only gained padding.
+    bind_nexus_cards();
 
     m_panel_separator_right = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxSize(PAGE_SPACING, -1), wxTAB_TRAVERSAL);
-    m_panel_separator_right->SetBackgroundColour(STATUS_PANEL_BG);
+    m_panel_separator_right->SetBackgroundColour(STATUS_PAGE_BG);
 
     bSizer_status_below->Add(m_panel_separator_right, 0, wxEXPAND | wxALL, 0);
 
     bSizer_status->Add(bSizer_status_below, 1, wxALL | wxEXPAND, 0);
 
     m_panel_separotor_bottom = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxSize(-1, PAGE_SPACING), wxTAB_TRAVERSAL);
-    m_panel_separotor_bottom->SetBackgroundColour(STATUS_PANEL_BG);
+    m_panel_separotor_bottom->SetBackgroundColour(STATUS_PAGE_BG);
 
     bSizer_status->Add(m_panel_separotor_bottom, 0, wxEXPAND | wxALL, 0);
     this->SetSizer(bSizer_status);
@@ -1474,6 +1482,46 @@ StatusBasePanel::~StatusBasePanel()
         delete m_custom_camera_view;
         m_custom_camera_view = nullptr;
     }
+}
+
+void StatusBasePanel::bind_nexus_cards()
+{
+    auto card_windows = [this]() -> std::vector<std::vector<wxWindow*>> {
+        return {{m_panel_monitoring_title, m_media_ctrl, m_custom_camera_view, m_media_play_ctrl},
+                {m_project_task_panel},
+                {m_machine_ctrl_panel}};
+    };
+    Bind(wxEVT_SIZE, [this](wxSizeEvent& e) { Refresh(); e.Skip(); });
+    for (wxWindow* w : {static_cast<wxWindow*>(m_panel_monitoring_title), static_cast<wxWindow*>(m_media_ctrl),
+                        static_cast<wxWindow*>(m_custom_camera_view), static_cast<wxWindow*>(m_media_play_ctrl),
+                        static_cast<wxWindow*>(m_machine_ctrl_panel)})
+        track_nexus_card(w);
+    Bind(wxEVT_PAINT, [this, card_windows](wxPaintEvent&) {
+        wxPaintDC dc(this);
+        wxGCDC    gdc(dc);
+        gdc.SetPen(wxPen(StateColor::darkModeColorFor(wxColour(NEXUS_CARD_LINE)), 1));
+        gdc.SetBrush(wxBrush(StateColor::darkModeColorFor(*wxWHITE)));
+        for (const auto& card : card_windows()) {
+            wxRect rc;
+            for (const wxWindow* w : card)
+                if (w && w->IsShown())
+                    rc = rc.IsEmpty() ? w->GetRect() : rc.Union(w->GetRect());
+            if (rc.IsEmpty())
+                continue;
+            rc.Inflate(FromDIP(NEXUS_CARD_PAD));
+            gdc.DrawRoundedRectangle(rc, FromDIP(NEXUS_CARD_RADIUS));
+        }
+    });
+}
+
+// A card window that resizes, moves or hides changes the card outline painted behind it.
+void StatusBasePanel::track_nexus_card(wxWindow* w)
+{
+    if (!w)
+        return;
+    w->Bind(wxEVT_SIZE, [this](wxSizeEvent& e) { Refresh(); e.Skip(); });
+    w->Bind(wxEVT_MOVE, [this](wxMoveEvent& e) { Refresh(); e.Skip(); });
+    w->Bind(wxEVT_SHOW, [this](wxShowEvent& e) { Refresh(); e.Skip(); });
 }
 
 void StatusBasePanel::init_bitmaps()
@@ -1525,6 +1573,7 @@ wxBoxSizer *StatusBasePanel::create_monitoring_page()
     m_staticText_monitoring->Wrap(-1);
     //m_staticText_monitoring->SetFont(PAGE_TITLE_FONT);
     m_staticText_monitoring->SetForegroundColour(PAGE_TITLE_FONT_COL);
+    m_staticText_monitoring->SetFont(Label::Head_14);
     bSizer_monitoring_title->Add(m_staticText_monitoring, 0, wxALIGN_CENTER_VERTICAL | wxLEFT, PAGE_TITLE_LEFT_MARGIN);
 
 
@@ -1605,7 +1654,7 @@ wxBoxSizer *StatusBasePanel::create_monitoring_page()
     m_panel_monitoring_title->SetSizer(bSizer_monitoring_title);
     m_panel_monitoring_title->Layout();
     bSizer_monitoring_title->Fit(m_panel_monitoring_title);
-    sizer->Add(m_panel_monitoring_title, 0, wxEXPAND | wxALL, 0);
+    sizer->Add(m_panel_monitoring_title, 0, wxEXPAND | wxLEFT | wxRIGHT | wxTOP, FromDIP(NEXUS_CARD_PAD));
 
 //    media_ctrl_panel              = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize);
 //    media_ctrl_panel->SetBackgroundColour(*wxBLACK);
@@ -1621,9 +1670,10 @@ wxBoxSizer *StatusBasePanel::create_monitoring_page()
     m_media_play_ctrl->SetWebMediaController(m_web_media_controller.get());
     m_custom_camera_view->Hide();
 
-    sizer->Add(m_media_ctrl, 1, wxEXPAND | wxALL, 0);
-    sizer->Add(m_custom_camera_view, 1, wxEXPAND | wxALL, 0);
-    sizer->Add(m_media_play_ctrl, 0, wxEXPAND | wxALL, 0);
+    sizer->Add(m_media_ctrl, 1, wxEXPAND | wxLEFT | wxRIGHT, FromDIP(NEXUS_CARD_PAD));
+    sizer->Add(m_custom_camera_view, 1, wxEXPAND | wxLEFT | wxRIGHT, FromDIP(NEXUS_CARD_PAD));
+    sizer->Add(m_media_play_ctrl, 0, wxEXPAND | wxLEFT | wxRIGHT, FromDIP(NEXUS_CARD_PAD));
+    sizer->AddSpacer(FromDIP(NEXUS_CARD_PAD));
 //    media_ctrl_panel->SetSizer(bSizer_monitoring);
 //    media_ctrl_panel->Layout();
 //
@@ -1682,6 +1732,7 @@ wxBoxSizer *StatusBasePanel::create_machine_control_page(wxWindow *parent)
     m_staticText_control->Wrap(-1);
     //m_staticText_control->SetFont(PAGE_TITLE_FONT);
     m_staticText_control->SetForegroundColour(PAGE_TITLE_FONT_COL);
+    m_staticText_control->SetFont(Label::Head_14);
 
     m_parts_btn = new Button(m_panel_control_title, _L("Printer Parts"));
     m_parts_btn->SetStyle(ButtonStyle::Confirm, ButtonType::Window);
@@ -1761,7 +1812,7 @@ wxBoxSizer *StatusBasePanel::create_temp_axis_group(wxWindow *parent)
 
     box->SetBackgroundColor(box_colour);
     box->SetBorderColor(box_border_colour);
-    box->SetCornerRadius(5);
+    box->SetCornerRadius(FromDIP(8));
 
     box->SetMinSize(wxSize(FromDIP(586), -1));
     box->SetMaxSize(wxSize(FromDIP(586), -1));
@@ -2155,7 +2206,7 @@ wxBoxSizer *StatusBasePanel::create_ams_group(wxWindow *parent)
 
     m_ams_control_box->SetBackgroundColor(box_colour);
     m_ams_control_box->SetBorderColor(box_border_colour);
-    m_ams_control_box->SetCornerRadius(5);
+    m_ams_control_box->SetCornerRadius(FromDIP(8));
 
     m_ams_control_box->SetMinSize(wxSize(FromDIP(586), -1));
     m_ams_control_box->SetBackgroundColour(*wxWHITE);
@@ -2216,7 +2267,7 @@ wxBoxSizer* StatusBasePanel::create_filament_group(wxWindow* parent)
     m_filament_load_box = new StaticBox(parent);
     m_filament_load_box->SetBackgroundColor(box_colour);
     m_filament_load_box->SetBorderColor(box_border_colour);
-    m_filament_load_box->SetCornerRadius(5);
+    m_filament_load_box->SetCornerRadius(FromDIP(8));
     m_filament_load_box->SetMinSize(wxSize(FromDIP(586), -1));
     m_filament_load_box->SetMaxSize(wxSize(FromDIP(586), -1));
     m_filament_load_box->SetBackgroundColour(*wxWHITE);

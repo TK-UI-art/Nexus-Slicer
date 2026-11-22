@@ -578,6 +578,8 @@ protected:
     StepIndicator*  m_calibration_flow;
 
     wxPanel *       m_machine_ctrl_panel;
+    void            bind_nexus_cards();
+    void            track_nexus_card(wxWindow* w);
     wxPanel *       m_scale_panel;
     wxStaticBitmap* m_img_filament_loading;
     PrintingTaskPanel *       m_project_task_panel;
