@@ -3364,17 +3364,9 @@ bool GUI_App::on_init_inner()
 #ifdef _MSW_DARK_MODE
 
 #ifndef __WINDOWS__
-    // The label colours and the dark mode flag were set above from the saved mode. When the system theme
-    // differs from it, refresh them, or dialogs that map their colours stay in the old mode for this session.
-    const bool saved_dark_mode = dark_mode();
-    wxSystemAppearance app = wxSystemSettings::GetAppearance();
-    GUI::wxGetApp().app_config->set("dark_color_mode", app.IsDark() ? "1" : "0");
-    GUI::wxGetApp().app_config->save();
-    if (dark_mode() != saved_dark_mode) {
-        init_label_colours();
-        Update_dark_mode_flag();
-    }
-#endif // __APPLE__
+    // Nexus: native controls use the theme saved in Preferences instead of the system appearance.
+    apply_native_appearance();
+#endif // __WINDOWS__
 
 
     bool init_dark_color_mode = dark_mode();
@@ -4554,23 +4546,9 @@ void GUI_App::select_machine(const std::string& agent_id)
 bool GUI_App::dark_mode()
 {
 #ifdef SUPPORT_DARK_MODE
-#if __APPLE__
-    // The check for dark mode returns false positive on 10.12 and 10.13,
-    // which allowed setting dark menu bar and dock area, which is
-    // is detected as dark mode. We must run on at least 10.14 where the
-    // proper dark mode was first introduced.
-    return wxPlatformInfo::Get().CheckOSVersion(10, 14) && mac_dark_mode();
-#else
-    // When the user has explicitly chosen a mode, honour it directly.
-    // Falling through to check_dark_mode() for an explicit "0" would query
-    // wxSystemSettings::GetAppearance().IsDark(), which is contaminated by
-    // wxWidgets 3.3's MSWEnableDarkMode(DarkMode_Auto) and can return true
-    // even though the user asked for light mode.
-    const auto &val = wxGetApp().app_config->get("dark_color_mode");
-    if (val == "1") return true;
-    if (val == "0") return false;
-    return check_dark_mode();
-#endif
+    // Nexus: the theme is chosen in Preferences on every platform and is light unless set to dark.
+    // It does not follow the system appearance (apply_native_appearance() makes native controls match).
+    return wxGetApp().app_config && wxGetApp().app_config->get("dark_color_mode") == "1";
 #else
     //BBS disable DarkUI mode
     return false;
@@ -4779,6 +4757,15 @@ static void update_dark_children_ui(wxWindow* window, bool just_buttons_update =
 void GUI_App::UpdateDarkUIWin(wxWindow* win)
 {
     update_dark_children_ui(win);
+}
+
+void GUI_App::apply_native_appearance()
+{
+#ifndef __WINDOWS__
+    // On macOS this changes every window's effective appearance, which sends wxEVT_SYS_COLOUR_CHANGED
+    // and so runs the usual colour update. Windows keeps its NppDarkMode handling.
+    SetAppearance(dark_mode() ? wxApp::Appearance::Dark : wxApp::Appearance::Light);
+#endif
 }
 
 void GUI_App::Update_dark_mode_flag()

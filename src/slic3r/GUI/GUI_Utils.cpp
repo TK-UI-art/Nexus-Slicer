@@ -456,8 +456,8 @@ void update_dark_ui(wxWindow* window)
 
 void update_dark_config()
 {
-    wxSystemAppearance app = wxSystemSettings::GetAppearance();
-    GUI::wxGetApp().app_config->set("dark_color_mode", app.IsDark() ? "1" : "0");
+    // Nexus: the theme is the user's choice in Preferences; a colour change event must not
+    // overwrite it with the system appearance.
     wxGetApp().Update_dark_mode_flag();
 }
 

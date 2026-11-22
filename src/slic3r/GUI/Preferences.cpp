@@ -1086,6 +1086,10 @@ wxBoxSizer* PreferencesDialog::create_item_darkmode(wxString title,wxString tool
         app_config->set(param, checkbox->GetValue() ? "1" : "0");
         app_config->save();
         wxGetApp().Update_dark_mode_flag();
+#ifndef __WINDOWS__
+        // Switches the native appearance; the resulting colour change event updates the windows
+        wxGetApp().apply_native_appearance();
+#endif
 
         //dark mode
 #ifdef _MSW_DARK_MODE
@@ -1766,10 +1770,9 @@ void PreferencesDialog::create_items()
     auto item_default_page     = create_item_combobox(_L("Default page"), _L("Set the page opened on startup."), "default_page", DefaultPage);
     g_sizer->Add(item_default_page);
 
-#ifdef _WIN32
+    // Nexus: the theme is chosen here on every platform (light by default)
     auto item_darkmode         = create_item_darkmode(_L("Enable dark Mode"), "", "dark_color_mode");
     g_sizer->Add(item_darkmode);
-#endif
 
     auto item_single_instance  = create_item_checkbox(_L("Allow only one OrcaSlicer instance"),
     #if __APPLE__

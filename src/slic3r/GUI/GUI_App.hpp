@@ -502,6 +502,8 @@ public:
     void            UpdateDarkUI(wxWindow *window, bool highlited = false, bool just_font = false);
     void            UpdateDarkUIWin(wxWindow* win);
     void            Update_dark_mode_flag();
+    // Nexus: make native controls follow the theme chosen in Preferences (macOS, Linux).
+    void            apply_native_appearance();
     // update color mode for whole dialog including all children
     void            UpdateDlgDarkUI(wxDialog* dlg);
     void            UpdateFrameDarkUI(wxFrame* dlg);
