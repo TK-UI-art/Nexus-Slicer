@@ -568,6 +568,9 @@ public:
     //BBS
     void update_side_button_style();
     void update_slice_print_status(SlicePrintEventType event, bool can_slice = true, bool can_print = true);
+    // Nexus: the sidebar's Slice button runs the same action as the top-bar slice button.
+    bool can_slice() const;
+    void slice_from_sidebar();
 
 #ifdef __APPLE__
     std::unique_ptr<wxTaskBarIcon> m_taskbar_icon;

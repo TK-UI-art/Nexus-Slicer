@@ -60,3 +60,17 @@
 #define NEXUS_BAR_DARK          "#18191B"
 // Radius, in DIP, of the main tab-bar pills.
 #define NEXUS_TAB_RADIUS        14
+
+// Sidebar cards (Web-Slicer step cards). The sidebar background shows between the cards; the cards
+// are white (mapped to the dark card colour in dark mode) with a thin outline.
+#define NEXUS_SIDEBAR_BG        "#E0E0E0"
+#define NEXUS_SIDEBAR_BG_DARK   "#18191B"
+#define NEXUS_CARD_LINE         "#C9C9C9"
+#define NEXUS_CARD_LINE_DARK    "#45474C"
+#define NEXUS_CARD_RADIUS       10 // DIP
+#define NEXUS_CARD_PAD          4  // DIP, inset of the card content from the card edge
+#define NEXUS_CARD_GAP          6  // DIP, sidebar background visible around and between cards
+
+// Outline of text inputs, combo boxes and spin inputs (Web-Slicer uses stronger lines than Orca's #DBDBDB).
+#define NEXUS_INPUT_LINE_RGB    0xBDBDBD
+#define NEXUS_INPUT_LINE        "#BDBDBD"

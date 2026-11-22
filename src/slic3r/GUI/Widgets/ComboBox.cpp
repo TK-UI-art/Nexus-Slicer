@@ -67,7 +67,7 @@ ComboBox::ComboBox(wxWindow *parent,
         TextInput::SetFont(Label::Body_14);
         TextInput::SetBorderColor(StateColor(std::make_pair(0xDBDBDB, (int) StateColor::Disabled),
             std::make_pair(NEXUS_ACCENT_RGB, (int) StateColor::Hovered),
-            std::make_pair(0xDBDBDB, (int) StateColor::Normal)));
+            std::make_pair(NEXUS_INPUT_LINE_RGB, (int) StateColor::Normal)));
         TextInput::SetBackgroundColor(StateColor(std::make_pair(0xF0F0F1, (int) StateColor::Disabled),
             std::make_pair(NEXUS_ACCENT_TINT10_RGB, (int) StateColor::Focused), // ORCA updated background color for focused item
             std::make_pair(*wxWHITE, (int) StateColor::Normal)));

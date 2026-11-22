@@ -2718,6 +2718,18 @@ void MainFrame::update_side_button_style()
     m_print_btn->GetParent()->SetBackgroundColour(bg);
 }
 
+bool MainFrame::can_slice() const { return m_slice_btn && m_slice_btn->IsEnabled(); }
+
+void MainFrame::slice_from_sidebar()
+{
+    if (!can_slice())
+        return;
+    // Run the top-bar button's own handler, so the slice-all/plate choice and the pre-slice checks apply.
+    wxCommandEvent evt(wxEVT_BUTTON, m_slice_btn->GetId());
+    evt.SetEventObject(m_slice_btn);
+    m_slice_btn->GetEventHandler()->ProcessEvent(evt);
+}
+
 void MainFrame::update_slice_print_status(SlicePrintEventType event, bool can_slice, bool can_print)
 {
     bool enable_print = true, enable_slice = true;

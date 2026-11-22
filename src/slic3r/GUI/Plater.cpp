@@ -983,6 +983,9 @@ struct Sidebar::priv
     // BBS printer config
     StaticBox* m_panel_printer_title = nullptr;
     wxPanel*   m_panel_printer_separator = nullptr;
+    // Nexus: windows that make up each sidebar step card; the card is painted behind their union.
+    std::vector<std::vector<wxWindow*>> nexus_cards;
+    Button*    btn_slice_sidebar = nullptr;
     ScalableButton* m_printer_icon = nullptr;
     ScalableButton* m_printer_connect = nullptr;
     ScalableButton* m_printer_bbl_sync = nullptr;
@@ -2801,7 +2804,8 @@ Sidebar::Sidebar(Plater *parent)
     // As a result we can see the empty block at the bottom of the sidebar
     // But if we set this value to 5, layout will be better
     //p->scrolled->SetScrollRate(0, 5);
-    p->scrolled->SetBackgroundColour(*wxWHITE);
+    // Nexus: the sidebar background shows between the step cards
+    p->scrolled->SetBackgroundColour(StateColor::darkModeColorFor(wxColour(NEXUS_SIDEBAR_BG)));
 
 
     SetFont(wxGetApp().normal_font());
@@ -2820,7 +2824,9 @@ Sidebar::Sidebar(Plater *parent)
     auto* scrolled_sizer = m_scrolled_sizer = new wxBoxSizer(wxVERTICAL);
     p->scrolled->SetSizer(scrolled_sizer);
 
-    wxColour title_bg = wxColour(248, 248, 248);
+    wxColour title_bg = *wxWHITE; // Nexus: section titles blend into their card
+    const int card_margin = FromDIP(NEXUS_CARD_GAP + NEXUS_CARD_PAD);         // card content inset from the sidebar edge
+    const int card_spacing = FromDIP(NEXUS_CARD_GAP + 2 * NEXUS_CARD_PAD);    // between the contents of two cards
     wxColour inactive_text = wxColour(86, 86, 86);
     wxColour active_text = wxColour(0, 0, 0);
     wxColour static_line_col = wxColour(166, 169, 170);
@@ -2835,9 +2841,9 @@ Sidebar::Sidebar(Plater *parent)
         // 1.1 create title bar resources
         p->m_panel_printer_title = new StaticBox(p->scrolled, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL | wxBORDER_NONE);
         p->m_panel_printer_title->SetBackgroundColor(title_bg);
-        p->m_panel_printer_title->SetBackgroundColor2(0xF1F1F1);
 
-        p->m_printer_icon = new ScalableButton(p->m_panel_printer_title, wxID_ANY, "printer");
+        p->m_printer_icon = new ScalableButton(p->m_panel_printer_title, wxID_ANY, "nexus_card_printer", wxEmptyString, wxDefaultSize,
+                                               wxDefaultPosition, wxBU_EXACTFIT | wxNO_BORDER, false, 22);
         p->m_text_printer_settings = new Label(p->m_panel_printer_title, _L("Printer"), LB_PROPAGATE_MOUSE_EVENT | wxST_ELLIPSIZE_END);
 
         p->m_printer_icon->Bind(wxEVT_BUTTON, [](wxCommandEvent& e) {
@@ -2885,7 +2891,8 @@ Sidebar::Sidebar(Plater *parent)
         // 1.2 Add spliters around title bar
 
         // add printer title
-        scrolled_sizer->Add(p->m_panel_printer_title, 0, wxEXPAND | wxALL, 0);
+        scrolled_sizer->AddSpacer(card_margin);
+        scrolled_sizer->Add(p->m_panel_printer_title, 0, wxEXPAND | wxLEFT | wxRIGHT, card_margin);
         // ORCA Bind with LEFT_DOWN, since closing a dialog over the title bar can send it a stray LEFT_UP
         auto toggle_printer_section = ([this] (wxMouseEvent & e) {
             if (!p || !p->combo_printer || !p->m_text_printer_settings || !p->m_panel_printer_content || !m_scrolled_sizer)
@@ -2903,7 +2910,7 @@ Sidebar::Sidebar(Plater *parent)
         // ORCA add bottom border for seperation wile sections folded
         p->m_panel_printer_separator = new wxPanel(p->scrolled, wxID_ANY, wxDefaultPosition, wxSize(-1, FromDIP(2))); // ORCA staticline class not works without string
         p->m_panel_printer_separator->SetBackgroundColour("#FFFFFF");
-        scrolled_sizer->Add(p->m_panel_printer_separator, 0, wxEXPAND);
+        scrolled_sizer->Add(p->m_panel_printer_separator, 0, wxEXPAND | wxLEFT | wxRIGHT, card_margin);
 
         /*************************** 2. add printer content ************************/
 
@@ -3262,7 +3269,8 @@ Sidebar::Sidebar(Plater *parent)
         p->layout_printer(true, true);
         p->m_panel_printer_content->SetSizer(p->vsizer_printer);
         p->m_panel_printer_content->Layout();
-        scrolled_sizer->Add(p->m_panel_printer_content, 0, wxEXPAND, 0);
+        scrolled_sizer->Add(p->m_panel_printer_content, 0, wxEXPAND | wxLEFT | wxRIGHT, card_margin);
+        scrolled_sizer->AddSpacer(card_spacing);
     }
 
     {
@@ -3271,7 +3279,6 @@ Sidebar::Sidebar(Plater *parent)
     // add filament title
     p->m_panel_filament_title = new StaticBox(p->scrolled, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL | wxBORDER_NONE);
     p->m_panel_filament_title->SetBackgroundColor(title_bg);
-    p->m_panel_filament_title->SetBackgroundColor2(0xF1F1F1);
     // ORCA Bind with LEFT_DOWN, since closing a dialog over the title bar can send it a stray LEFT_UP
     auto toggle_filament_section = ([this](wxMouseEvent &e) {
         if (!p || !p->m_filament_area_wrapper || !m_scrolled_sizer || !p->m_bpButton_set_filament || !p->m_purge_mode_btn || !p->m_flushing_volume_btn || !p->m_bpButton_add_filament || !ams_btn)
@@ -3297,7 +3304,8 @@ Sidebar::Sidebar(Plater *parent)
 
     wxBoxSizer* bSizer39;
     bSizer39 = new wxBoxSizer( wxHORIZONTAL );
-    p->m_filament_icon = new ScalableButton(p->m_panel_filament_title, wxID_ANY, "filament");
+    p->m_filament_icon = new ScalableButton(p->m_panel_filament_title, wxID_ANY, "nexus_card_filament", wxEmptyString, wxDefaultSize,
+                                            wxDefaultPosition, wxBU_EXACTFIT | wxNO_BORDER, false, 22);
     p->m_staticText_filament_settings = new Label(p->m_panel_filament_title, _L("Project Filaments"), LB_PROPAGATE_MOUSE_EVENT);
     bSizer39->Add(p->m_filament_icon, 0, wxALIGN_CENTER | wxLEFT, FromDIP(SidebarProps::TitlebarMargin()));
     bSizer39->Add(p->m_staticText_filament_settings, 0, wxALIGN_CENTER | wxLEFT | wxRIGHT, FromDIP(SidebarProps::ElementSpacing()));
@@ -3309,11 +3317,11 @@ Sidebar::Sidebar(Plater *parent)
 
     p->m_panel_filament_title->SetSizer( bSizer39 );
     p->m_panel_filament_title->Layout();
-    scrolled_sizer->Add(p->m_panel_filament_title, 0, wxEXPAND | wxALL, 0);
+    scrolled_sizer->Add(p->m_panel_filament_title, 0, wxEXPAND | wxLEFT | wxRIGHT, card_margin);
     // ORCA add bottom border for seperation wile sections folded
     p->m_panel_filament_separator = new wxPanel(p->scrolled, wxID_ANY, wxDefaultPosition, wxSize(-1, FromDIP(2))); // ORCA staticline class not works without string
     p->m_panel_filament_separator->SetBackgroundColour("#FFFFFF");
-    scrolled_sizer->Add(p->m_panel_filament_separator, 0, wxEXPAND);
+    scrolled_sizer->Add(p->m_panel_filament_separator, 0, wxEXPAND | wxLEFT | wxRIGHT, card_margin);
 
     bSizer39->AddStretchSpacer(1);
 
@@ -3560,7 +3568,9 @@ Sidebar::Sidebar(Plater *parent)
 
     p->m_filament_area_wrapper->SetSizer(wrapper_sizer);
     p->m_filament_area_wrapper->Layout();
-    scrolled_sizer->Add(p->m_filament_area_wrapper, 0, wxEXPAND | wxTOP | wxBOTTOM, FromDIP(SidebarProps::ContentMarginV())); // ORCA use vertical margin on parent otherwise it shows scrollbar even on 1 filament
+    scrolled_sizer->AddSpacer(FromDIP(SidebarProps::ContentMarginV())); // ORCA use vertical margin on parent otherwise it shows scrollbar even on 1 filament
+    scrolled_sizer->Add(p->m_filament_area_wrapper, 0, wxEXPAND | wxLEFT | wxRIGHT, card_margin);
+    scrolled_sizer->AddSpacer(card_spacing);
     // ---- End filament area ----
     }
 
@@ -3569,13 +3579,11 @@ Sidebar::Sidebar(Plater *parent)
     auto params_panel = ((MainFrame*)parent->GetParent())->m_param_panel;
     if (params_panel) {
         params_panel->get_top_panel()->Reparent(p->scrolled);
-        auto spliter_1 = new ::StaticLine(p->scrolled);
-        spliter_1->SetLineColour("#A6A9AA");
-        scrolled_sizer->Add(spliter_1, 0, wxEXPAND);
-        scrolled_sizer->Add(params_panel->get_top_panel(), 0, wxEXPAND);
+        // Nexus: the card gap replaces the line above the Process title
+        scrolled_sizer->Add(params_panel->get_top_panel(), 0, wxEXPAND | wxLEFT | wxRIGHT, card_margin);
         auto spliter_2 = new ::StaticLine(p->scrolled);
         spliter_2->SetLineColour("#CECECE");
-        scrolled_sizer->Add(spliter_2, 0, wxEXPAND);
+        scrolled_sizer->Add(spliter_2, 0, wxEXPAND | wxLEFT | wxRIGHT, card_margin);
     }
 
     //add project content
@@ -3631,7 +3639,7 @@ Sidebar::Sidebar(Plater *parent)
 
     p->sizer_params->Add(p->m_search_bar, 0, wxALL | wxEXPAND, 0);
     p->sizer_params->Add(p->m_object_list, 1, wxEXPAND | wxTOP, 0);
-    scrolled_sizer->Add(p->sizer_params, 2, wxEXPAND | wxLEFT, 0);
+    scrolled_sizer->Add(p->sizer_params, 2, wxEXPAND | wxLEFT | wxRIGHT, card_margin);
     p->m_object_list->Hide();
     p->m_search_bar->Hide();
     // Frequently Object Settings
@@ -3644,9 +3652,45 @@ Sidebar::Sidebar(Plater *parent)
 #else
     if (params_panel) {
         params_panel->Reparent(p->scrolled);
-        scrolled_sizer->Add(params_panel, 3, wxEXPAND);
+        scrolled_sizer->Add(params_panel, 3, wxEXPAND | wxLEFT | wxRIGHT, card_margin);
     }
 #endif
+    scrolled_sizer->AddSpacer(card_margin);
+
+    // Nexus: Web-Slicer step cards. Each card is painted on p->scrolled behind the union of its
+    // windows, so the sections keep their parent and their layout code; only margins were added.
+    p->nexus_cards = {
+        {p->m_panel_printer_title, p->m_panel_printer_separator, p->m_panel_printer_content},
+        {p->m_panel_filament_title, p->m_panel_filament_separator, p->m_filament_area_wrapper},
+        {p->m_search_bar, p->m_object_list},
+    };
+    if (params_panel) {
+        p->nexus_cards.back().push_back(params_panel->get_top_panel());
+        p->nexus_cards.back().push_back(params_panel);
+    }
+    for (const auto& card : p->nexus_cards)
+        for (wxWindow* w : card) {
+            // A section that resizes, moves or folds changes the card outline
+            w->Bind(wxEVT_SIZE, [this](wxSizeEvent& e) { p->scrolled->Refresh(); e.Skip(); });
+            w->Bind(wxEVT_MOVE, [this](wxMoveEvent& e) { p->scrolled->Refresh(); e.Skip(); });
+            w->Bind(wxEVT_SHOW, [this](wxShowEvent& e) { p->scrolled->Refresh(); e.Skip(); });
+        }
+    p->scrolled->Bind(wxEVT_PAINT, [this](wxPaintEvent&) {
+        wxPaintDC dc(p->scrolled);
+        wxGCDC    gdc(dc);
+        gdc.SetPen(wxPen(StateColor::darkModeColorFor(wxColour(NEXUS_CARD_LINE)), 1));
+        gdc.SetBrush(wxBrush(StateColor::darkModeColorFor(*wxWHITE)));
+        for (const auto& card : p->nexus_cards) {
+            wxRect rc;
+            for (const wxWindow* w : card)
+                if (w && w->IsShown())
+                    rc = rc.IsEmpty() ? w->GetRect() : rc.Union(w->GetRect());
+            if (rc.IsEmpty())
+                continue;
+            rc.Inflate(FromDIP(NEXUS_CARD_PAD));
+            gdc.DrawRoundedRectangle(rc, FromDIP(NEXUS_CARD_RADIUS));
+        }
+    });
     }
 
     p->object_layers = new ObjectLayers(p->scrolled);
@@ -3655,6 +3699,30 @@ Sidebar::Sidebar(Plater *parent)
 
     auto *sizer = new wxBoxSizer(wxVERTICAL);
     sizer->Add(p->scrolled, 1, wxEXPAND);
+
+    // Nexus: Slice button at the foot of the sidebar (Web-Slicer "Slice Plate"). It runs the top-bar
+    // slice button's action and mirrors its enabled state.
+    SetBackgroundColour(StateColor::darkModeColorFor(wxColour(NEXUS_SIDEBAR_BG)));
+    p->btn_slice_sidebar = new Button(this, _L("Slice plate"));
+    p->btn_slice_sidebar->SetStyle(ButtonStyle::Confirm, ButtonType::Expanded);
+    p->btn_slice_sidebar->SetFont(Label::Head_16);
+    p->btn_slice_sidebar->SetMinSize(wxSize(-1, FromDIP(40)));
+    p->btn_slice_sidebar->SetCornerRadius(FromDIP(20));
+    // Disabled: a visible grey instead of the regular button grey, which equals the dark sidebar background
+    const StateColor slice_bg(std::make_pair(wxColour(NEXUS_CARD_LINE), (int) StateColor::Disabled),
+                              std::make_pair(wxColour(NEXUS_ACCENT_PRESSED), (int) StateColor::Pressed),
+                              std::make_pair(wxColour(NEXUS_ACCENT_HOVER), (int) StateColor::Hovered),
+                              std::make_pair(wxColour(NEXUS_ACCENT), (int) StateColor::Normal));
+    p->btn_slice_sidebar->SetBackgroundColor(slice_bg);
+    p->btn_slice_sidebar->SetBorderColor(slice_bg);
+    p->btn_slice_sidebar->Bind(wxEVT_BUTTON, [](wxCommandEvent&) {
+        if (MainFrame* mainframe = wxGetApp().mainframe)
+            mainframe->slice_from_sidebar();
+    });
+    p->btn_slice_sidebar->Bind(wxEVT_UPDATE_UI, [](wxUpdateUIEvent& e) {
+        e.Enable(wxGetApp().mainframe && wxGetApp().mainframe->can_slice());
+    });
+    sizer->Add(p->btn_slice_sidebar, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, FromDIP(NEXUS_CARD_GAP));
     SetSizer(sizer);
 }
 
@@ -3874,10 +3942,10 @@ void Sidebar::update_all_preset_comboboxes(bool update_filament_combos)
 
     if (cfg.opt_bool("pellet_modded_printer")) {
 		p->m_staticText_filament_settings->SetLabel(_L("Pellets"));
-        p->m_filament_icon->SetBitmap_("pellets");
+        p->m_filament_icon->SetBitmap_("nexus_card_pellets");
     } else {
 		p->m_staticText_filament_settings->SetLabel(_L("Filament"));
-        p->m_filament_icon->SetBitmap_("filament");
+        p->m_filament_icon->SetBitmap_("nexus_card_filament");
     }
 
     show_SEMM_buttons();
@@ -5626,6 +5694,10 @@ void Sidebar::msw_rescale()
 void Sidebar::sys_color_changed()
 {
     wxWindowUpdateLocker noUpdates(this);
+    // Nexus: card gap colour follows the theme (set explicitly, it is not a palette white)
+    SetBackgroundColour(StateColor::darkModeColorFor(wxColour(NEXUS_SIDEBAR_BG)));
+    p->scrolled->SetBackgroundColour(StateColor::darkModeColorFor(wxColour(NEXUS_SIDEBAR_BG)));
+    p->scrolled->Refresh();
 
 #if 0
     for (wxWindow* win : std::vector<wxWindow*>{ this, p->sliced_info->GetStaticBox(), p->object_info->GetStaticBox(), p->btn_reslice, p->btn_export_gcode })

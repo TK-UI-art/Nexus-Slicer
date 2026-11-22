@@ -56,6 +56,9 @@ static std::map<wxColour, wxColour> gDarkColors{
     // Nexus accent (NexusTheme.hpp). The fill greens stay the same in both themes and have no entry.
     // Nexus neutrals: dark values above follow the Web-Slicer palette (bg #18191B, card #2A2B2E, line #55575C)
     {NEXUS_BAR, NEXUS_BAR_DARK},
+    {NEXUS_SIDEBAR_BG, NEXUS_SIDEBAR_BG_DARK},
+    {NEXUS_CARD_LINE, NEXUS_CARD_LINE_DARK},
+    {NEXUS_INPUT_LINE, "#55575C"},
     {NEXUS_ACCENT_TEXT, NEXUS_ACCENT_TEXT_DARK},
     {NEXUS_ACCENT_TINT25, NEXUS_ACCENT_TINT25_DARK},
     {NEXUS_ACCENT_TINT10, NEXUS_ACCENT_TINT10_DARK},
