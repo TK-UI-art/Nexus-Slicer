@@ -1,4 +1,5 @@
 #include "EditGCodeDialog.hpp"
+#include "slic3r/GUI/NexusTheme.hpp"
 
 #include "slic3r/GUI/GUI_Utils.hpp"
 #include "slic3r/GUI/Gizmos/GLGizmoBase.hpp"
@@ -470,7 +471,7 @@ static void make_bold(wxString& str)
 static void highlight(wxString& str)
 {
 #if defined(SUPPORTS_MARKUP) && !defined(__APPLE__)
-    str = format_wxstr("<span bgcolor=\"#009688\">%1%</span>", str);
+    str = format_wxstr("<span bgcolor=\"" NEXUS_ACCENT "\">%1%</span>", str);
 #endif
 }
 

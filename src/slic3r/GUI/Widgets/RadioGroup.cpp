@@ -1,4 +1,5 @@
 #include "RadioGroup.hpp"
+#include "slic3r/GUI/NexusTheme.hpp"
 #include "Label.hpp"
 #include "StateColor.hpp"
 #include <vector>
@@ -57,7 +58,7 @@ void RadioGroup::Create(
 
     m_focus_color = StateColor(
         std::pair(bg                 , (int)StateColor::NotFocused),
-        std::pair(wxColour("#009688"), (int)StateColor::Focused)
+        std::pair(wxColour(NEXUS_ACCENT), (int)StateColor::Focused)
     );
 
     auto bmp_size   = m_on.GetBmpSize();

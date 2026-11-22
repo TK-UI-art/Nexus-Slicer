@@ -1,4 +1,5 @@
 #include "CheckList.hpp"
+#include "slic3r/GUI/NexusTheme.hpp"
 
 #include "slic3r/GUI/I18N.hpp"
 #include <wx/anybutton.h>
@@ -52,7 +53,7 @@ CheckList::CheckList(
     fb_sizer = new wxBoxSizer(wxHORIZONTAL);
     auto create_btn = [this] (wxString title, bool select){
         auto btn = new wxStaticText(f_bar, wxID_ANY, title);
-        btn->SetForegroundColour("#009687");
+        btn->SetForegroundColour(NEXUS_ACCENT_TEXT);
         btn->SetCursor(wxCURSOR_HAND);
         btn->SetFont(Label::Body_13);
         btn->Bind(wxEVT_LEFT_DOWN, [this, select](wxMouseEvent &e) {SelectAll(select);});

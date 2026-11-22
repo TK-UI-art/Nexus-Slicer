@@ -9,6 +9,7 @@
 ************************************************************/
 
 #include "wgtDeviceNozzleRack.h"
+#include "slic3r/GUI/NexusTheme.hpp"
 #include "wgtDeviceNozzleRackUpdate.h"
 
 #include "slic3r/GUI/DeviceCore/DevNozzleSystem.h"
@@ -54,7 +55,7 @@
 #define L_RAW_B_STR _L("Row B")
 
 static wxColour s_gray_clr("#B0B0B0");
-static wxColour s_hgreen_clr("#009688"); // Orca: accent green
+static wxColour s_hgreen_clr(NEXUS_ACCENT); // Orca: accent green
 static wxColour s_red_clr("#D01B1B");
 
 // Orca: StateColor lacks these grey constants, so mirror the values here.

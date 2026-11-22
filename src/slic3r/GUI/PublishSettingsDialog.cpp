@@ -1,4 +1,5 @@
 #include "PublishSettingsDialog.hpp"
+#include "slic3r/GUI/NexusTheme.hpp"
 
 #include "GUI_App.hpp"
 #include "MainFrame.hpp"
@@ -690,7 +691,7 @@ PublishSettingsDialog::PublishSettingsDialog(wxWindow* parent,
     m_fb_sizer      = new wxBoxSizer(wxHORIZONTAL);
     auto create_btn = [this, f_bar](wxString title, bool select) {
         auto btn = new wxStaticText(f_bar, wxID_ANY, title);
-        btn->SetForegroundColour("#009687");
+        btn->SetForegroundColour(NEXUS_ACCENT_TEXT);
         btn->SetCursor(wxCURSOR_HAND);
         btn->SetFont(Label::Body_13);
         btn->Bind(wxEVT_LEFT_DOWN, [this, select](wxMouseEvent&) { select_all(select); });
@@ -704,7 +705,7 @@ PublishSettingsDialog::PublishSettingsDialog(wxWindow* parent,
     // Labels reuse the menu entries (no new strings); clicking the chip returns to text
     // filtering, keeping the search box contents.
     m_pseudo_chip = new wxStaticText(f_bar, wxID_ANY, "");
-    m_pseudo_chip->SetForegroundColour("#009687");
+    m_pseudo_chip->SetForegroundColour(NEXUS_ACCENT_TEXT);
     m_pseudo_chip->SetCursor(wxCURSOR_HAND);
     m_pseudo_chip->SetFont(Label::Body_13);
     m_pseudo_chip->Bind(wxEVT_LEFT_DOWN, [this](wxMouseEvent&) { apply_filter(m_filter_ctrl->GetValue()); });

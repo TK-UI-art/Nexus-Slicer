@@ -1,4 +1,5 @@
 #include "slic3r/GUI/CAD/DesignRowList.hpp"
+#include "slic3r/GUI/NexusTheme.hpp"
 
 #include "slic3r/GUI/Widgets/StateColor.hpp"
 #include "slic3r/GUI/wxExtensions.hpp"
@@ -263,9 +264,9 @@ void DesignRowList::OnDrawBackground(wxDC& dc, const wxRect& rect, size_t n) con
     // ObjectList's selection teal, and the dropdowns' lighter hover teal; both are dark-mapped.
     wxColour bg;
     if (IsSelected(n))
-        bg = StateColor::darkModeColorFor(wxColour("#BFE1DE"));
+        bg = StateColor::darkModeColorFor(wxColour(NEXUS_ACCENT_TINT25));
     else if (m_selectable && int(n) == m_hover.row)   // a non-selectable row lights only its icons
-        bg = StateColor::darkModeColorFor(wxColour("#E5F0EE"));
+        bg = StateColor::darkModeColorFor(wxColour(NEXUS_ACCENT_TINT10));
     if (!bg.IsOk())
         return;   // the list already cleared to its background colour
     dc.SetPen(*wxTRANSPARENT_PEN);

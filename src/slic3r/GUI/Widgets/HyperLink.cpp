@@ -1,4 +1,5 @@
 #include "HyperLink.hpp"
+#include "slic3r/GUI/NexusTheme.hpp"
 #include "Label.hpp"
 #include <wx/string.h>
 #include <wx/wx.h>
@@ -14,8 +15,8 @@ namespace Slic3r { namespace GUI {
 HyperLink::HyperLink(wxWindow* parent, const wxString& label, const wxString& url, long style)
     : wxStaticText(parent, wxID_ANY, label)
     , m_url(url)
-    , m_normalColor(wxColour("#009687")) // used slightly different color otherwise automatically uses ColorForDark that not visible enough
-    , m_hoverColor(wxColour("#26A69A"))
+    , m_normalColor(wxColour(NEXUS_ACCENT_TEXT)) // Nexus: mapped to NEXUS_ACCENT_TEXT_DARK in dark mode
+    , m_hoverColor(wxColour(NEXUS_ACCENT_TEXT))
 {
     SetForegroundColour(m_normalColor);
     HyperLink::SetFont(Label::Head_14);

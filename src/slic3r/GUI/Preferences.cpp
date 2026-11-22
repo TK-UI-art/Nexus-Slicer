@@ -1,4 +1,5 @@
 #include "Preferences.hpp"
+#include "slic3r/GUI/NexusTheme.hpp"
 #include "slic3r/plugin/host/PluginPages.hpp"
 #include "CloudProvider.hpp"
 #include "ColorPickerDialog.hpp"
@@ -289,7 +290,7 @@ private:
         dc.SetBackground(wxBrush(GetParent() ? GetParent()->GetBackgroundColour() : *wxWHITE));
         dc.Clear();
  
-        wxColour textCol = StateColor::darkModeColorFor(m_hovered ? "#26A69A" : "#363636");
+        wxColour textCol = StateColor::darkModeColorFor(m_hovered ? NEXUS_ACCENT_TEXT : "#363636");
  
         dc.SetTextForeground(textCol);
         dc.SetFont(m_font);

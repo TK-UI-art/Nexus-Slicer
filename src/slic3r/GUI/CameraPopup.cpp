@@ -1,4 +1,5 @@
 #include "CameraPopup.hpp"
+#include "slic3r/GUI/NexusTheme.hpp"
 
 #include "I18N.hpp"
 #include "Widgets/Label.hpp"
@@ -261,7 +262,7 @@ void CameraPopup::set_custom_cam_button_state(bool state)
 {
     m_custom_camera_enabled = state;
     m_custom_camera_input->Enable(!state);
-    const wxColour colour = state ? wxColour(170, 0, 0) : wxColour(38, 166, 154);
+    const wxColour colour = state ? wxColour(170, 0, 0) : wxColour(NEXUS_ACCENT_HOVER);
     m_custom_camera_input_confirm->SetBackgroundColor(colour);
     m_custom_camera_input_confirm->SetBorderColor(colour);
     m_custom_camera_input_confirm->SetLabel(state ? _L("Disable") : _L("Enable"));

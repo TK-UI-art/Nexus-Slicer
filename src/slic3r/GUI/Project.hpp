@@ -2,6 +2,7 @@
 #define slic3r_Project_hpp_
 
 #include "wx/artprov.h"
+#include "slic3r/GUI/NexusTheme.hpp"
 #include "wx/cmdline.h"
 #include "wx/notifmsg.h"
 #include "wx/settings.h"
@@ -48,8 +49,8 @@ namespace boost { class thread; }
 #define AUFILE_GREY500 wxColour(158, 158, 158)
 #define AUFILE_GREY300 wxColour(238, 238, 238)
 #define AUFILE_GREY200 wxColour(248, 248, 248)
-#define AUFILE_BRAND wxColour(0, 150, 136)
-#define AUFILE_BRAND_TRANSPARENT wxColour("#E5F0EE") // ORCA color with %10 opacity
+#define AUFILE_BRAND wxColour(NEXUS_ACCENT)
+#define AUFILE_BRAND_TRANSPARENT wxColour(NEXUS_ACCENT_TINT10) // ORCA color with %10 opacity
 //#define AUFILE_PICTURES_SIZE wxSize(FromDIP(300), FromDIP(300))
 //#define AUFILE_PICTURES_PANEL_SIZE wxSize(FromDIP(300), FromDIP(340))
 #define AUFILE_PICTURES_SIZE wxSize(FromDIP(168), FromDIP(168))

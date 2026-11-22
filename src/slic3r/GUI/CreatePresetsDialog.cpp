@@ -1,4 +1,5 @@
 #include "CreatePresetsDialog.hpp"
+#include "slic3r/GUI/NexusTheme.hpp"
 #include <algorithm>
 #include <any>
 #include <boost/algorithm/string/trim.hpp>
@@ -91,7 +92,7 @@
 #define STATIC_TEXT_COLOUR wxColour("#363636")
 #define PRINTER_LIST_COLOUR wxColour("#EEEEEE")
 #define FILAMENT_OPTION_COLOUR wxColour("#D9D9D9")
-#define SELECT_ALL_OPTION_COLOUR wxColour("#009688")
+#define SELECT_ALL_OPTION_COLOUR wxColour(NEXUS_ACCENT)
 #define DEFAULT_PROMPT_TEXT_COLOUR wxColour("#ACACAC")
 
 using json = nlohmann::json;

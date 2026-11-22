@@ -1,4 +1,5 @@
 #include "TextInput.hpp"
+#include "slic3r/GUI/NexusTheme.hpp"
 #include "TextCtrl.h"
 #include "slic3r/GUI/Widgets/Label.hpp"
 
@@ -42,7 +43,7 @@ TextInput::TextInput()
 {
     input_corner_radius = true;
     border_width = 1;
-    border_color = StateColor(std::make_pair(0xDBDBDB, (int) StateColor::Disabled), std::make_pair(0x009688, (int) StateColor::Hovered),
+    border_color = StateColor(std::make_pair(0xDBDBDB, (int) StateColor::Disabled), std::make_pair(NEXUS_ACCENT_RGB, (int) StateColor::Hovered),
                               std::make_pair(0xDBDBDB, (int) StateColor::Normal));
     background_color = StateColor(std::make_pair(0xF0F0F1, (int) StateColor::Disabled), std::make_pair(*wxWHITE, (int) StateColor::Normal));
     SetFont(Label::Body_12);

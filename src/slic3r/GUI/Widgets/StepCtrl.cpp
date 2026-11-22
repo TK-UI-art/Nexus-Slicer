@@ -1,4 +1,5 @@
 #include "StepCtrl.hpp"
+#include "slic3r/GUI/NexusTheme.hpp"
 #include "Label.hpp"
 #include "../I18N.hpp"
 
@@ -38,7 +39,7 @@ StepCtrlBase::StepCtrlBase(wxWindow *      parent,
     , font_tip(Label::Body_14)
     , clr_bar(0xACACAC)
     , clr_step(0xACACAC)
-    , clr_text(std::make_pair(0x009688, (int) StateColor::Checked),
+    , clr_text(std::make_pair(NEXUS_ACCENT_RGB, (int) StateColor::Checked),
             std::make_pair(0x6B6B6B, (int) StateColor::Normal))
     , clr_tip(0x828280)
 {
@@ -273,7 +274,7 @@ StepIndicator::StepIndicator(wxWindow *parent, wxWindowID id, const wxPoint &pos
     clr_bar = 0xE1E1E1;
     clr_step = StateColor(
             std::make_pair(0xACACAC, (int) StateColor::Disabled),
-            std::make_pair(0x009688, 0));
+            std::make_pair(NEXUS_ACCENT_RGB, 0));
     clr_text = StateColor(
             std::make_pair(0xACACAC, (int) StateColor::Disabled),
             std::make_pair(0x323A3D, (int) StateColor::Checked),
@@ -383,7 +384,7 @@ FilamentStepIndicator::FilamentStepIndicator(wxWindow* parent, wxWindowID id, co
     clr_bar = 0xE1E1E1;
     clr_step = StateColor(
         std::make_pair(0xACACAC, (int)StateColor::Disabled),
-        std::make_pair(0x009688, 0));
+        std::make_pair(NEXUS_ACCENT_RGB, 0));
     clr_text = StateColor(
         std::make_pair(0xACACAC, (int)StateColor::Disabled),
         std::make_pair(0x323A3D, (int)StateColor::Checked),
@@ -421,7 +422,7 @@ void FilamentStepIndicator::doRender(wxDC& dc)
     }
 
     dc.SetFont(::Label::Head_16);
-    dc.SetTextForeground(wxColour(0, 150, 136));
+    dc.SetTextForeground(wxColour(NEXUS_ACCENT_TEXT));
     int circleX = 20;
     int circleY = 20;
     const wxString loading = _L("Loading");

@@ -1,4 +1,5 @@
 #include "UpgradePanel.hpp"
+#include "slic3r/GUI/NexusTheme.hpp"
 #include "slic3r/GUI/Widgets/Button.hpp"
 #include "slic3r/GUI/Widgets/ProgressBar.hpp"
 #include <exception>
@@ -37,7 +38,7 @@
 namespace Slic3r {
 namespace GUI {
 
-static const wxColour TEXT_NORMAL_CLR = wxColour(0, 150, 136);
+static const wxColour TEXT_NORMAL_CLR = wxColour(NEXUS_ACCENT_TEXT);
 static const wxColour TEXT_FAILED_CLR = wxColour(255, 111, 0);
 
 static const std::unordered_map<wxString, wxString> ACCESSORY_DISPLAY_STR = {

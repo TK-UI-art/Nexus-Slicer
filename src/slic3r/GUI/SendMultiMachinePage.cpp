@@ -1,4 +1,5 @@
 #include "SendMultiMachinePage.hpp"
+#include "slic3r/GUI/NexusTheme.hpp"
 #include "TaskManager.hpp"
 #include "I18N.hpp"
 
@@ -280,7 +281,7 @@ void SendDeviceItem::doRender(wxDC& dc)
 
     //device state
     if (state_printable <= 2) {
-        dc.SetTextForeground(wxColour(0, 150, 136));
+        dc.SetTextForeground(wxColour(NEXUS_ACCENT_TEXT));
     }
     else {
         dc.SetTextForeground(wxColour(208, 27, 27));
@@ -305,7 +306,7 @@ void SendDeviceItem::doRender(wxDC& dc)
     }
 
     if (m_hover) {
-        dc.SetPen(wxPen(wxColour(0, 150, 136)));
+        dc.SetPen(wxPen(wxColour(NEXUS_ACCENT)));
         dc.SetBrush(*wxTRANSPARENT_BRUSH);
         dc.DrawRoundedRectangle(0, 0, size.x, size.y, 3);
     }

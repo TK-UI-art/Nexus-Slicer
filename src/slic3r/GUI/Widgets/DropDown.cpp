@@ -1,4 +1,5 @@
 #include "DropDown.hpp"
+#include "slic3r/GUI/NexusTheme.hpp"
 #include "Label.hpp"
 
 #include <cassert>
@@ -58,9 +59,9 @@ DropDown::DropDown(std::vector<Item> &items)
     , border_color(0xDBDBDB)
     , text_color(std::make_pair(0x909090, (int) StateColor::Disabled),
         std::make_pair(0x363636, (int) StateColor::Normal))
-    , selector_border_color(std::make_pair(0x009688, (int) StateColor::Hovered),
+    , selector_border_color(std::make_pair(NEXUS_ACCENT_RGB, (int) StateColor::Hovered),
         std::make_pair(*wxWHITE, (int) StateColor::Normal))
-    , selector_background_color(std::make_pair(0xBFE1DE, (int) StateColor::Checked), // ORCA updated background color for checked item
+    , selector_background_color(std::make_pair(NEXUS_ACCENT_TINT25_RGB, (int) StateColor::Checked), // ORCA updated background color for checked item
         std::make_pair(*wxWHITE, (int) StateColor::Normal))
 {
 }

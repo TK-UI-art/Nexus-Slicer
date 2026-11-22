@@ -1,4 +1,5 @@
 #include "Search.hpp"
+#include "slic3r/GUI/NexusTheme.hpp"
 #include "OptionStateRegistry.hpp"
 
 #include <wx/app.h>
@@ -439,7 +440,7 @@ void SearchItem::OnPaint(wxPaintEvent &event)
 
 void SearchItem::on_mouse_enter(wxMouseEvent &evt)
 {
-    SetBackgroundColour(StateColor::darkModeColorFor(wxColour("#BFE1DE"))); // ORCA color with %25 opacity
+    SetBackgroundColour(StateColor::darkModeColorFor(wxColour(NEXUS_ACCENT_TINT25))); // ORCA color with %25 opacity
     Refresh();
 }
 
@@ -451,7 +452,7 @@ void SearchItem::on_mouse_leave(wxMouseEvent &evt)
 
 void SearchItem::on_mouse_left_down(wxMouseEvent &evt)
 {
-    SetBackgroundColour(StateColor::darkModeColorFor(wxColour("#BFE1DE"))); // ORCA color with %25 opacity
+    SetBackgroundColour(StateColor::darkModeColorFor(wxColour(NEXUS_ACCENT_TINT25))); // ORCA color with %25 opacity
     Refresh();
 }
 

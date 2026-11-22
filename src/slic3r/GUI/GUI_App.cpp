@@ -1,4 +1,5 @@
 #include "CloudProvider.hpp"
+#include "slic3r/GUI/NexusTheme.hpp"
 #include "ExportPresetBundleDialog.hpp"
 #include "ICloudServiceAgent.hpp"
 #include "IPrinterAgent.hpp"
@@ -482,7 +483,7 @@ public:
         m_bg_color = StateColor::darkModeColorFor(wxColour("#FFFFFF"));
         m_fg_color = StateColor::darkModeColorFor(wxColour("#6B6A6A"));
         m_progress_bg_color = StateColor::darkModeColorFor(wxColour("#DFDFDF"));
-        m_progress_fg_color = StateColor::darkModeColorFor(wxColour("#009688"));
+        m_progress_fg_color = StateColor::darkModeColorFor(wxColour(NEXUS_ACCENT));
         m_progress_h = FromDIP(6);
         bool dark_mode = m_fg_color != wxColour("#6B6A6A");
         wxSize sz  = m_window->GetClientSize();

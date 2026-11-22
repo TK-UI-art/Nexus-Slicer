@@ -1,4 +1,5 @@
 #include "LabeledCheckBox.hpp"
+#include "slic3r/GUI/NexusTheme.hpp"
 
 #include "CheckBox.hpp"
 #include "Label.hpp"
@@ -208,7 +209,7 @@ void LabeledCheckBox::TakeFocus()
 void LabeledCheckBox::ShowFocus(bool focused)
 {
     if (!IsBeingDeleted())
-        m_text_box->SetBorderColor(focused ? wxColour("#009688") : GetBackgroundColour());
+        m_text_box->SetBorderColor(focused ? wxColour(NEXUS_ACCENT) : GetBackgroundColour());
 }
 
 void LabeledCheckBox::UpdateLabelColor()

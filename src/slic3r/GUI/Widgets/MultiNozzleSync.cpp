@@ -1,4 +1,5 @@
 #include "MultiNozzleSync.hpp"
+#include "slic3r/GUI/NexusTheme.hpp"
 
 #include "../GUI.hpp"
 #include "../GUI_App.hpp"
@@ -583,11 +584,11 @@ std::vector<int> HotEndTable::FilterHotEnds(const NozzleOption& option)
 void HotEndTable::MarkRelatedItems(const NozzleOption& option)
 {
     const static StateColor bg_green(
-        std::pair<wxColour, int>(wxColour("#E5F0EE"), StateColor::Normal)
+        std::pair<wxColour, int>(wxColour(NEXUS_ACCENT_TINT10), StateColor::Normal)
     );
 
     const static StateColor bd_green(
-        std::pair<wxColour, int>(wxColour("#009688"), StateColor::Normal)
+        std::pair<wxColour, int>(wxColour(NEXUS_ACCENT), StateColor::Normal)
     );
     auto filtered_nozzles = FilterHotEnds(option);
     for (auto nozzle_id : filtered_nozzles) {
@@ -598,7 +599,7 @@ void HotEndTable::MarkRelatedItems(const NozzleOption& option)
         item->SetBackgroundColor(bg_green);
         item->SetBorderColor(bd_green);
         for (auto child : item->GetChildren()) {
-            child->SetBackgroundColour("#E5F0EE");
+            child->SetBackgroundColour(NEXUS_ACCENT_TINT10);
         }
     }
     wxGetApp().UpdateDarkUIWin(this);
@@ -984,13 +985,13 @@ Slic3r::GUI::MultiNozzleSyncDialog::MultiNozzleSyncDialog(wxWindow* parent,std::
 
     StateColor btn_bg_green(
         std::pair<wxColour, int>(wxColour(144, 144, 144), StateColor::Disabled),
-        std::pair<wxColour, int>(wxColour(0, 137, 123), StateColor::Pressed),
-        std::pair<wxColour, int>(wxColour(38, 166, 154), StateColor::Hovered),
-        std::pair<wxColour, int>(wxColour(0, 150, 136), StateColor::Normal)
+        std::pair<wxColour, int>(wxColour(NEXUS_ACCENT_PRESSED), StateColor::Pressed),
+        std::pair<wxColour, int>(wxColour(NEXUS_ACCENT_HOVER), StateColor::Hovered),
+        std::pair<wxColour, int>(wxColour(NEXUS_ACCENT), StateColor::Normal)
     );
 
     StateColor btn_text_green(
-        std::pair<wxColour, int>(wxColour(255, 255, 254), StateColor::Normal)
+        std::pair<wxColour, int>(wxColour(NEXUS_ON_ACCENT), StateColor::Normal)
     );
 
 

@@ -1,4 +1,5 @@
 #include "MediaFilePanel.h"
+#include "slic3r/GUI/NexusTheme.hpp"
 #include "ImageGrid.h"
 #include "I18N.hpp"
 #include "GUI_App.hpp"
@@ -147,15 +148,15 @@ MediaFilePanel::MediaFilePanel(wxWindow * parent)
     m_button_delete->SetBorderColorNormal(wxColor("#FF6F00"));
     m_button_delete->SetTextColorNormal(wxColor("#FF6F00"));
     m_button_select_all->SetBorderWidth(0);
-    m_button_select_all->SetBackgroundColorNormal(wxColor("#009688"));
+    m_button_select_all->SetBackgroundColorNormal(wxColour(NEXUS_ACCENT));
     m_button_select_all->SetTextColorNormal(*wxWHITE);
     m_button_select_all->Enable(false);
     m_button_management->SetBorderWidth(0);
-    m_button_management->SetBackgroundColorNormal(wxColor("#009688"));
+    m_button_management->SetBackgroundColorNormal(wxColour(NEXUS_ACCENT));
     m_button_management->SetTextColorNormal(*wxWHITE);
     m_button_management->Enable(false);
     m_button_refresh->SetBorderWidth(0);
-    m_button_refresh->SetBackgroundColorNormal(wxColor("#009688"));
+    m_button_refresh->SetBackgroundColorNormal(wxColour(NEXUS_ACCENT));
     m_button_refresh->SetTextColorNormal(*wxWHITE);
     m_button_refresh->Enable(false);
 

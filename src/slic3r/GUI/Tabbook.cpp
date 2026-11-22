@@ -1,4 +1,5 @@
 #include "Tabbook.hpp"
+#include "slic3r/GUI/NexusTheme.hpp"
 
 //#ifdef _WIN32
 
@@ -24,7 +25,7 @@
 wxDEFINE_EVENT(wxCUSTOMEVT_TABBOOK_SEL_CHANGED, wxCommandEvent);
 
 const static wxColour TAB_BUTTON_BG  = wxColour("#FEFFFF");
-const static wxColour TAB_BUTTON_SEL = wxColour("#BFE1DE"); // ORCA
+const static wxColour TAB_BUTTON_SEL = wxColour(NEXUS_ACCENT_TINT25); // ORCA
 
 static const wxFont& TAB_BUTTON_FONT     = Label::Body_14;
 static const wxFont& TAB_BUTTON_FONT_SEL = Label::Head_14;
