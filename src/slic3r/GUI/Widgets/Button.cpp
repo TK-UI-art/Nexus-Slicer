@@ -296,7 +296,7 @@ void Button::SetVertical(bool vertical)
 
 //                           Background                                             Foreground                       Border on focus
 // Button Colors             0-Disabled 1-Pressed  2-Hover    3-Normal   4-Enabled  5-Disabled 6-Normal   7-Hover    8-Dark     9-Light
-wxString btn_regular[10]  = {"#DFDFDF", "#DFDFDF", "#D4D4D4", "#DFDFDF", "#DFDFDF", "#6B6A6A", "#262E30", "#262E30", NEXUS_ACCENT, NEXUS_ACCENT};
+wxString btn_regular[10]  = {"#DFDFDF", "#D4D4D4", "#DFDFDF", "#DFDFDF", "#DFDFDF", "#6B6A6A", "#262E30", "#262E30", NEXUS_ACCENT, NEXUS_ACCENT};
 wxString btn_confirm[10]  = {"#DFDFDF", NEXUS_ACCENT_PRESSED, NEXUS_ACCENT_HOVER, NEXUS_ACCENT, NEXUS_ACCENT, "#6B6A6A", NEXUS_ON_ACCENT, NEXUS_ON_ACCENT, NEXUS_ACCENT_LIGHT, NEXUS_ACCENT_PRESSED};
 wxString btn_alert[10]    = {"#DFDFDF", "#DFDFDF", "#E14747", "#DFDFDF", "#DFDFDF", "#6B6A6A", "#262E30", "#FFFFFD", NEXUS_ACCENT, NEXUS_ACCENT};
 wxString btn_disabled[10] = {"#DFDFDF", "#DFDFDF", "#DFDFDF", "#DFDFDF", "#DFDFDF", "#6B6A6A", "#6B6A6A", "#262E30", "#DFDFDF", "#DFDFDF"};
@@ -304,8 +304,8 @@ wxString btn_disabled[10] = {"#DFDFDF", "#DFDFDF", "#DFDFDF", "#DFDFDF", "#DFDFD
 void Button::SetStyle(const ButtonStyle style, const ButtonType type)
 {
     if (type == ButtonType::Compact) {
-        this->SetPaddingSize(FromDIP(wxSize(8, 3)));
-        this->SetCornerRadius(this->FromDIP(8));
+        this->SetPaddingSize(FromDIP(wxSize(10, 3)));
+        this->SetCornerRadius(this->FromDIP(9)); // Nexus: pill
         this->SetFont(Label::Body_10);
     } else if (type == ButtonType::Window) {
         this->SetSize(FromDIP(wxSize(58, 24)));
@@ -314,19 +314,19 @@ void Button::SetStyle(const ButtonStyle style, const ButtonType type)
         this->SetFont(Label::Body_12);
     } else if (type == ButtonType::Choice) {
         this->SetMinSize(FromDIP(wxSize(100, 32)));
-        this->SetPaddingSize(FromDIP(wxSize(12, 8)));
-        this->SetCornerRadius(this->FromDIP(4));
+        this->SetPaddingSize(FromDIP(wxSize(16, 8)));
+        this->SetCornerRadius(this->FromDIP(16)); // Nexus: pill
         this->SetFont(Label::Body_14);
     } else if (type == ButtonType::Parameter) {
         this->SetMinSize(FromDIP(wxSize(120, 26)));
         this->SetSize(FromDIP(wxSize(120, 26)));
-        this->SetCornerRadius(this->FromDIP(4));
+        this->SetCornerRadius(this->FromDIP(13)); // Nexus: pill
         this->SetFont(Label::Body_14);
     } else if (type == ButtonType::Icon) {
         this->SetPaddingSize(FromDIP(wxSize(5, 5)));
         this->SetMinSize(FromDIP(wxSize(26, 26)));
         this->SetSize(FromDIP(wxSize(26, 26)));
-        this->SetCornerRadius(this->FromDIP(4));
+        this->SetCornerRadius(this->FromDIP(8));
     } else if (type == ButtonType::Circle) {
         this->SetPaddingSize(FromDIP(wxSize(6, 6)));
         this->SetMinSize(FromDIP(wxSize(25, 25)));
@@ -336,7 +336,7 @@ void Button::SetStyle(const ButtonStyle style, const ButtonType type)
     } else if (type == ButtonType::Expanded) {
         this->SetMinSize(FromDIP(wxSize(-1, 32)));
         this->SetPaddingSize(FromDIP(wxSize(12, 8)));
-        this->SetCornerRadius(this->FromDIP(4));
+        this->SetCornerRadius(this->FromDIP(16)); // Nexus: pill
         this->SetFont(Label::Body_14);
     }
 
@@ -358,8 +358,10 @@ void Button::SetStyle(const ButtonStyle style, const ButtonType type)
     bg_color.setTakeFocusedAsHovered(false);
     this->SetBackgroundColor(bg_color);
     wxColour focus_clr = clr_arr[is_dark ? 8 : 9];
+    // Nexus: regular buttons keep their fill on hover and show an accent ring instead
+    wxColour hover_border = style == ButtonStyle::Regular ? wxColour(NEXUS_ACCENT) : wxColour(clr_arr[2]);
     auto border_color  = StateColor(std::pair(wxColour(clr_arr[0]), (int) StateColor::Disabled),
-                                    std::pair(wxColour(clr_arr[2]), (int) (StateColor::Hovered | ~StateColor::Focused)),
+                                    std::pair(hover_border, (int) (StateColor::Hovered | ~StateColor::Focused)),
                                     std::pair(wxColour(focus_clr), (int) StateColor::Focused),
                                     std::pair(wxColour(clr_arr[3]), (int) StateColor::Normal));
     border_color.setTakeFocusedAsHovered(false);

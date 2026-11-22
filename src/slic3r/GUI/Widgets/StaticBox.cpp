@@ -1,4 +1,5 @@
 #include "StaticBox.hpp"
+#include <algorithm>
 #include "../GUI.hpp"
 #include <utility>
 #include <wx/anybutton.h>
@@ -251,7 +252,10 @@ void StaticBox::doRender(wxDC& dc)
                 dc.DrawRectangle(rc);
             }
             else {
-                dc.DrawRoundedRectangle(rc, radius - border_width);
+                // Nexus: pill radii are given as half the nominal height; clamp so a box laid out
+                // smaller than that still draws a valid rounded rectangle.
+                const double r = std::min<double>(radius - border_width, std::min(rc.width, rc.height) / 2.0);
+                dc.DrawRoundedRectangle(rc, std::max(0.0, r));
             }
         }
     }

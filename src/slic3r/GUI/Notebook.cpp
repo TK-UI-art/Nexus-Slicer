@@ -34,24 +34,24 @@ ButtonsListCtrl::ButtonsListCtrl(wxWindow *parent, wxBoxSizer* side_tools) :
 
     wxColour default_btn_bg;
 #ifdef __APPLE__
-    default_btn_bg = wxColour("#3B4446"); // Gradient #414B4E
+    default_btn_bg = wxColour(NEXUS_BAR);
 #else
-    default_btn_bg = wxColour("#2D2D30"); // Gradient #414B4E
+    default_btn_bg = wxColour(NEXUS_BAR);
 #endif
 
    
     SetBackgroundColour(default_btn_bg);
 
     int em = em_unit(this);// Slic3r::GUI::wxGetApp().em_unit();
-    // BBS: no gap
-    m_btn_margin = 0; // std::lround(0.3 * em);
+    // Nexus: tabs are pills with a small gap between them and around the row
+    m_btn_margin = std::lround(0.4 * em);
     m_line_margin = std::lround(0.1 * em);
 
     m_sizer = new wxBoxSizer(wxHORIZONTAL);
     this->SetSizer(m_sizer);
 
     m_buttons_sizer = new wxFlexGridSizer(1, m_btn_margin, m_btn_margin);
-    m_sizer->Add(m_buttons_sizer, 0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxBOTTOM, m_btn_margin);
+    m_sizer->Add(m_buttons_sizer, 0, wxALIGN_CENTER_VERTICAL | wxALL, m_btn_margin);
 
     if (side_tools != NULL) {
         m_sizer->AddStretchSpacer(1);
@@ -62,7 +62,7 @@ ButtonsListCtrl::ButtonsListCtrl(wxWindow *parent, wxBoxSizer* side_tools) :
                 item_win->Reparent(this);
             }
         }
-        m_sizer->Add(side_tools, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT | wxBOTTOM, m_btn_margin);
+        m_sizer->Add(side_tools, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, m_btn_margin);
     }
 
     // BBS: disable custom paint
@@ -81,7 +81,7 @@ void ButtonsListCtrl::OnPaint(wxPaintEvent&)
         return;
 
     wxColour selected_btn_bg("#1F8EEA");
-    wxColour default_btn_bg("#3B4446"); // Gradient #414B4E
+    wxColour default_btn_bg(NEXUS_BAR);
     const wxColour& btn_marker_color = Slic3r::GUI::wxGetApp().get_color_hovered_btn_label();
 
     // highlight selected notebook button
@@ -116,7 +116,8 @@ void ButtonsListCtrl::Rescale()
     int em = em_unit(this);
     for (Button* btn : m_pageButtons) {
         //BBS
-        btn->SetMinSize({(btn->GetLabel().empty() ? 40 : 132) * em / 10, 36 * em / 10});
+        btn->SetMinSize({(btn->GetLabel().empty() ? 40 : 132) * em / 10, 28 * em / 10});
+        btn->SetCornerRadius(btn->FromDIP(NEXUS_TAB_RADIUS));
         btn->Rescale();
     }
 
@@ -138,7 +139,7 @@ void ButtonsListCtrl::SetSelection(int sel)
     if (m_selection >= 0 && m_selection < static_cast<int>(m_pageButtons.size())) {
         StateColor bg_color = StateColor(
         std::pair{wxColour(107, 107, 107), (int) StateColor::Hovered},
-        std::pair{wxColour(59, 68, 70), (int) StateColor::Normal});
+        std::pair{wxColour(NEXUS_BAR), (int) StateColor::Normal});
         m_pageButtons[m_selection]->SetBackgroundColor(bg_color);
         StateColor text_color = StateColor(
         std::pair{wxColour(254,254, 254), (int) StateColor::Normal}
@@ -171,7 +172,7 @@ void ButtonsListCtrl::SetSelection(int sel)
 bool ButtonsListCtrl::InsertPage(size_t n, const wxString &text, bool bSelect /* = false*/, const std::string &bmp_name /* = ""*/, const wxBitmap &bmp /* = wxNullBitmap */)
 {
     Button * btn = new Button(this, text, bmp_name, wxNO_BORDER);
-    btn->SetCornerRadius(0);
+    btn->SetCornerRadius(btn->FromDIP(NEXUS_TAB_RADIUS));
 
     if (bmp_name.empty() && bmp.IsOk())
         btn->SetIcon(bmp);
@@ -188,11 +189,11 @@ bool ButtonsListCtrl::InsertPage(size_t n, const wxString &text, bool bSelect /*
 
     int em = em_unit(this);
     //BBS set size for button
-    btn->SetMinSize({(text.empty() ? 40 : 136) * em / 10, 36 * em / 10});
+    btn->SetMinSize({(text.empty() ? 40 : 136) * em / 10, 28 * em / 10});
 
     StateColor bg_color = StateColor(
         std::pair{wxColour(107, 107, 107), (int) StateColor::Hovered},
-        std::pair{wxColour(59, 68, 70), (int) StateColor::Normal});
+        std::pair{wxColour(NEXUS_BAR), (int) StateColor::Normal});
 
     btn->SetBackgroundColor(bg_color);
     StateColor text_color = StateColor(
@@ -268,7 +269,7 @@ void ButtonsListCtrl::SetCompact(size_t n, bool compact)
 {
     int em = em_unit(this);
     Button* btn = m_pageButtons[n];
-    btn->SetMinSize({(compact ? 40 : 136) * em / 10, 36 * em / 10});
+    btn->SetMinSize({(compact ? 40 : 136) * em / 10, 28 * em / 10});
     btn->SetLabel(compact ? "" : m_pageLabels[n]);
 }
 
@@ -297,7 +298,7 @@ void ButtonsListCtrl::SetOverflowButton(wxWindow* button)
 
     if (m_overflow_button != nullptr)
         // Right after the tab buttons (index 0), ahead of any stretch spacer / side_tools.
-        m_sizer->Insert(1, m_overflow_button, 0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxBOTTOM, m_btn_margin);
+        m_sizer->Insert(1, m_overflow_button, 0, wxALIGN_CENTER_VERTICAL | wxLEFT, m_btn_margin);
 
     m_sizer->Layout();
 }

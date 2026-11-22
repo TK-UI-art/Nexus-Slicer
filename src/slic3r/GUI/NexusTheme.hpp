@@ -53,3 +53,10 @@
 #define NEXUS_ACCENT_TINT25_RGB 0xD9F9D2
 #define NEXUS_ACCENT_TINT10_DARK "#2F3D2D"
 #define NEXUS_ACCENT_TINT25_DARK "#3A5A35"
+
+// Neutral palette taken from the Web-Slicer design.
+// Top tab bar (and the slice/print strip next to it). Mapped to NEXUS_BAR_DARK in dark mode.
+#define NEXUS_BAR               "#2B2C2F"
+#define NEXUS_BAR_DARK          "#18191B"
+// Radius, in DIP, of the main tab-bar pills.
+#define NEXUS_TAB_RADIUS        14

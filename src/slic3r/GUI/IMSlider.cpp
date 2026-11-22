@@ -60,14 +60,15 @@ static const float  LEFT_MARGIN       = 13.0f + 100.0f;  // avoid thumbnail tool
 static const float  HORIZONTAL_SLIDER_WINDOW_HEIGHT  = 64.0f;
 // ORCA: widen slider window to account for one-layer label box left shift.
 static const float  VERTICAL_SLIDER_WINDOW_WIDTH     = 164.0f;
-static const float  GROOVE_WIDTH      = 12.0f;
+static const float  GROOVE_WIDTH      = 8.0f; // Nexus: slimmer track (Web-Slicer)
 static const ImVec2 ONE_LAYER_MARGIN  = ImVec2(20.0f, 20.0f);
 static const ImVec2 ONE_LAYER_BUTTON_SIZE  = ImVec2(56.0f, 56.0f);
 
-static const ImU32 BACKGROUND_COLOR_DARK  = IM_COL32(65, 65, 71, 255);
-static const ImU32 BACKGROUND_COLOR_LIGHT = IM_COL32(255, 255, 255, 255);
-static const ImU32 GROOVE_COLOR_DARK      = IM_COL32(45, 45, 49, 255);
-static const ImU32 GROOVE_COLOR_LIGHT     = IM_COL32(206, 206, 206, 255);
+// Nexus: Web-Slicer card / background greys
+static const ImU32 BACKGROUND_COLOR_DARK  = IM_COL32(42, 43, 46, 255);
+static const ImU32 BACKGROUND_COLOR_LIGHT = IM_COL32(244, 244, 244, 255);
+static const ImU32 GROOVE_COLOR_DARK      = IM_COL32(24, 25, 27, 255);
+static const ImU32 GROOVE_COLOR_LIGHT     = IM_COL32(224, 224, 224, 255);
 static const ImU32 BRAND_COLOR            = ImColor(NEXUS_ACCENT_I, 255);
 
 static int m_tick_value = -1;
@@ -543,7 +544,7 @@ bool IMSlider::horizontal_slider(const char* str_id, int* value, int v_min, int 
     const float  handle_dummy_width  = 10.0f * m_scale;
     const float  text_right_dummy    = 70.0f * scale * m_scale;
 
-    const float  handle_radius       = 12.0f * m_scale;
+    const float  handle_radius       = 10.0f * m_scale;
     const float  handle_border       = 2.0f * m_scale;
     const float  text_start_offset   = 8.0f * m_scale;
     const ImVec2 text_padding        = ImVec2(5.0f, 2.0f) * m_scale;
@@ -558,7 +559,7 @@ bool IMSlider::horizontal_slider(const char* str_id, int* value, int v_min, int 
     const ImU32 label_border_clr = IM_COL32(label_border.Red(), label_border.Green(), label_border.Blue(), 255);
     const ImU32 label_shadow_clr = m_is_dark ? IM_COL32(0, 0, 0, 84) : IM_COL32(0, 0, 0, 38);
     ImVec4 range_fill = ImGui::ColorConvertU32ToFloat4(BRAND_COLOR);
-    range_fill.w = (m_is_dark ? 210.0f : 190.0f) / 255.0f;
+    range_fill.w = 1.0f; // Nexus: solid accent fill
     const ImU32 range_fill_clr = ImGui::GetColorU32(range_fill);
     const ImU32 rail_inner_clr = IM_COL32(rail_inner_bg.Red(), rail_inner_bg.Green(), rail_inner_bg.Blue(), 255);
     const ImU32 rail_border_clr = IM_COL32(rail_border.Red(), rail_border.Green(), rail_border.Blue(), 190);
@@ -935,7 +936,7 @@ bool IMSlider::vertical_slider(const char* str_id, int* higher_value, int* lower
 
     const float  text_dummy_height   = 60.0f * scale * m_scale;
 
-    const float  handle_radius       = 12.0f * m_scale;
+    const float  handle_radius       = 10.0f * m_scale;
     const float  handle_border       = 2.0f * m_scale;
     const float  line_width          = 1.0f * m_scale;
     const float  line_length         = 12.0f * m_scale;
@@ -956,7 +957,7 @@ bool IMSlider::vertical_slider(const char* str_id, int* higher_value, int* lower
     const ImU32 label_border_clr = IM_COL32(label_border.Red(), label_border.Green(), label_border.Blue(), 255);
     const ImU32 label_shadow_clr = m_is_dark ? IM_COL32(0, 0, 0, 84) : IM_COL32(0, 0, 0, 38);
     ImVec4 range_fill = ImGui::ColorConvertU32ToFloat4(BRAND_COLOR);
-    range_fill.w = (m_is_dark ? 210.0f : 190.0f) / 255.0f;
+    range_fill.w = 1.0f; // Nexus: solid accent fill
     const ImU32 range_fill_clr = ImGui::GetColorU32(range_fill);
     const ImU32 rail_inner_clr = IM_COL32(rail_inner_bg.Red(), rail_inner_bg.Green(), rail_inner_bg.Blue(), 255);
     const ImU32 rail_border_clr = IM_COL32(rail_border.Red(), rail_border.Green(), rail_border.Blue(), 190);
