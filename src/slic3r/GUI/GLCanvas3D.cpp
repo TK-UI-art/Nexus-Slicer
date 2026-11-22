@@ -9442,7 +9442,7 @@ void GLCanvas3D::_render_fps_overlay(int fps) const
         pos.y = get_top_toolbar_height() + margin;
     ImGui::SetNextWindowPos(pos, ImGuiCond_Always, ImVec2(1.0f, 0.0f));
     ImGui::SetNextWindowBgAlpha(0.35f);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 8.0f * get_scale());
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 14.0f * get_scale());
     imgui.begin(
         std::string("###fps_overlay"),
         ImGuiWindowFlags_AlwaysAutoResize |

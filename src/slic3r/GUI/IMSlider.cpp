@@ -613,7 +613,7 @@ bool IMSlider::horizontal_slider(const char* str_id, int* value, int v_min, int 
     ImVec2 text_size = text_content_size + text_padding * 2;
     ImVec2 text_start = ImVec2(handle_center.x + handle_radius + text_start_offset, handle_center.y - 0.5 * text_size.y);
     ImRect text_rect(text_start, text_start + text_size);
-    const float label_rounding = 5.0f * m_scale;
+    const float label_rounding = 10.0f * m_scale; // Nexus: pill-like value labels
     const ImVec2 shadow_offset = ImVec2(2.0f, 2.0f) * m_scale;
     window->DrawList->AddRectFilled(text_rect.Min + shadow_offset, text_rect.Max + shadow_offset, label_shadow_clr, label_rounding);
     ImGui::RenderFrame(text_rect.Min, text_rect.Max, label_bg_clr, false, label_rounding);
@@ -836,7 +836,7 @@ void IMSlider::draw_ticks(const ImRect& slideable_region) {
 
 void IMSlider::show_tooltip(const std::string tooltip) {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 6 * m_scale, 3 * m_scale });
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 3 * m_scale);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 8 * m_scale);
     ImGui::PushStyleColor(ImGuiCol_PopupBg, ImGuiWrapper::COL_WINDOW_BACKGROUND);
     ImGui::PushStyleColor(ImGuiCol_Border, { 0,0,0,0 });
     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.00f, 1.00f, 1.00f, 1.00f));
@@ -1018,7 +1018,7 @@ bool IMSlider::vertical_slider(const char* str_id, int* higher_value, int* lower
         return ImRect(text_start, text_start + text_size);
     };
     auto draw_label = [&](const ImRect& rect, const ImVec2& content_size, const std::string& label, bool hovered, bool active) {
-        const float rounding = 5.0f * m_scale;
+        const float rounding = 10.0f * m_scale; // Nexus: pill-like value labels
         const ImU32 bg_clr = active ? label_bg_active_clr : label_bg_clr;
         const ImVec2 shadow_offset = ImVec2(2.0f, 2.0f) * m_scale;
         window->DrawList->AddRectFilled(rect.Min + shadow_offset, rect.Max + shadow_offset, label_shadow_clr, rounding);
