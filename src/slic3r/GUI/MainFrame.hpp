@@ -569,7 +569,7 @@ public:
     void update_side_button_style();
     void update_slice_print_status(SlicePrintEventType event, bool can_slice = true, bool can_print = true);
     // Nexus: the sidebar's Slice button runs the same action as the top-bar slice button.
-    bool can_slice() const;
+    bool slice_button_enabled() const;
     void slice_from_sidebar();
 
 #ifdef __APPLE__

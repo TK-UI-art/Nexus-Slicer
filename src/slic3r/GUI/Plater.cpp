@@ -3720,7 +3720,7 @@ Sidebar::Sidebar(Plater *parent)
             mainframe->slice_from_sidebar();
     });
     p->btn_slice_sidebar->Bind(wxEVT_UPDATE_UI, [](wxUpdateUIEvent& e) {
-        e.Enable(wxGetApp().mainframe && wxGetApp().mainframe->can_slice());
+        e.Enable(wxGetApp().mainframe && wxGetApp().mainframe->slice_button_enabled());
     });
     sizer->Add(p->btn_slice_sidebar, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, FromDIP(NEXUS_CARD_GAP));
     SetSizer(sizer);
