@@ -1800,7 +1800,7 @@ bool MainFrame::is_prepare_or_preview_tab() const
 
 void MainFrame::fit_tab_labels()
 {
-    if (!m_tabpanel || !m_slice_option_btn) // ignore layout change while slice/print buttons not visible
+    if (!m_tabpanel || !m_print_option_btn) // ignore layout change while slice/print buttons not visible
         return;
 
     auto* ctrl  = m_tabpanel->GetBtnsListCtrl();
@@ -1815,7 +1815,7 @@ void MainFrame::fit_tab_labels()
 
     // Compact (last to first)
     for (size_t i = count - 1; i >= 1; --i) {
-        int right = ScreenToClient(m_slice_option_btn->ClientToScreen({})).x;
+        int right = ScreenToClient(m_print_option_btn->ClientToScreen({})).x;
         int left  = sizer->GetSize().GetWidth();
         // The overflow button sits between the tab buttons and the side tools, so it is not free space.
         if (const wxWindow* overflow = ctrl->GetOverflowButton())
@@ -2351,8 +2351,10 @@ wxBoxSizer* MainFrame::create_side_tools()
     m_slice_option_btn->Enable();
     m_print_option_btn->Enable();
     //sizer->Add(FromDIP(15), 0, 0, 0, 0);
+    // Nexus: slicing is started from the sidebar slice button (Web-Slicer layout), which offers the
+    // plate/all choice itself. The top-bar slice button stays as the hidden owner of that action.
+    slice_panel->Hide();
     sizer->Add(slice_panel);
-    sizer->Add(FromDIP(15), 0, 0, 0, 0);
     sizer->Add(print_panel);
     sizer->Add(FromDIP(19), 0, 0, 0, 0);
 
@@ -2470,23 +2472,13 @@ wxBoxSizer* MainFrame::create_side_tools()
             slice_plate_btn->SetCornerRadius(0);
 
             slice_all_btn->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) {
-                m_slice_btn->SetLabel(_L("Slice all"));
-                m_slice_select = eSliceAll;
-                m_slice_enable = get_enable_slice_status();
-                m_slice_btn->Enable(m_slice_enable);
-                this->Layout();
-                fit_tab_labels(); // ORCA on label change
+                set_slice_all(true);
                 if(m_slice_option_pop_up)
                     m_slice_option_pop_up->Dismiss();
                 });
 
             slice_plate_btn->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) {
-                m_slice_btn->SetLabel(_L("Slice plate"));
-                m_slice_select = eSlicePlate;
-                m_slice_enable = get_enable_slice_status();
-                m_slice_btn->Enable(m_slice_enable);
-                this->Layout();
-                fit_tab_labels(); // ORCA on label change
+                set_slice_all(false);
                 if(m_slice_option_pop_up)
                     m_slice_option_pop_up->Dismiss();
                 });
@@ -2716,6 +2708,16 @@ void MainFrame::update_side_button_style()
     auto bg = StateColor::darkModeColorFor(wxColour(NEXUS_BAR));
     m_slice_btn->GetParent()->SetBackgroundColour(bg);
     m_print_btn->GetParent()->SetBackgroundColour(bg);
+}
+
+void MainFrame::set_slice_all(bool all)
+{
+    m_slice_btn->SetLabel(all ? _L("Slice all") : _L("Slice plate"));
+    m_slice_select = all ? eSliceAll : eSlicePlate;
+    m_slice_enable = get_enable_slice_status();
+    m_slice_btn->Enable(m_slice_enable);
+    this->Layout();
+    fit_tab_labels(); // ORCA on label change
 }
 
 bool MainFrame::slice_button_enabled() const { return m_slice_btn && m_slice_btn->IsEnabled(); }

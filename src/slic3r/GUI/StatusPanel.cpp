@@ -1,5 +1,6 @@
 #include "StatusPanel.hpp"
 #include "slic3r/GUI/NexusTheme.hpp"
+#include "slic3r/GUI/NexusCard.hpp"
 #include "I18N.hpp"
 #include "IPrinterAgent.hpp"
 #include "Widgets/Label.hpp"
@@ -142,7 +143,7 @@ static const int default_champer_temp_max = 60;
 static const wxColour STATUS_PANEL_BG     = wxColour(238, 238, 238);
 // Nexus: card titles sit on the white card, the page between cards is the sidebar grey.
 static const wxColour STATUS_TITLE_BG     = wxColour(255, 255, 255);
-static const wxColour STATUS_PAGE_BG      = wxColour(NEXUS_SIDEBAR_BG);
+static const wxColour STATUS_PAGE_BG      = wxColour(NEXUS_DEVICE_BG);
 static const wxColour STATIC_BOX_LINE_COL = wxColour(238, 238, 238);
 
 static const wxColour BUTTON_NORMAL1_COL = wxColour(238, 238, 238);
@@ -1498,19 +1499,7 @@ void StatusBasePanel::bind_nexus_cards()
         track_nexus_card(w);
     Bind(wxEVT_PAINT, [this, card_windows](wxPaintEvent&) {
         wxPaintDC dc(this);
-        wxGCDC    gdc(dc);
-        gdc.SetPen(wxPen(StateColor::darkModeColorFor(wxColour(NEXUS_CARD_LINE)), 1));
-        gdc.SetBrush(wxBrush(StateColor::darkModeColorFor(*wxWHITE)));
-        for (const auto& card : card_windows()) {
-            wxRect rc;
-            for (const wxWindow* w : card)
-                if (w && w->IsShown())
-                    rc = rc.IsEmpty() ? w->GetRect() : rc.Union(w->GetRect());
-            if (rc.IsEmpty())
-                continue;
-            rc.Inflate(FromDIP(NEXUS_CARD_PAD));
-            gdc.DrawRoundedRectangle(rc, FromDIP(NEXUS_CARD_RADIUS));
-        }
+        nexus_paint_cards(this, dc, card_windows());
     });
 }
 

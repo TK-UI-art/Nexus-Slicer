@@ -571,6 +571,9 @@ public:
     // Nexus: the sidebar's Slice button runs the same action as the top-bar slice button.
     bool slice_button_enabled() const;
     void slice_from_sidebar();
+    // Slice the current plate or all plates. The sidebar slice button offers this choice.
+    void set_slice_all(bool all);
+    bool slice_all_selected() const { return m_slice_select == eSliceAll; }
 
 #ifdef __APPLE__
     std::unique_ptr<wxTaskBarIcon> m_taskbar_icon;

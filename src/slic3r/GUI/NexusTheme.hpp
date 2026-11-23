@@ -71,6 +71,10 @@
 #define NEXUS_CARD_PAD          5  // DIP, inset of the card content from the card edge
 #define NEXUS_CARD_GAP          8  // DIP, sidebar background visible around and between cards
 
+// Device page background (Web-Slicer device view, a little darker than the sidebar).
+#define NEXUS_DEVICE_BG         "#CDD0D5"
+#define NEXUS_DEVICE_BG_DARK    "#0F1012"
+
 // Outline of text inputs, combo boxes and spin inputs (Web-Slicer uses stronger lines than Orca's #DBDBDB).
 #define NEXUS_INPUT_LINE_RGB    0xBDBDBD
 #define NEXUS_INPUT_LINE        "#BDBDBD"

@@ -220,13 +220,11 @@ void AxisCtrlButton::render(wxDC& dc)
     home_path.AddCircle(0, 0, r_home);
     home_path.CloseSubpath();
     gc->PushState();
-    if (current_pos == 8) {
-        gc->SetPen(wxPen(border_color.colorForStates(states), 2));
-        gc->SetBrush(wxBrush(background_color.colorForStates(states)));
-    } else {
-        gc->SetPen(StateColor::darkModeColorFor(BUTTON_BG_COL));
-        gc->SetBrush(StateColor::darkModeColorFor(BUTTON_BG_COL));
-    }
+    // Nexus: green home button, as in the Web-Slicer jog pad
+    const wxColour home = !IsEnabled() ? StateColor::darkModeColorFor(BUTTON_IN_BG_COL)
+                          : current_pos == 8 ? wxColour(NEXUS_ACCENT_HOVER) : wxColour(NEXUS_ACCENT);
+    gc->SetPen(current_pos == 8 ? wxPen(border_color.colorForStates(states), 2) : wxPen(home));
+    gc->SetBrush(wxBrush(home));
     gc->DrawPath(home_path);
 
     if (m_icon.bmp().IsOk()) {

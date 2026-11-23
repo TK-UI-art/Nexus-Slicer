@@ -1,5 +1,6 @@
 #include "Plater.hpp"
 #include "slic3r/GUI/NexusTheme.hpp"
+#include "slic3r/GUI/NexusCard.hpp"
 #include "LazyPage.hpp"
 #include "../Utils/NetworkAgent.hpp"
 #include "IPrinterAgent.hpp"
@@ -121,6 +122,7 @@
 #include <wx/dcclient.h>
 #include <wx/dcbuffer.h>
 #include <wx/dcgraph.h>
+#include <wx/menu.h>
 #include <wx/chartype.h>
 #include <wx/busycursor.h>
 #include <wx/app.h>
@@ -986,6 +988,7 @@ struct Sidebar::priv
     // Nexus: windows that make up each sidebar step card; the card is painted behind their union.
     std::vector<std::vector<wxWindow*>> nexus_cards;
     Button*    btn_slice_sidebar = nullptr;
+    Button*    btn_slice_option_sidebar = nullptr;
     ScalableButton* m_printer_icon = nullptr;
     ScalableButton* m_printer_connect = nullptr;
     ScalableButton* m_printer_bbl_sync = nullptr;
@@ -3679,19 +3682,7 @@ Sidebar::Sidebar(Plater *parent)
         }
     p->scrolled->Bind(wxEVT_PAINT, [this](wxPaintEvent&) {
         wxPaintDC dc(p->scrolled);
-        wxGCDC    gdc(dc);
-        gdc.SetPen(wxPen(StateColor::darkModeColorFor(wxColour(NEXUS_CARD_LINE)), 1));
-        gdc.SetBrush(wxBrush(StateColor::darkModeColorFor(*wxWHITE)));
-        for (const auto& card : p->nexus_cards) {
-            wxRect rc;
-            for (const wxWindow* w : card)
-                if (w && w->IsShown())
-                    rc = rc.IsEmpty() ? w->GetRect() : rc.Union(w->GetRect());
-            if (rc.IsEmpty())
-                continue;
-            rc.Inflate(FromDIP(NEXUS_CARD_PAD));
-            gdc.DrawRoundedRectangle(rc, FromDIP(NEXUS_CARD_RADIUS));
-        }
+        nexus_paint_cards(p->scrolled, dc, p->nexus_cards);
     });
     }
 
@@ -3724,7 +3715,35 @@ Sidebar::Sidebar(Plater *parent)
     p->btn_slice_sidebar->Bind(wxEVT_UPDATE_UI, [](wxUpdateUIEvent& e) {
         e.Enable(wxGetApp().mainframe && wxGetApp().mainframe->slice_button_enabled());
     });
-    sizer->Add(p->btn_slice_sidebar, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, FromDIP(NEXUS_CARD_GAP));
+    // Choice between slicing the current plate and all plates (the former top-bar dropdown)
+    p->btn_slice_option_sidebar = new Button(this, "", "nexus_slice_dropdown", 0, 14);
+    p->btn_slice_option_sidebar->SetBackgroundColor(slice_bg);
+    p->btn_slice_option_sidebar->SetBorderColor(slice_bg);
+    p->btn_slice_option_sidebar->SetMinSize(wxSize(FromDIP(44), FromDIP(44)));
+    p->btn_slice_option_sidebar->SetCornerRadius(FromDIP(22));
+    p->btn_slice_option_sidebar->SetToolTip(_L("Choose whether to slice the current plate or all plates"));
+    p->btn_slice_option_sidebar->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) {
+        MainFrame* mainframe = wxGetApp().mainframe;
+        if (!mainframe)
+            return;
+        wxMenu menu;
+        wxMenuItem* plate = menu.AppendRadioItem(wxID_ANY, _L("Slice plate"));
+        wxMenuItem* all   = menu.AppendRadioItem(wxID_ANY, _L("Slice all"));
+        (mainframe->slice_all_selected() ? all : plate)->Check();
+        auto select = [this, mainframe](bool slice_all) {
+            mainframe->set_slice_all(slice_all);
+            p->btn_slice_sidebar->SetLabel(slice_all ? _L("Slice all") : _L("Slice plate"));
+            Layout();
+        };
+        menu.Bind(wxEVT_MENU, [select](wxCommandEvent&) { select(false); }, plate->GetId());
+        menu.Bind(wxEVT_MENU, [select](wxCommandEvent&) { select(true); }, all->GetId());
+        p->btn_slice_option_sidebar->PopupMenu(&menu, 0, p->btn_slice_option_sidebar->GetSize().y);
+    });
+
+    auto* slice_row = new wxBoxSizer(wxHORIZONTAL);
+    slice_row->Add(p->btn_slice_sidebar, 1, wxEXPAND);
+    slice_row->Add(p->btn_slice_option_sidebar, 0, wxEXPAND | wxLEFT, FromDIP(6));
+    sizer->Add(slice_row, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, FromDIP(NEXUS_CARD_GAP));
     SetSizer(sizer);
 }
 
