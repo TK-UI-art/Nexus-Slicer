@@ -3,6 +3,8 @@
 #include "GUI_App.hpp"
 #ifdef __WXGTK__
 #include "LinuxDisplayBackend.hpp"
+#include "NexusTheme.hpp"
+#include "Widgets/StateColor.hpp"
 #endif
 
 #include <wx/aui/dockart.h>
@@ -44,12 +46,14 @@ void AuiMgr::init(wxWindow* window)
 
 void AuiMgr::apply_color_mode()
 {
+    // Nexus: caption strip, sash and border take the sidebar background, which is also the 3D view
+    // background, so the sidebar cards appear to float over the scene (Web-Slicer layout).
     const bool     is_dark    = wxGetApp().dark_mode();
-    const wxColour sash_color = is_dark ? wxColour(38, 46, 48) : wxColour(206, 206, 206);
+    const wxColour sash_color = StateColor::darkModeColorFor(wxColour(NEXUS_SIDEBAR_BG));
     GetArtProvider()->SetColour(wxAUI_DOCKART_INACTIVE_CAPTION_COLOUR, sash_color);
-    GetArtProvider()->SetColour(wxAUI_DOCKART_INACTIVE_CAPTION_TEXT_COLOUR, *wxWHITE);
+    GetArtProvider()->SetColour(wxAUI_DOCKART_INACTIVE_CAPTION_TEXT_COLOUR, is_dark ? wxColour(0xB2, 0xB3, 0xB5) : wxColour(0x8A, 0x8A, 0x8A));
     GetArtProvider()->SetColour(wxAUI_DOCKART_SASH_COLOUR, sash_color);
-    GetArtProvider()->SetColour(wxAUI_DOCKART_BORDER_COLOUR, is_dark ? *wxBLACK : wxColour(165, 165, 165));
+    GetArtProvider()->SetColour(wxAUI_DOCKART_BORDER_COLOUR, sash_color);
 }
 
 void AuiMgr::track_docked_size(wxWindow* window)

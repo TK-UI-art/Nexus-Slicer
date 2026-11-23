@@ -51,6 +51,10 @@ ButtonsListCtrl::ButtonsListCtrl(wxWindow *parent, wxBoxSizer* side_tools) :
     this->SetSizer(m_sizer);
 
     m_buttons_sizer = new wxFlexGridSizer(1, m_btn_margin, m_btn_margin);
+    // Nexus: the main tab bar centres its tabs between the left edge and the side tools (Web-Slicer
+    // centred mode switch). Both stretch spacers shrink to nothing when the bar runs out of room.
+    if (side_tools != NULL)
+        m_sizer->AddStretchSpacer(1);
     m_sizer->Add(m_buttons_sizer, 0, wxALIGN_CENTER_VERTICAL | wxALL, m_btn_margin);
 
     if (side_tools != NULL) {
@@ -296,9 +300,13 @@ void ButtonsListCtrl::SetOverflowButton(wxWindow* button)
 
     m_overflow_button = button;
 
-    if (m_overflow_button != nullptr)
-        // Right after the tab buttons (index 0), ahead of any stretch spacer / side_tools.
-        m_sizer->Insert(1, m_overflow_button, 0, wxALIGN_CENTER_VERTICAL | wxLEFT, m_btn_margin);
+    if (m_overflow_button != nullptr) {
+        // Right after the tab buttons (which may follow a leading spacer), ahead of side_tools
+        size_t idx = 0;
+        while (idx < m_sizer->GetItemCount() && m_sizer->GetItem(idx)->GetSizer() != m_buttons_sizer)
+            ++idx;
+        m_sizer->Insert(idx + 1, m_overflow_button, 0, wxALIGN_CENTER_VERTICAL | wxLEFT, m_btn_margin);
+    }
 
     m_sizer->Layout();
 }

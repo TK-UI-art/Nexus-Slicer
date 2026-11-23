@@ -7,6 +7,7 @@
 #include <boost/lexical_cast.hpp>
 #include <cstddef>
 #include <algorithm>
+#include "slic3r/GUI/NexusTheme.hpp"
 #include "libslic3r/Color.hpp"
 #include "libslic3r/Point.hpp"
 #include "libslic3r/Config.hpp"
@@ -4240,7 +4241,7 @@ void PartPlate::generate_plate_name_texture()
     auto l = Label::sysFont(size, true);
     wxFont* font = &l;
 
-	wxColour foreground(0xf2, 0x75, 0x4e, 0xff);
+	wxColour foreground(NEXUS_ACCENT_HOVER_I, 0xff); // Nexus: green plate labels (Web-Slicer)
 	if (!m_name_texture.generate_from_text_string(text.ToUTF8().data(), *font, *wxBLACK, foreground)) {
 		BOOST_LOG_TRIVIAL(error) << "PartPlate::generate_plate_name_texture(): generate_from_text_string() failed";
 		return;
@@ -6222,7 +6223,7 @@ void PartPlateList::generate_icon_textures()
 			else
 				file_name = std::to_string(i+1);
 
-			wxColour foreground(0xf2, 0x75, 0x4e, 0xff);
+			wxColour foreground(NEXUS_ACCENT_HOVER_I, 0xff); // Nexus: green plate labels (Web-Slicer)
 			if (!m_idx_textures[i].generate_from_text_string(file_name, *font, *wxBLACK, foreground)) {
 				BOOST_LOG_TRIVIAL(error) << __FUNCTION__ << boost::format(":load file %1% failed") % file_name;
 			}

@@ -1816,7 +1816,8 @@ void MainFrame::fit_tab_labels()
     // Compact (last to first)
     for (size_t i = count - 1; i >= 1; --i) {
         int right = ScreenToClient(m_print_option_btn->ClientToScreen({})).x;
-        int left  = sizer->GetSize().GetWidth();
+        // The tab buttons may be centred, so measure up to their right edge
+        int left  = ScreenToClient(ctrl->ClientToScreen(sizer->GetPosition())).x + sizer->GetSize().GetWidth();
         // The overflow button sits between the tab buttons and the side tools, so it is not free space.
         if (const wxWindow* overflow = ctrl->GetOverflowButton())
             left += overflow->GetSize().GetWidth();
