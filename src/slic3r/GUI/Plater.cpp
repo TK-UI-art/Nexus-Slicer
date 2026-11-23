@@ -2845,6 +2845,7 @@ Sidebar::Sidebar(Plater *parent)
         p->m_printer_icon = new ScalableButton(p->m_panel_printer_title, wxID_ANY, "nexus_card_printer", wxEmptyString, wxDefaultSize,
                                                wxDefaultPosition, wxBU_EXACTFIT | wxNO_BORDER, false, 22);
         p->m_text_printer_settings = new Label(p->m_panel_printer_title, _L("Printer"), LB_PROPAGATE_MOUSE_EVENT | wxST_ELLIPSIZE_END);
+        p->m_text_printer_settings->SetFont(Label::Body_16); // Nexus: Web-Slicer card title
 
         p->m_printer_icon->Bind(wxEVT_BUTTON, [](wxCommandEvent& e) {
             //auto wizard_t = new ConfigWizard(wxGetApp().mainframe);
@@ -3307,6 +3308,7 @@ Sidebar::Sidebar(Plater *parent)
     p->m_filament_icon = new ScalableButton(p->m_panel_filament_title, wxID_ANY, "nexus_card_filament", wxEmptyString, wxDefaultSize,
                                             wxDefaultPosition, wxBU_EXACTFIT | wxNO_BORDER, false, 22);
     p->m_staticText_filament_settings = new Label(p->m_panel_filament_title, _L("Project Filaments"), LB_PROPAGATE_MOUSE_EVENT);
+    p->m_staticText_filament_settings->SetFont(Label::Body_16); // Nexus: Web-Slicer card title
     bSizer39->Add(p->m_filament_icon, 0, wxALIGN_CENTER | wxLEFT, FromDIP(SidebarProps::TitlebarMargin()));
     bSizer39->Add(p->m_staticText_filament_settings, 0, wxALIGN_CENTER | wxLEFT | wxRIGHT, FromDIP(SidebarProps::ElementSpacing()));
     bSizer39->SetMinSize(-1, FromDIP(30));

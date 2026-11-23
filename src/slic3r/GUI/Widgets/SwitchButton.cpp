@@ -49,8 +49,9 @@ SwitchButton::SwitchButton(wxWindow* parent, wxWindowID id)
 	: wxBitmapToggleButton(parent, id, wxNullBitmap, wxDefaultPosition, wxDefaultSize, wxBORDER_NONE | wxBU_EXACTFIT)
 	, m_on(this, "toggle_on", 16)
 	, m_off(this, "toggle_off", 16)
-    , text_color(std::pair{0xfffffe, (int) StateColor::Checked}, std::pair{0x6B6B6B, (int) StateColor::Normal})
-	, track_color(0xD9D9D9)
+    // Nexus: Web-Slicer segmented switch - dark text on the green thumb, ink text on a page-grey track
+    , text_color(std::pair{0x101010, (int) StateColor::Checked}, std::pair{0x262E30, (int) StateColor::Normal})
+	, track_color(0xE0E0E0)
     , thumb_color(std::pair{NEXUS_ACCENT_RGB, (int) StateColor::Checked}, std::pair{0xD9D9D9, (int) StateColor::Normal})
 {
 	SetBackgroundColour(StaticBox::GetParentBackgroundColor(parent));
@@ -196,14 +197,15 @@ void SwitchButton::Rescale()
 #else
                 wxDC &dc2(memdc);
 #endif
-				dc2.SetBrush(wxBrush(track_color.colorForStates(state)));
-				dc2.SetPen(wxPen(track_color.colorForStates(state)));
+				const wxColour track = StateColor::darkModeColorFor(track_color.colorForStates(state));
+				dc2.SetBrush(wxBrush(track));
+				dc2.SetPen(wxPen(track));
                 dc2.DrawRoundedRectangle(wxRect({0, 0}, trackSize), trackSize.y / 2.0);
 				dc2.SetBrush(wxBrush(thumb_color.colorForStates(StateColor::Checked | StateColor::Enabled)));
 				dc2.SetPen(wxPen(thumb_color.colorForStates(StateColor::Checked | StateColor::Enabled)));
                 dc2.DrawRoundedRectangle(wxRect({ i == 0 ? BS : (trackSize.x - thumbSize.x - BS), BS}, thumbSize), thumbSize.y / 2.0);
 			}
-            memdc.SetTextForeground(text_color.colorForStates(state ^ StateColor::Checked));
+            memdc.SetTextForeground(StateColor::darkModeColorFor(text_color.colorForStates(state ^ StateColor::Checked)));
             auto text_y = BS + (thumbSize.y - textSize[0].y) / 2;
 #ifdef __APPLE__
             if (Slic3r::is_mac_version_15()) {
@@ -211,7 +213,7 @@ void SwitchButton::Rescale()
             }
 #endif
             memdc.DrawText(labels[0], {BS + (thumbSize.x - textSize[0].x) / 2, text_y});
-            memdc.SetTextForeground(text_color2.count() == 0 ? text_color.colorForStates(state) : text_color2.colorForStates(state));
+            memdc.SetTextForeground(StateColor::darkModeColorFor(text_color2.count() == 0 ? text_color.colorForStates(state) : text_color2.colorForStates(state)));
             auto text_y_1 = BS + (thumbSize.y - textSize[1].y) / 2;
 #ifdef __APPLE__
             if (Slic3r::is_mac_version_15()) {

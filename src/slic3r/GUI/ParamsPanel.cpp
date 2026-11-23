@@ -281,6 +281,7 @@ ParamsPanel::ParamsPanel( wxWindow* parent, wxWindowID id, const wxPoint& pos, c
                                             wxDefaultPosition, wxBU_EXACTFIT | wxNO_BORDER, false, 22);
 
         m_title_label = new Label(m_top_panel, _L("Process"));
+        m_title_label->SetFont(Label::Body_16); // Nexus: Web-Slicer card title
 
         //int width, height;
         // BBS: new layout
@@ -780,7 +781,7 @@ void ParamsPanel::notify_object_config_changed()
     if (has_config == m_has_object_config) return;
     m_has_object_config = has_config;
     if (has_config)
-        m_mode_region->SetTextColor2(StateColor(std::pair{0xfffffe, (int) StateColor::Checked}, std::pair{wxGetApp().get_label_clr_modified(), 0}));
+        m_mode_region->SetTextColor2(StateColor(std::pair{0x101010, (int) StateColor::Checked}, std::pair{wxGetApp().get_label_clr_modified(), 0}));
     else
         m_mode_region->SetTextColor2(StateColor());
     m_mode_region->Rescale();
