@@ -603,7 +603,7 @@ void PrintingTaskPanel::create_panel(wxWindow* parent)
     m_staticText_printing->Wrap(-1);
     //m_staticText_printing->SetFont(PAGE_TITLE_FONT);
     m_staticText_printing->SetForegroundColour(PAGE_TITLE_FONT_COL);
-    m_staticText_printing->SetFont(Label::Head_14);
+    m_staticText_printing->SetFont(Label::Body_16);
 
     bSizer_printing_title->Add(m_staticText_printing, 0, wxALIGN_CENTER_VERTICAL | wxLEFT, PAGE_TITLE_LEFT_MARGIN);
     bSizer_printing_title->Add(0, 0, 1, wxEXPAND, 0);
@@ -1573,7 +1573,7 @@ wxBoxSizer *StatusBasePanel::create_monitoring_page()
     m_staticText_monitoring->Wrap(-1);
     //m_staticText_monitoring->SetFont(PAGE_TITLE_FONT);
     m_staticText_monitoring->SetForegroundColour(PAGE_TITLE_FONT_COL);
-    m_staticText_monitoring->SetFont(Label::Head_14);
+    m_staticText_monitoring->SetFont(Label::Body_16);
     bSizer_monitoring_title->Add(m_staticText_monitoring, 0, wxALIGN_CENTER_VERTICAL | wxLEFT, PAGE_TITLE_LEFT_MARGIN);
 
 
@@ -1732,7 +1732,7 @@ wxBoxSizer *StatusBasePanel::create_machine_control_page(wxWindow *parent)
     m_staticText_control->Wrap(-1);
     //m_staticText_control->SetFont(PAGE_TITLE_FONT);
     m_staticText_control->SetForegroundColour(PAGE_TITLE_FONT_COL);
-    m_staticText_control->SetFont(Label::Head_14);
+    m_staticText_control->SetFont(Label::Body_16);
 
     m_parts_btn = new Button(m_panel_control_title, _L("Printer Parts"));
     m_parts_btn->SetStyle(ButtonStyle::Confirm, ButtonType::Window);

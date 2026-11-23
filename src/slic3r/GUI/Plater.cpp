@@ -3707,9 +3707,9 @@ Sidebar::Sidebar(Plater *parent)
     SetBackgroundColour(StateColor::darkModeColorFor(wxColour(NEXUS_SIDEBAR_BG)));
     p->btn_slice_sidebar = new Button(this, _L("Slice plate"));
     p->btn_slice_sidebar->SetStyle(ButtonStyle::Confirm, ButtonType::Expanded);
-    p->btn_slice_sidebar->SetFont(Label::Head_16);
-    p->btn_slice_sidebar->SetMinSize(wxSize(-1, FromDIP(40)));
-    p->btn_slice_sidebar->SetCornerRadius(FromDIP(20));
+    p->btn_slice_sidebar->SetFont(Label::Body_16);
+    p->btn_slice_sidebar->SetMinSize(wxSize(-1, FromDIP(44)));
+    p->btn_slice_sidebar->SetCornerRadius(FromDIP(22));
     // Disabled: a visible grey instead of the regular button grey, which equals the dark sidebar background
     const StateColor slice_bg(std::make_pair(wxColour(NEXUS_CARD_LINE), (int) StateColor::Disabled),
                               std::make_pair(wxColour(NEXUS_ACCENT_PRESSED), (int) StateColor::Pressed),
