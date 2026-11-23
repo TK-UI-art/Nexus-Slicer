@@ -1,10 +1,10 @@
 #include "AuiMgr.hpp"
 
 #include "GUI_App.hpp"
-#ifdef __WXGTK__
-#include "LinuxDisplayBackend.hpp"
 #include "NexusTheme.hpp"
 #include "Widgets/StateColor.hpp"
+#ifdef __WXGTK__
+#include "LinuxDisplayBackend.hpp"
 #endif
 
 #include <wx/aui/dockart.h>
