@@ -1384,7 +1384,14 @@ void GLToolbar::render_arrow(const GLCanvas3D& parent, GLToolbarItem* highlighte
         const float top_uv    = 1.0f;
         const float bottom_uv = 0.0f;
 
-        GLTexture::render_sub_texture(tex_id, internal_left, internal_right, internal_bottom, internal_top, { { left_uv, top_uv }, { right_uv, top_uv }, { right_uv, bottom_uv }, { left_uv, bottom_uv } });
+        if (parent.is_toolbar_at_bottom()) {
+            // Nexus: above the toolbar row at the bottom of the canvas, pointing down at the item.
+            const float arrow_height = internal_top - internal_bottom;
+            internal_bottom          = m_layout.top + border;
+            internal_top             = internal_bottom + arrow_height;
+            GLTexture::render_sub_texture(tex_id, internal_left, internal_right, internal_bottom, internal_top, { { left_uv, bottom_uv }, { right_uv, bottom_uv }, { right_uv, top_uv }, { left_uv, top_uv } });
+        } else
+            GLTexture::render_sub_texture(tex_id, internal_left, internal_right, internal_bottom, internal_top, { { left_uv, top_uv }, { right_uv, top_uv }, { right_uv, bottom_uv }, { left_uv, bottom_uv } });
     }
 }
 
