@@ -1253,6 +1253,15 @@ public:
     // ORCA the top toolbar row: main toolbar, separator, gizmo bar and assemble view toolbar (not the collapse toolbar)
     float get_top_toolbar_width() const;
     float get_top_toolbar_height() const;
+    // Nexus: in the 3D view the toolbar row floats at the bottom of the canvas, as the Web-Slicer's edit bar.
+    bool  is_toolbar_at_bottom() const { return m_canvas_type == ECanvasType::CanvasView3D; }
+    // Top edge of the toolbar row, in pixels from the canvas top.
+    float get_toolbar_row_top() const;
+    // A panel that opens from the toolbar row, `y` pixels from the row's canvas edge with vertical pivot `pivot_y`
+    // (as for a row at the top): mapped to open upwards from a row at the bottom.
+    void  place_toolbar_panel(float& y, float& pivot_y) const;
+    // The bottom_limit a panel opening from the toolbar row fits above, in the same terms as place_toolbar_panel's `y`.
+    float get_toolbar_panel_limit() const;
     int get_main_toolbar_height() const { return m_main_toolbar.get_height(); }
     int get_main_toolbar_width() const { return m_main_toolbar.get_width(); }
     float get_assemble_view_toolbar_width() const { return m_assemble_view_toolbar.get_width(); }
@@ -1720,6 +1729,7 @@ private:
     void _render_separator_toolbar_left() const;
     bool _is_mouse_over_top_toolbar(const Vec2d& mouse_pos) const;
     void _render_collapse_toolbar() const;
+    void _render_toolbar_row_frame() const;
     // BBS
     //void _render_view_toolbar() const;
     void _render_paint_toolbar() const;

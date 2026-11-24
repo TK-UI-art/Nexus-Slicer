@@ -71,6 +71,12 @@
 #define NEXUS_CARD_PAD          5  // DIP, inset of the card content from the card edge
 #define NEXUS_CARD_GAP          8  // DIP, sidebar background visible around and between cards
 
+// Settings group frames (Web-Slicer fieldset): a rounded NEXUS_CARD_LINE outline around each group of a
+// settings page, the group title set into its top edge. DIP.
+#define NEXUS_FRAME_RADIUS      12
+#define NEXUS_FRAME_PAD         4  // outline outside the group's controls, left, right and below
+#define NEXUS_FRAME_TITLE_INSET 8  // title from the group's left edge
+
 // Device page background (Web-Slicer device view, a little darker than the sidebar).
 #define NEXUS_DEVICE_BG         "#CDD0D5"
 #define NEXUS_DEVICE_BG_DARK    "#0F1012"

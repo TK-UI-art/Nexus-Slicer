@@ -7,6 +7,8 @@
 #include <wx/colour.h>
 #include <wx/event.h>
 
+class wxSizer;
+
 class StaticLine : public wxWindow
 {
 public:
@@ -21,7 +23,12 @@ public:
     
     void Rescale();
 
+    // Nexus: the title of a settings group drawn in a frame (NexusFrame.hpp); `sizer` holds the group.
+    void     SetFrameSizer(wxSizer* sizer) { m_frame_sizer = sizer; }
+    wxSizer* GetFrameSizer() const { return m_frame_sizer; }
+
 private:
+    wxSizer*       m_frame_sizer{nullptr};
     wxColour       lineColor;
     bool vertical;
     ScalableBitmap icon;

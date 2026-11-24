@@ -392,6 +392,7 @@ void GLGizmoBase::GizmoImguiSetNextWIndowPos(float &x, float y, float w, float h
         }
     }
 
+    m_parent.place_toolbar_panel(y, pivot_y);
     m_imgui->set_next_window_pos(x, y, flag, pivot_x, pivot_y);
 }
 

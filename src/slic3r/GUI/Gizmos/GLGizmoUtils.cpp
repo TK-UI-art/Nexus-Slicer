@@ -49,6 +49,14 @@ namespace Slic3r::GUI::GLGizmoUtils {
         ImGuiWrapper* imgui_wrapper, const GLCanvas3D& canvas, const std::vector<std::pair<wxString, wxString>>& shortcuts, float x, float y)
     {
         float caption_y = ImGui::GetContentRegionMax().y + ImGui::GetFrameHeight() + y;
+        if (canvas.is_toolbar_at_bottom()) {
+            // Nexus: below the panel unless that runs into the toolbar row at the bottom, else above the panel.
+            const ImGuiStyle& style  = ImGui::GetStyle();
+            const float       tips_h = shortcuts.size() * (ImGui::GetTextLineHeight() + style.ItemSpacing.y) - style.ItemSpacing.y + 2.f * style.WindowPadding.y;
+            caption_y                = ImGui::GetWindowPos().y + ImGui::GetWindowHeight() + style.ItemSpacing.y;
+            if (caption_y + tips_h > canvas.get_toolbar_row_top())
+                caption_y = std::max(0.f, ImGui::GetWindowPos().y - style.ItemSpacing.y - tips_h);
+        }
         float caption_x_max = 0.f;
         for (const auto& item : shortcuts) {
             caption_x_max = std::max(caption_x_max, imgui_wrapper->calc_text_size(item.first).x);

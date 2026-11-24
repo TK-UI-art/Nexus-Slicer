@@ -8,6 +8,7 @@
 #include "PluginPickerDialog.hpp"
 #include "Widgets/StaticLine.hpp"
 #include "Widgets/LabeledStaticBox.hpp"
+#include "NexusTheme.hpp"
 
 #include <boost/any.hpp>
 #include <boost/log/trivial.hpp>
@@ -339,6 +340,8 @@ void OptionsGroup::activate_line(Line& line)
         custom_ctrl = new OG_CustomCtrl(is_legend_line || !staticbox ? this->parent() : static_cast<wxWindow*>(this->stb), this);
         // BBS: new layout
         custom_ctrl->SetLabel("");
+        if (nexus_frame)
+            custom_ctrl->Bind(wxEVT_SIZE, [parent = m_parent](wxSizeEvent& e) { e.Skip(); parent->Refresh(); });
         if (is_legend_line)
             sizer->Add(custom_ctrl, 0, wxEXPAND | wxLEFT, (wxOSX && !staticbox) ? 0 : 10);
         else
@@ -553,9 +556,21 @@ bool OptionsGroup::activate(std::function<void()> throw_if_canceled /* = [](){}*
             sizer = new wxBoxSizer(wxVERTICAL);
             if (title.IsEmpty()) {
                 stl->Hide();
+            } else if (nexus_frame) {
+                // Only as wide as the title, which then interrupts the frame's top edge; the line it draws
+                // after the title continues that edge.
+                stl->SetLineColour(wxColour(NEXUS_CARD_LINE));
+                stl->SetFrameSizer(sizer);
+                sizer->Add(stl, 0, wxLEFT, stl->FromDIP(NEXUS_FRAME_TITLE_INSET));
+                sizer->AddSpacer(8);
             } else {
                 sizer->Add(stl, 0, wxEXPAND);
                 sizer->AddSpacer(8);
+            }
+            if (nexus_frame) {
+                // The frame is painted on the parent around the group: repaint it when the group moves or resizes.
+                stl->Bind(wxEVT_MOVE, [parent = m_parent](wxMoveEvent& e) { e.Skip(); parent->Refresh(); });
+                stl->Bind(wxEVT_SIZE, [parent = m_parent](wxSizeEvent& e) { e.Skip(); parent->Refresh(); });
             }
             this->stb = stl;
         }

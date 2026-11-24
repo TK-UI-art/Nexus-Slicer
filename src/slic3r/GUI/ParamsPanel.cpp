@@ -38,6 +38,8 @@
 #include <boost/log/trivial.hpp>
 #include <boost/format.hpp>
 #include <wx/wupdlock.h>
+#include <wx/dcclient.h>
+#include "NexusFrame.hpp"
 #include <vector>
 
 
@@ -411,6 +413,11 @@ ParamsPanel::ParamsPanel( wxWindow* parent, wxWindowID id, const wxPoint& pos, c
 
     m_page_view = new PageScrolledWindow(page_parent);
     m_page_view->SetBackgroundColour(*wxWHITE);
+    // Nexus: the settings groups sit in rounded frames (Web-Slicer fieldsets).
+    m_page_view->Bind(wxEVT_PAINT, [this](wxPaintEvent&) {
+        wxPaintDC dc(m_page_view);
+        nexus_paint_group_frames(m_page_view, dc);
+    });
     m_page_sizer = new wxBoxSizer(wxVERTICAL);
 
     m_page_view->SetSizer(m_page_sizer);

@@ -2322,8 +2322,9 @@ wxBoxSizer* MainFrame::create_side_tools()
 
     auto slice_panel = new wxPanel(this,wxID_ANY,wxDefaultPosition,wxDefaultSize);
     auto print_panel = new wxPanel(this,wxID_ANY,wxDefaultPosition,wxDefaultSize);
-    slice_panel->SetBackgroundColour(StateColor::darkModeColorFor(wxColour(NEXUS_BAR)));
-    print_panel->SetBackgroundColour(StateColor::darkModeColorFor(wxColour(NEXUS_BAR)));
+    // Nexus: on the app background beside the floating tab pill.
+    slice_panel->SetBackgroundColour(StateColor::darkModeColorFor(wxColour(NEXUS_SIDEBAR_BG)));
+    print_panel->SetBackgroundColour(StateColor::darkModeColorFor(wxColour(NEXUS_SIDEBAR_BG)));
 
     m_slice_btn = new SideButton(slice_panel, _L("Slice plate"), "");
     m_slice_option_btn = new SideButton(slice_panel, "", "sidebutton_dropdown", 0, 14);
@@ -2705,10 +2706,12 @@ void MainFrame::update_side_button_style()
     m_print_option_btn->SetIconOffset(FromDIP(2));
     m_print_option_btn->SetMinSize(wxSize(FromDIP(24), FromDIP(24)));
 
-    // Keep panel backgrounds in sync with SideButton's darkModeColorFor(NEXUS_BAR) bottom strip
-    auto bg = StateColor::darkModeColorFor(wxColour(NEXUS_BAR));
+    // Keep panel backgrounds in sync with the SideButtons' bottom strip: the app background beside the tab pill.
+    auto bg = StateColor::darkModeColorFor(wxColour(NEXUS_SIDEBAR_BG));
     m_slice_btn->GetParent()->SetBackgroundColour(bg);
     m_print_btn->GetParent()->SetBackgroundColour(bg);
+    for (SideButton* btn : {m_slice_btn, m_slice_option_btn, m_print_btn, m_print_option_btn})
+        btn->SetBottomColour(wxColour(NEXUS_SIDEBAR_BG));
 }
 
 void MainFrame::set_slice_all(bool all)

@@ -155,6 +155,8 @@ public:
     const bool staticbox{true};
     bool split_multi_line{false};
     bool option_label_at_right{false};
+    // Nexus: a settings page group, drawn in a rounded frame with its title in the top edge (NexusFrame.hpp).
+    bool nexus_frame{false};
     // BBS: new layout
     wxWindow *     stb{ nullptr };
     const wxString  icon;

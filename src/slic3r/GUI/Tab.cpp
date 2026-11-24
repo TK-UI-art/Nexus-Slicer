@@ -9830,6 +9830,7 @@ ConfigOptionsGroupShp Page::new_optgroup(const wxString &title, const wxString &
         : std::make_shared<ConfigOptionsGroup>(m_parent, title, icon, m_config, true);
     optgroup->split_multi_line     = this->m_split_multi_line;
     optgroup->option_label_at_right = this->m_option_label_at_right;
+    optgroup->nexus_frame          = true;
     if (noncommon_label_width >= 0)
         optgroup->label_width = noncommon_label_width;
 

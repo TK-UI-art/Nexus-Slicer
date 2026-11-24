@@ -6,6 +6,8 @@
 #include "GUI_App.hpp"
 #include "wxExtensions.hpp"
 #include "Widgets/Button.hpp"
+#include "Widgets/StateColor.hpp"
+#include "NexusCard.hpp"
 
 //BBS set font size
 
@@ -13,6 +15,7 @@
 #include <cmath>
 #include <cstddef>
 #include <utility>
+#include <vector>
 #include <string>
 #include <algorithm>
 #include <wx/button.h>
@@ -32,15 +35,8 @@ ButtonsListCtrl::ButtonsListCtrl(wxWindow *parent, wxBoxSizer* side_tools) :
     SetDoubleBuffered(true);
 #endif //__WINDOWS__
 
-    wxColour default_btn_bg;
-#ifdef __APPLE__
-    default_btn_bg = wxColour(NEXUS_BAR);
-#else
-    default_btn_bg = wxColour(NEXUS_BAR);
-#endif
-
-   
-    SetBackgroundColour(default_btn_bg);
+    // Nexus: the tabs float as a white pill on the app background (Web-Slicer mode switch).
+    SetBackgroundColour(StateColor::darkModeColorFor(wxColour(NEXUS_SIDEBAR_BG)));
 
     int em = em_unit(this);// Slic3r::GUI::wxGetApp().em_unit();
     // Nexus: tabs are pills with a small gap between them and around the row
@@ -55,7 +51,8 @@ ButtonsListCtrl::ButtonsListCtrl(wxWindow *parent, wxBoxSizer* side_tools) :
     // centred mode switch). Both stretch spacers shrink to nothing when the bar runs out of room.
     if (side_tools != NULL)
         m_sizer->AddStretchSpacer(1);
-    m_sizer->Add(m_buttons_sizer, 0, wxALIGN_CENTER_VERTICAL | wxALL, m_btn_margin);
+    // Room for the pill's padding and its drop shadow around the tabs.
+    m_sizer->Add(m_buttons_sizer, 0, wxALIGN_CENTER_VERTICAL | wxALL, FromDIP(NEXUS_CARD_PAD + 6));
 
     if (side_tools != NULL) {
         m_sizer->AddStretchSpacer(1);
@@ -69,9 +66,16 @@ ButtonsListCtrl::ButtonsListCtrl(wxWindow *parent, wxBoxSizer* side_tools) :
         m_sizer->Add(side_tools, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, m_btn_margin);
     }
 
-    // BBS: disable custom paint
-    //this->Bind(wxEVT_PAINT, &ButtonsListCtrl::OnPaint, this);
-    Bind(wxEVT_SYS_COLOUR_CHANGED, [](auto& e){
+    Bind(wxEVT_PAINT, [this](wxPaintEvent&) {
+        wxPaintDC dc(this);
+        Slic3r::GUI::nexus_paint_cards(this, dc, {std::vector<wxWindow*>(m_pageButtons.begin(), m_pageButtons.end())});
+    });
+    Bind(wxEVT_SYS_COLOUR_CHANGED, [this](wxSysColourChangedEvent& e) {
+        e.Skip();
+        SetBackgroundColour(StateColor::darkModeColorFor(wxColour(NEXUS_SIDEBAR_BG)));
+        for (Button* btn : m_pageButtons)
+            btn->SetBackgroundColour(StateColor::darkModeColorFor(*wxWHITE));
+        Refresh();
     });
 }
 
@@ -142,11 +146,11 @@ void ButtonsListCtrl::SetSelection(int sel)
     wxColour selected_btn_bg(NEXUS_ACCENT);
     if (m_selection >= 0 && m_selection < static_cast<int>(m_pageButtons.size())) {
         StateColor bg_color = StateColor(
-        std::pair{wxColour(107, 107, 107), (int) StateColor::Hovered},
-        std::pair{wxColour(NEXUS_BAR), (int) StateColor::Normal});
+        std::pair{wxColour("#F0F0F1"), (int) StateColor::Hovered},
+        std::pair{*wxWHITE, (int) StateColor::Normal});
         m_pageButtons[m_selection]->SetBackgroundColor(bg_color);
         StateColor text_color = StateColor(
-        std::pair{wxColour(254,254, 254), (int) StateColor::Normal}
+        std::pair{wxColour("#262E30"), (int) StateColor::Normal}
         );
         m_pageButtons[m_selection]->SetTextColor(text_color);
     }
@@ -196,12 +200,12 @@ bool ButtonsListCtrl::InsertPage(size_t n, const wxString &text, bool bSelect /*
     btn->SetMinSize({(text.empty() ? 40 : 136) * em / 10, 28 * em / 10});
 
     StateColor bg_color = StateColor(
-        std::pair{wxColour(107, 107, 107), (int) StateColor::Hovered},
-        std::pair{wxColour(NEXUS_BAR), (int) StateColor::Normal});
+        std::pair{wxColour("#F0F0F1"), (int) StateColor::Hovered},
+        std::pair{*wxWHITE, (int) StateColor::Normal});
 
     btn->SetBackgroundColor(bg_color);
     StateColor text_color = StateColor(
-        std::pair{wxColour(254,254, 254), (int) StateColor::Normal});
+        std::pair{wxColour("#262E30"), (int) StateColor::Normal});
     btn->SetTextColor(text_color);
     btn->Bind(wxEVT_BUTTON, [this, btn](wxCommandEvent& event) {
         if (auto it = std::find(m_pageButtons.begin(), m_pageButtons.end(), btn); it != m_pageButtons.end()) {
@@ -215,6 +219,8 @@ bool ButtonsListCtrl::InsertPage(size_t n, const wxString &text, bool bSelect /*
         }
     });
     Slic3r::GUI::wxGetApp().UpdateDarkUI(btn);
+    // The corners outside the tab's rounding show the pill, not the bar.
+    btn->SetBackgroundColour(StateColor::darkModeColorFor(*wxWHITE));
     m_pageButtons.insert(m_pageButtons.begin() + n, btn);
     m_pageLabels.insert(m_pageLabels.begin() + n, text); // ORCA
     m_pageIcons.insert(m_pageIcons.begin() + n, bmp_name);

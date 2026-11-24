@@ -130,7 +130,7 @@ GLGizmosManager::EType GLGizmosManager::get_gizmo_from_mouse(const Vec2d &mouse_
         top_x = m_parent.get_main_toolbar_offset();
         top_x += m_parent.get_main_toolbar_width() + separator_width / 2 + border;
     }
-    float top_y = 0;
+    float top_y = m_parent.get_toolbar_row_top();
     float stride_x = m_layout.scaled_stride_x();
 
     // is mouse vertically in the area?
@@ -1311,7 +1311,7 @@ void GLGizmosManager::do_render_overlay(bool draw_icons) const
         top_x = main_toolbar_left + main_toolbar_width * 2 + separator_width;
         top_x = top_x * inv_cnv_w;
     }
-    float top_y = 1.0f;
+    float top_y = 1.0f - 2.0f * m_parent.get_toolbar_row_top() * inv_cnv_h;
 
     if (draw_icons)
         render_background(top_x, top_y, top_x + width, top_y - height, border_w, border_h);
@@ -1361,7 +1361,7 @@ void GLGizmosManager::do_render_overlay(bool draw_icons) const
             //1. no need to scale by camera zoom, set {0,0} at left-up corner for imgui
             //gizmo->render_input_window(width, 0.5f * cnv_h - zoomed_top_y * zoom, toolbar_top);
             if (!draw_icons)
-                m_gizmos[m_current]->render_input_window(0.5 * cnv_w + 0.5f * top_x * cnv_w, get_scaled_total_height(), cnv_h);
+                m_gizmos[m_current]->render_input_window(0.5 * cnv_w + 0.5f * top_x * cnv_w, get_scaled_total_height(), m_parent.get_toolbar_panel_limit());
 
             is_render_current = true;
         }
@@ -1370,7 +1370,7 @@ void GLGizmosManager::do_render_overlay(bool draw_icons) const
 
     // BBS simplify gizmo is not a selected gizmo and need to render input window
     if (!draw_icons && !is_render_current && m_current != Undefined) {
-        m_gizmos[m_current]->render_input_window(0.5 * cnv_w + 0.5f * top_x * cnv_w, get_scaled_total_height(), cnv_h);
+        m_gizmos[m_current]->render_input_window(0.5 * cnv_w + 0.5f * top_x * cnv_w, get_scaled_total_height(), m_parent.get_toolbar_panel_limit());
     }
 }
 
