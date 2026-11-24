@@ -90,6 +90,9 @@ public:
 
     bool setColorForStates(wxColour const & color, int states);
 
+    // Replaces every state's colour equal to `from` (light-mode value) by `to`. Returns whether any matched.
+    bool replaceColor(wxColour const &from, wxColour const &to);
+
     void setTakeFocusedAsHovered(bool set);
 
 private:

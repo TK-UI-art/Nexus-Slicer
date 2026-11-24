@@ -690,7 +690,7 @@ private:
     wxPanel* create_item_row(size_t idx, int row_h)
     {
         wxColour row_bg    = StateColor::darkModeColorFor(*wxWHITE);
-        wxColour hover_bg  = StateColor::darkModeColorFor(wxColour("#F4F4F4"));
+        wxColour hover_bg  = StateColor::darkModeColorFor(wxColour("#EEEEEE"));
         wxColour name_fg   = texture_import_text_colour();
 
         wxPanel* row = new wxPanel(m_content, wxID_ANY, wxDefaultPosition, wxSize(-1, row_h));
@@ -785,7 +785,7 @@ private:
     wxPanel* create_mixed_item_row(const TextureFilamentEntry& entry, int row_h)
     {
         wxColour row_bg    = StateColor::darkModeColorFor(*wxWHITE);
-        wxColour hover_bg  = StateColor::darkModeColorFor(wxColour("#F4F4F4"));
+        wxColour hover_bg  = StateColor::darkModeColorFor(wxColour("#EEEEEE"));
         wxColour name_fg   = texture_import_text_colour();
         const int idx = entry.dialog_index;
 

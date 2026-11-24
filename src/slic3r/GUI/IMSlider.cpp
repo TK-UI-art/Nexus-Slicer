@@ -60,7 +60,7 @@ static const float  LEFT_MARGIN       = 13.0f + 100.0f;  // avoid thumbnail tool
 static const float  HORIZONTAL_SLIDER_WINDOW_HEIGHT  = 64.0f;
 // ORCA: widen slider window to account for one-layer label box left shift.
 static const float  VERTICAL_SLIDER_WINDOW_WIDTH     = 164.0f;
-static const float  GROOVE_WIDTH      = 8.0f; // Nexus: slimmer track (Web-Slicer)
+static const float  GROOVE_WIDTH      = 6.0f; // Nexus: Web-Slicer track
 static const ImVec2 ONE_LAYER_MARGIN  = ImVec2(20.0f, 20.0f);
 static const ImVec2 ONE_LAYER_BUTTON_SIZE  = ImVec2(56.0f, 56.0f);
 
@@ -70,6 +70,10 @@ static const ImU32 BACKGROUND_COLOR_LIGHT = IM_COL32(244, 244, 244, 255);
 static const ImU32 GROOVE_COLOR_DARK      = IM_COL32(24, 25, 27, 255);
 static const ImU32 GROOVE_COLOR_LIGHT     = IM_COL32(224, 224, 224, 255);
 static const ImU32 BRAND_COLOR            = ImColor(NEXUS_ACCENT_I, 255);
+static const ImU32 LINE_COLOR_LIGHT       = IM_COL32(176, 176, 176, 255); // NEXUS_CARD_LINE
+static const ImU32 LINE_COLOR_DARK        = IM_COL32(85, 87, 92, 255);    // NEXUS_CARD_LINE_DARK
+static const ImU32 THUMB_SHADOW_LIGHT     = IM_COL32(0, 0, 0, 31);        // Web-Slicer thumb ring, rgba(0,0,0,.12)
+static const ImU32 THUMB_SHADOW_DARK      = IM_COL32(0, 0, 0, 90);
 
 static int m_tick_value = -1;
 static ImVec4 m_tick_rect;
@@ -515,11 +519,17 @@ bool IMSlider::switch_one_layer_mode()
 void IMSlider::draw_background_and_groove(const ImRect& bg_rect, const ImRect& groove) {
     const ImU32 bg_rect_col = m_is_dark ? BACKGROUND_COLOR_DARK : BACKGROUND_COLOR_LIGHT;
     const ImU32 groove_col = m_is_dark ? GROOVE_COLOR_DARK : GROOVE_COLOR_LIGHT;
+    const ImU32 line_col    = m_is_dark ? LINE_COLOR_DARK : LINE_COLOR_LIGHT;
 
-    // draw bg of slider
-    ImGui::RenderFrame(bg_rect.Min, bg_rect.Max, bg_rect_col, false, 0.5 * bg_rect.GetWidth());
-    // draw groove
-    ImGui::RenderFrame(groove.Min, groove.Max, groove_col, false, 0.5 * groove.GetWidth());
+    // Nexus: the slider sits in a Web-Slicer pill (card fill, outline, card shadow) a little wider than its
+    // active region, and the track is a plain groove in the page grey.
+    ImDrawList*  draw_list = ImGui::GetWindowDrawList();
+    const ImRect pill(bg_rect.Min - ImVec2(3.0f, 3.0f) * m_scale, bg_rect.Max + ImVec2(3.0f, 3.0f) * m_scale);
+    const float  pill_rounding = 0.5f * std::min(pill.GetWidth(), pill.GetHeight());
+    ImGuiWrapper::draw_drop_shadow(draw_list, pill.Min, pill.Max, pill_rounding, m_scale, m_is_dark);
+    draw_list->AddRectFilled(pill.Min, pill.Max, bg_rect_col, pill_rounding);
+    draw_list->AddRect(pill.Min, pill.Max, line_col, pill_rounding, 0, 1.0f * m_scale);
+    draw_list->AddRectFilled(groove.Min, groove.Max, groove_col, 0.5f * std::min(groove.GetWidth(), groove.GetHeight()));
 }
 
 bool IMSlider::is_dragging() const
@@ -545,24 +555,19 @@ bool IMSlider::horizontal_slider(const char* str_id, int* value, int v_min, int 
     const float  text_right_dummy    = 70.0f * scale * m_scale;
 
     const float  handle_radius       = 10.0f * m_scale;
-    const float  handle_border       = 2.0f * m_scale;
+    const float  thumb_radius        = 8.0f * m_scale;
     const float  text_start_offset   = 8.0f * m_scale;
     const ImVec2 text_padding        = ImVec2(5.0f, 2.0f) * m_scale;
 
     const ImU32 handle_clr = BRAND_COLOR;
-    const ImU32 handle_border_clr = m_is_dark ? BACKGROUND_COLOR_DARK : BACKGROUND_COLOR_LIGHT;
-    const wxColour label_bg = StateColor::darkModeColorFor(wxGetApp().get_window_default_clr());
-    const wxColour label_border = StateColor::darkModeColorFor(wxColour("#CECECE"));
-    const wxColour rail_inner_bg = m_is_dark ? StateColor::darkModeColorFor(wxColour("#CECECE")) : wxGetApp().get_highlight_default_clr();
-    const wxColour rail_border = m_is_dark ? StateColor::darkModeColorFor(wxColour("#F0F0F1")) : wxColour("#CECECE");
+    const wxColour label_bg = StateColor::darkModeColorFor(wxColour(NEXUS_CARD)); // Nexus: value labels are small cards
+    const wxColour label_border = StateColor::darkModeColorFor(wxColour(NEXUS_CARD_LINE));
     const ImU32 label_bg_clr = IM_COL32(label_bg.Red(), label_bg.Green(), label_bg.Blue(), 238);
     const ImU32 label_border_clr = IM_COL32(label_border.Red(), label_border.Green(), label_border.Blue(), 255);
     const ImU32 label_shadow_clr = m_is_dark ? IM_COL32(0, 0, 0, 84) : IM_COL32(0, 0, 0, 38);
     ImVec4 range_fill = ImGui::ColorConvertU32ToFloat4(BRAND_COLOR);
     range_fill.w = 1.0f; // Nexus: solid accent fill
     const ImU32 range_fill_clr = ImGui::GetColorU32(range_fill);
-    const ImU32 rail_inner_clr = IM_COL32(rail_inner_bg.Red(), rail_inner_bg.Green(), rail_inner_bg.Blue(), 255);
-    const ImU32 rail_border_clr = IM_COL32(rail_border.Red(), rail_border.Green(), rail_border.Blue(), 190);
 
     // calculate groove size
     const ImVec2 groove_start = ImVec2(pos.x + handle_dummy_width, pos.y + size.y - ONE_LAYER_MARGIN.y * m_scale - (ONE_LAYER_BUTTON_SIZE.y / 2) * m_scale * 0.5f - GROOVE_WIDTH * m_scale * 0.5f);
@@ -581,9 +586,6 @@ bool IMSlider::horizontal_slider(const char* str_id, int* value, int v_min, int 
 
     // draw background
     draw_background_and_groove(bg_rect, groove);
-    window->DrawList->AddRect(groove.Min, groove.Max, rail_border_clr, 0.5f * groove.GetHeight(), 0, 1.0f * m_scale);
-    const ImRect rail_inner(groove.Min + ImVec2(2.0f, 2.0f) * m_scale, groove.Max - ImVec2(2.0f, 2.0f) * m_scale);
-    window->DrawList->AddRectFilled(rail_inner.Min, rail_inner.Max, rail_inner_clr, 0.5f * rail_inner.GetHeight());
 
     // set scrollable region
     const ImRect slideable_region = ImRect(bg_rect.Min + ImVec2(handle_radius, 0.0f), bg_rect.Max - ImVec2(handle_radius, 0.0f));
@@ -597,15 +599,12 @@ bool IMSlider::horizontal_slider(const char* str_id, int* value, int v_min, int 
     ImVec2 handle_center = handle.GetCenter();
 
     // draw scroll line
-    ImRect scroll_line = ImRect(ImVec2(groove.Min.x, groove.Min.y - 2.0f * m_scale),
-        ImVec2(handle_center.x, groove.Max.y + 2.0f * m_scale));
+    ImRect scroll_line = ImRect(groove.Min, ImVec2(handle_center.x, groove.Max.y));
     window->DrawList->AddRectFilled(scroll_line.Min, scroll_line.Max, range_fill_clr, 0.5f * scroll_line.GetHeight());
 
-    // draw handle
-    window->DrawList->AddCircleFilled(handle_center, handle_radius + 2.0f * m_scale, handle_border_clr);
-    window->DrawList->AddCircleFilled(handle_center, handle_radius, handle_border_clr);
-    window->DrawList->AddCircleFilled(handle_center, handle_radius - handle_border, handle_clr);
-    window->DrawList->AddCircle(handle_center, handle_radius + 3.0f * m_scale, handle_clr, 0, 2.0f * m_scale);
+    // draw handle (Nexus: Web-Slicer thumb, an accent dot with a faint ring; the hit area stays handle_radius)
+    window->DrawList->AddCircleFilled(handle_center, thumb_radius + 1.0f * m_scale, m_is_dark ? THUMB_SHADOW_DARK : THUMB_SHADOW_LIGHT);
+    window->DrawList->AddCircleFilled(handle_center, thumb_radius, handle_clr);
 
     // draw label
     const std::string value_label = std::to_string(*value);
@@ -937,21 +936,16 @@ bool IMSlider::vertical_slider(const char* str_id, int* higher_value, int* lower
     const float  text_dummy_height   = 60.0f * scale * m_scale;
 
     const float  handle_radius       = 10.0f * m_scale;
-    const float  handle_border       = 2.0f * m_scale;
-    const float  line_width          = 1.0f * m_scale;
-    const float  line_length         = 12.0f * m_scale;
+    const float  thumb_radius        = 8.0f * m_scale;
 
     const ImVec2 text_padding        = ImVec2(5.0f, 2.0f) * m_scale;
     ImVec2 text_size;
 
     const ImU32 white_bg = m_is_dark ? BACKGROUND_COLOR_DARK : BACKGROUND_COLOR_LIGHT;
     const ImU32 handle_clr = BRAND_COLOR;
-    const ImU32 handle_border_clr = m_is_dark ? BACKGROUND_COLOR_DARK : BACKGROUND_COLOR_LIGHT;
-    const wxColour label_bg = StateColor::darkModeColorFor(wxGetApp().get_window_default_clr());
+    const wxColour label_bg = StateColor::darkModeColorFor(wxColour(NEXUS_CARD)); // Nexus: value labels are small cards
     const wxColour label_bg_active = StateColor::darkModeColorFor(wxColour(NEXUS_ACCENT_TINT10));
-    const wxColour label_border = StateColor::darkModeColorFor(wxColour("#CECECE"));
-    const wxColour rail_inner_bg = m_is_dark ? StateColor::darkModeColorFor(wxColour("#CECECE")) : wxGetApp().get_highlight_default_clr();
-    const wxColour rail_border = m_is_dark ? StateColor::darkModeColorFor(wxColour("#F0F0F1")) : wxColour("#CECECE");
+    const wxColour label_border = StateColor::darkModeColorFor(wxColour(NEXUS_CARD_LINE));
     const ImU32 label_bg_clr = IM_COL32(label_bg.Red(), label_bg.Green(), label_bg.Blue(), 238);
     const ImU32 label_bg_active_clr = IM_COL32(label_bg_active.Red(), label_bg_active.Green(), label_bg_active.Blue(), 246);
     const ImU32 label_border_clr = IM_COL32(label_border.Red(), label_border.Green(), label_border.Blue(), 255);
@@ -959,8 +953,6 @@ bool IMSlider::vertical_slider(const char* str_id, int* higher_value, int* lower
     ImVec4 range_fill = ImGui::ColorConvertU32ToFloat4(BRAND_COLOR);
     range_fill.w = 1.0f; // Nexus: solid accent fill
     const ImU32 range_fill_clr = ImGui::GetColorU32(range_fill);
-    const ImU32 rail_inner_clr = IM_COL32(rail_inner_bg.Red(), rail_inner_bg.Green(), rail_inner_bg.Blue(), 255);
-    const ImU32 rail_border_clr = IM_COL32(rail_border.Red(), rail_border.Green(), rail_border.Blue(), 190);
     // calculate slider groove size
     const ImVec2 groove_start = ImVec2(pos.x + size.x - ONE_LAYER_MARGIN.x * m_scale - (ONE_LAYER_BUTTON_SIZE.x / 2) * m_scale * 0.5f - GROOVE_WIDTH * m_scale * 0.5f, pos.y + text_dummy_height);
     const ImVec2 groove_size = ImVec2(GROOVE_WIDTH * m_scale, size.y - 2 * text_dummy_height);
@@ -1028,16 +1020,15 @@ bool IMSlider::vertical_slider(const char* str_id, int* higher_value, int* lower
         ImGui::RenderText(rect.Min + ImVec2((rect_size.x - content_size.x) * 0.5f,
             (rect_size.y - content_size.y) * 0.5f), label.c_str());
     };
+    // Nexus: Web-Slicer thumbs, an accent dot with a faint ring; the selected one also gets an accent ring.
     auto draw_handle = [&](const ImVec2& center) {
-        window->DrawList->AddCircleFilled(center, handle_radius, handle_border_clr);
-        window->DrawList->AddCircleFilled(center, handle_radius - handle_border, handle_clr);
+        window->DrawList->AddCircleFilled(center, thumb_radius + 1.0f * m_scale, m_is_dark ? THUMB_SHADOW_DARK : THUMB_SHADOW_LIGHT);
+        window->DrawList->AddCircleFilled(center, thumb_radius, handle_clr);
     };
     auto draw_active_handle = [&](const ImVec2& center) {
-        window->DrawList->AddCircleFilled(center, handle_radius + 2.0f * m_scale, handle_border_clr);
+        window->DrawList->AddCircleFilled(center, thumb_radius + 3.0f * m_scale, white_bg);
         draw_handle(center);
-        window->DrawList->AddCircle(center, handle_radius + 3.0f * m_scale, handle_clr, 0, 2.0f * m_scale);
-        window->DrawList->AddLine(center + ImVec2(-0.5f * line_length, 0.0f), center + ImVec2(0.5f * line_length, 0.0f), white_bg, line_width);
-        window->DrawList->AddLine(center + ImVec2(0.0f, -0.5f * line_length), center + ImVec2(0.0f, 0.5f * line_length), white_bg, line_width);
+        window->DrawList->AddCircle(center, thumb_radius + 3.0f * m_scale, handle_clr, 0, 1.5f * m_scale);
     };
 
     // Prevent interaction with labels if slider add/edit menu is open
@@ -1082,9 +1073,6 @@ bool IMSlider::vertical_slider(const char* str_id, int* higher_value, int* lower
 
     // draw background
     draw_background_and_groove(bg_rect, groove);
-    window->DrawList->AddRect(groove.Min, groove.Max, rail_border_clr, 0.5f * groove.GetWidth(), 0, 1.0f * m_scale);
-    const ImRect rail_inner(groove.Min + ImVec2(2.0f, 2.0f) * m_scale, groove.Max - ImVec2(2.0f, 2.0f) * m_scale);
-    window->DrawList->AddRectFilled(rail_inner.Min, rail_inner.Max, rail_inner_clr, 0.5f * rail_inner.GetWidth());
 
     bool value_changed = false;
     if (!one_layer_flag)
@@ -1174,8 +1162,8 @@ bool IMSlider::vertical_slider(const char* str_id, int* higher_value, int* lower
 
         if (!m_ticks.has_tick_with_code(ToolChange)) {
             // draw scroll line
-            ImRect scroll_line = ImRect(ImVec2(groove.Min.x - 2.0f * m_scale, higher_handle_center.y),
-                ImVec2(groove.Max.x + 2.0f * m_scale, lower_handle_center.y));
+            ImRect scroll_line = ImRect(ImVec2(groove.Min.x, higher_handle_center.y),
+                ImVec2(groove.Max.x, lower_handle_center.y));
             window->DrawList->AddRectFilled(scroll_line.Min, scroll_line.Max, range_fill_clr, 0.5f * scroll_line.GetWidth());
         }
 

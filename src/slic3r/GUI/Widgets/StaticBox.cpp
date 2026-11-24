@@ -120,6 +120,14 @@ void StaticBox::SetBackgroundColorNormal(wxColor const &color)
     Refresh();
 }
 
+bool StaticBox::ReplaceBackgroundColor(wxColour const &from, wxColour const &to)
+{
+    const bool replaced = background_color.replaceColor(from, to) | background_color2.replaceColor(from, to);
+    if (replaced)
+        Refresh();
+    return replaced;
+}
+
 void StaticBox::SetBackgroundColor2(StateColor const &color)
 {
     background_color2 = color;

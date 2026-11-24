@@ -51,6 +51,9 @@ public:
 
     void SetBackgroundColor2(StateColor const &color);
 
+    // Replaces the background colour `from` by `to` in every state (light-mode values). Returns whether any matched.
+    bool ReplaceBackgroundColor(wxColour const &from, wxColour const &to);
+
     static wxColor GetParentBackgroundColor(wxWindow * parent);
 
     void ShowBadge(bool show);

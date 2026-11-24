@@ -987,6 +987,12 @@ struct Sidebar::priv
     wxPanel*   m_panel_printer_separator = nullptr;
     // Nexus: windows that make up each sidebar step card; the card is painted behind their union.
     std::vector<std::vector<wxWindow*>> nexus_cards;
+    void nexus_apply_card_colours()
+    {
+        for (const auto& card : nexus_cards)
+            for (wxWindow* w : card)
+                nexus_apply_card_colour(w);
+    }
     Button*    btn_slice_sidebar = nullptr;
     Button*    btn_slice_option_sidebar = nullptr;
     ScalableButton* m_printer_icon = nullptr;
@@ -2827,7 +2833,7 @@ Sidebar::Sidebar(Plater *parent)
     auto* scrolled_sizer = m_scrolled_sizer = new wxBoxSizer(wxVERTICAL);
     p->scrolled->SetSizer(scrolled_sizer);
 
-    wxColour title_bg = *wxWHITE; // Nexus: section titles blend into their card
+    wxColour title_bg = wxColour(NEXUS_CARD); // Nexus: section titles blend into their card
     const int card_margin = FromDIP(NEXUS_CARD_GAP + NEXUS_CARD_PAD);         // card content inset from the sidebar edge
     const int card_spacing = FromDIP(NEXUS_CARD_GAP + 2 * NEXUS_CARD_PAD);    // between the contents of two cards
     wxColour inactive_text = wxColour(86, 86, 86);
@@ -3683,7 +3689,11 @@ Sidebar::Sidebar(Plater *parent)
     p->scrolled->Bind(wxEVT_PAINT, [this](wxPaintEvent&) {
         wxPaintDC dc(p->scrolled);
         nexus_paint_cards(p->scrolled, dc, p->nexus_cards);
+        // A card repaints when its sections change; windows they built meanwhile (a new filament row, an
+        // object list row editor) take the card fill.
+        CallAfter([this] { p->nexus_apply_card_colours(); });
     });
+    p->nexus_apply_card_colours();
     }
 
     p->object_layers = new ObjectLayers(p->scrolled);
@@ -5806,6 +5816,9 @@ void Sidebar::sys_color_changed()
 
     // Mixed rows are custom-drawn, so they need rebuilding for the new theme colours.
     update_mixed_filament_list();
+
+    // Nexus: after the theme walk has mapped the windows' colours, give the cards their fill again
+    CallAfter([this] { p->nexus_apply_card_colours(); });
 
     p->searcher.dlg_sys_color_changed();
 }

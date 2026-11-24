@@ -4636,21 +4636,28 @@ void GCodeViewer::render_legend(float &legend_height, int canvas_width, int canv
 
     //BBS: GUI refactor: move to the right
     imgui.set_next_window_pos(float(canvas_width - right_margin * m_scale), 4.0f * m_scale, ImGuiCond_Always, 1.0f, 0.0f); // ORCA add a small gap to top to create seperation with main toolbar
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 14.0f * m_scale); // ORCA add window rounding to modernize / match style
+    // Nexus: the legend is a Web-Slicer card: the card fill with ink text in the light theme, an outline and
+    // the card shadow in both themes.
+    const float legend_rounding = 14.0f * m_scale;
+    const wxColour legend_line(m_is_dark ? NEXUS_CARD_LINE_DARK : NEXUS_CARD_LINE);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, legend_rounding); // ORCA add window rounding to modernize / match style
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0,0.0));
-    ImGui::PushStyleColor(ImGuiCol_Separator, ImVec4(1.0f,1.0f,1.0f,0.6f));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1.0f);
+    ImGui::PushStyleColor(ImGuiCol_Separator, m_is_dark ? ImVec4(1.0f, 1.0f, 1.0f, 0.6f) : ImVec4(0.0f, 0.0f, 0.0f, 0.25f));
     ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(NEXUS_ACCENT_F, 1.0f));
     ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(NEXUS_ACCENT_F, 1.0f));
     ImGui::PushStyleColor(ImGuiCol_ScrollbarGrab, ImVec4(0.42f, 0.42f, 0.42f, 1.00f));
-    ImGui::PushStyleColor(ImGuiCol_ScrollbarGrabHovered, ImVec4(0.93f, 0.93f, 0.93f, 1.00f));
-    ImGui::PushStyleColor(ImGuiCol_ScrollbarGrabActive, ImVec4(0.93f, 0.93f, 0.93f, 1.00f));
-    //ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(1.f, 1.f, 1.f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_Border, {1, 0, 0, 0});
-    ImGui::SetNextWindowBgAlpha(0.8f);
+    ImGui::PushStyleColor(ImGuiCol_ScrollbarGrabHovered, m_is_dark ? ImVec4(0.93f, 0.93f, 0.93f, 1.00f) : ImVec4(0.30f, 0.30f, 0.30f, 1.00f));
+    ImGui::PushStyleColor(ImGuiCol_ScrollbarGrabActive, m_is_dark ? ImVec4(0.93f, 0.93f, 0.93f, 1.00f) : ImVec4(0.30f, 0.30f, 0.30f, 1.00f));
+    ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(legend_line.Red() / 255.f, legend_line.Green() / 255.f, legend_line.Blue() / 255.f, 1.f));
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, m_is_dark ? ImGuiWrapper::COL_WINDOW_BG_DARK : ImGuiWrapper::COL_WINDOW_BG);
+    ImGui::PushStyleColor(ImGuiCol_Text, m_is_dark ? ImVec4(1.0f, 1.0f, 1.0f, 1.0f) : ImVec4(NEXUS_ON_ACCENT_F, 1.0f));
     const float max_height = 0.75f * static_cast<float>(cnv_size.get_height());
     const float child_height = 0.3333f * max_height;
     ImGui::SetNextWindowSizeConstraints({ 0.0f, 0.0f }, { -1.0f, max_height });
     imgui.begin(std::string("Legend"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove);
+    ImGuiWrapper::draw_drop_shadow(ImGui::GetBackgroundDrawList(), ImGui::GetWindowPos(), ImGui::GetWindowPos() + ImGui::GetWindowSize(),
+                                   legend_rounding, m_scale, m_is_dark);
 
     enum class EItemType : unsigned char
     {
@@ -4781,7 +4788,8 @@ void GCodeViewer::render_legend(float &legend_height, int canvas_width, int canv
                 ImGui::SameLine(checkbox_pos);
                 ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.0, 0.0)); // ensure no padding active
                 ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0, 0.0)); // ensure no item spacing active
-                ImGui::Text("%s", into_u8(visible ? ImGui::VisibleIcon : ImGui::HiddenIcon).c_str());
+                // Nexus: an untinted icon (glyph images are multiplied by the text colour)
+                ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), "%s", into_u8(visible ? ImGui::VisibleIcon : ImGui::HiddenIcon).c_str());
                 ImGui::PopStyleVar(2);
             }
         }
@@ -4980,8 +4988,9 @@ void GCodeViewer::render_legend(float &legend_height, int canvas_width, int canv
     ImGui::SameLine(window_padding * 2); // ORCA Ignores item spacing to get perfect window margins since since this part uses dummies for window padding
 
     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(84 / 255.f, 84 / 255.f, 90 / 255.f, 1.f));
-    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(84 / 255.f, 84 / 255.f, 90 / 255.f, 1.f));
+    const ImVec4 glyph_hover = m_is_dark ? ImVec4(84 / 255.f, 84 / 255.f, 90 / 255.f, 1.f) : ImVec4(0.f, 0.f, 0.f, 0.08f);
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, glyph_hover);
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, glyph_hover);
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding , ImVec2(2.f, 2.f) * m_scale);
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 3.0f * m_scale); // ORCA Match button style with combo box
 
@@ -5048,8 +5057,8 @@ void GCodeViewer::render_legend(float &legend_height, int canvas_width, int canv
         ImGui::SameLine(window_width);                // ORCA use stored window width while folded. This prevents annoying position change on fold/expand button
         ImGui::Dummy({ 0, 0 });
         imgui.end();
-        ImGui::PopStyleColor(7);
-        ImGui::PopStyleVar(2);
+        ImGui::PopStyleColor(9);
+        ImGui::PopStyleVar(3);
         return;
     }
 
@@ -6216,8 +6225,8 @@ void GCodeViewer::render_legend(float &legend_height, int canvas_width, int canv
 
     legend_height = ImGui::GetCurrentWindow()->Size.y;
     imgui.end();
-    ImGui::PopStyleColor(7);
-    ImGui::PopStyleVar(2);
+    ImGui::PopStyleColor(9);
+    ImGui::PopStyleVar(3);
 }
 
 void GCodeViewer::push_combo_style()
@@ -6225,11 +6234,13 @@ void GCodeViewer::push_combo_style()
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 3.0f * m_scale); // ORCA scale rounding
     ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f * m_scale); // ORCA scale frame size
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8.0,8.0));
-    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.3f));
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 0.0f, 0.0f, 0.3f));
-    ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.0f, 0.0f, 0.0f, 0.3f));
-    ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.0f, 0.0f, 0.0f, 0.3f));
-    ImGui::PushStyleColor(ImGuiCol_PopupBg, ImVec4(0.0f, 0.0f, 0.0f, 0.8f));
+    // Nexus: on the light legend card the combo is an outlined field (Web-Slicer select) on a card pop-up
+    const ImVec4 frame = m_is_dark ? ImVec4(0.0f, 0.0f, 0.0f, 0.3f) : ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
+    ImGui::PushStyleColor(ImGuiCol_Button, frame);
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, frame);
+    ImGui::PushStyleColor(ImGuiCol_FrameBg, frame);
+    ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, m_is_dark ? frame : ImVec4(0.0f, 0.0f, 0.0f, 0.05f));
+    ImGui::PushStyleColor(ImGuiCol_PopupBg, m_is_dark ? ImVec4(0.0f, 0.0f, 0.0f, 0.8f) : ImGuiWrapper::COL_WINDOW_BG);
     ImGui::PushStyleColor(ImGuiCol_BorderActive, ImVec4(NEXUS_ACCENT_F, 1.00f));
     ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(NEXUS_ACCENT_F, 0.0f));
     ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(NEXUS_ACCENT_F, 1.0f));

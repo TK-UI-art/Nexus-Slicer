@@ -35,7 +35,6 @@ static std::map<wxColour, wxColour> gDarkColors{
     {"#CECECE", "#18191B"}, // rgb(206, 206, 206)  Sidebar wxPanel bg | 
     {"#DBFDD5", "#3B3B40"}, // rgb(219, 253, 213)  Not Used anymore // Was used for BBS combo boxes etc
     {"#000000", "#FFFFFE"}, // rgb(0, 0, 0)        Mostly Text color wxBlack
-    {"#F4F4F4", "#2F3033"}, // rgb(244, 244, 244)  ???
     {"#DBDBDB", "#55575C"}, // rgb(219, 219, 219)  Input/Combo Box Border Color
     {"#EDFAF2", "#283232"}, // rgb(229, 240, 238)  Not Used anymore // Was used for BBS Combo / Dropdown focused background color
     {"#323A3C", "#E5E5E6"}, // rgb(50, 58, 60)     Text color used on search list | 
@@ -57,6 +56,7 @@ static std::map<wxColour, wxColour> gDarkColors{
     // Nexus neutrals: dark values above follow the Web-Slicer palette (bg #18191B, card #2A2B2E, line #55575C)
     {NEXUS_BAR, NEXUS_BAR_DARK},
     {NEXUS_SIDEBAR_BG, NEXUS_SIDEBAR_BG_DARK},
+    {NEXUS_CARD, NEXUS_CARD_DARK},
     {NEXUS_CARD_LINE, NEXUS_CARD_LINE_DARK},
     {NEXUS_DEVICE_BG, NEXUS_DEVICE_BG_DARK},
     {NEXUS_INPUT_LINE, "#55575C"},
@@ -337,6 +337,17 @@ bool StateColor::setColorForStates(wxColour const &color, int states)
         }
     }
     return false;
+}
+
+bool StateColor::replaceColor(wxColour const &from, wxColour const &to)
+{
+    bool replaced = false;
+    for (auto &c : colors_)
+        if (c == from) {
+            c        = to;
+            replaced = true;
+        }
+    return replaced;
 }
 
 void StateColor::setTakeFocusedAsHovered(bool set) { takeFocusedAsHovered_ = set; }

@@ -62,9 +62,14 @@
 #define NEXUS_TAB_RADIUS        14
 
 // Sidebar cards (Web-Slicer step cards). The sidebar background shows between the cards; the cards
-// are white (mapped to the dark card colour in dark mode) with a thin outline.
+// are NEXUS_CARD (mapped to NEXUS_CARD_DARK in dark mode) with a thin outline.
 #define NEXUS_SIDEBAR_BG        "#E0E0E0"
 #define NEXUS_SIDEBAR_BG_DARK   "#18191B"
+// Card fill (Web-Slicer --card). Its dark value differs from the dark window white (#2A2B2E) by one step
+// so that StateColor's reverse lookup maps each back to its own light colour.
+#define NEXUS_CARD              "#F4F4F4"
+#define NEXUS_CARD_RGB          0xF4F4F4
+#define NEXUS_CARD_DARK         "#2A2B2F"
 #define NEXUS_CARD_LINE         "#B0B0B0"
 #define NEXUS_CARD_LINE_DARK    "#55575C"
 #define NEXUS_CARD_RADIUS       26 // DIP, as the Web-Slicer's cards

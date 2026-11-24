@@ -1,6 +1,7 @@
 //#include "slic3r/Utils/Serial.hpp"
 #include "Tab.hpp"
 #include "slic3r/GUI/NexusTheme.hpp"
+#include "slic3r/GUI/NexusCard.hpp"
 #include "PresetHints.hpp"
 #include "libslic3r/IMEXHelpers.hpp"
 #include "libslic3r/PresetBundle.hpp"
@@ -8059,6 +8060,12 @@ void Tab::activate_selected_page(std::function<void()> throw_if_canceled)
     ScopeGuard show_view([this, hide_view] { if (hide_view) m_page_view->Show(); });
 #endif
     m_active_page->activate(m_mode, throw_if_canceled);
+    // Nexus: in the sidebar the page sits on a card and takes its fill (not in the settings dialog)
+    for (wxWindow* w = m_page_view; w != nullptr && wxGetApp().plater() != nullptr; w = w->GetParent())
+        if (w == &wxGetApp().sidebar()) {
+            nexus_apply_card_colour(m_page_view);
+            break;
+        }
     update_changed_ui();
     update_description_lines();
     if (m_active_page && !(m_active_page->title() == "Dependencies"))

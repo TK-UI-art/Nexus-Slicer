@@ -80,7 +80,7 @@ ButtonsListCtrl::ButtonsListCtrl(wxWindow *parent, wxBoxSizer* side_tools) :
         e.Skip();
         SetBackgroundColour(StateColor::darkModeColorFor(wxColour(NEXUS_SIDEBAR_BG)));
         for (Button* btn : m_pageButtons)
-            btn->SetBackgroundColour(StateColor::darkModeColorFor(*wxWHITE));
+            btn->SetBackgroundColour(Slic3r::GUI::nexus_card_colour());
         Refresh();
     });
 }
@@ -152,8 +152,8 @@ void ButtonsListCtrl::SetSelection(int sel)
     wxColour selected_btn_bg(NEXUS_ACCENT);
     if (m_selection >= 0 && m_selection < static_cast<int>(m_pageButtons.size())) {
         StateColor bg_color = StateColor(
-        std::pair{wxColour("#F0F0F1"), (int) StateColor::Hovered},
-        std::pair{*wxWHITE, (int) StateColor::Normal});
+        std::pair{wxColour(NEXUS_SIDEBAR_BG), (int) StateColor::Hovered}, // Nexus: Web-Slicer pill, hover shows the page grey
+        std::pair{wxColour(NEXUS_CARD), (int) StateColor::Normal});
         m_pageButtons[m_selection]->SetBackgroundColor(bg_color);
         StateColor text_color = StateColor(
         std::pair{wxColour("#262E30"), (int) StateColor::Normal}
@@ -206,8 +206,8 @@ bool ButtonsListCtrl::InsertPage(size_t n, const wxString &text, bool bSelect /*
     btn->SetMinSize({(text.empty() ? 40 : 136) * em / 10, 28 * em / 10});
 
     StateColor bg_color = StateColor(
-        std::pair{wxColour("#F0F0F1"), (int) StateColor::Hovered},
-        std::pair{*wxWHITE, (int) StateColor::Normal});
+        std::pair{wxColour(NEXUS_SIDEBAR_BG), (int) StateColor::Hovered}, // Nexus: Web-Slicer pill, hover shows the page grey
+        std::pair{wxColour(NEXUS_CARD), (int) StateColor::Normal});
 
     btn->SetBackgroundColor(bg_color);
     StateColor text_color = StateColor(
@@ -226,7 +226,7 @@ bool ButtonsListCtrl::InsertPage(size_t n, const wxString &text, bool bSelect /*
     });
     Slic3r::GUI::wxGetApp().UpdateDarkUI(btn);
     // The corners outside the tab's rounding show the pill, not the bar.
-    btn->SetBackgroundColour(StateColor::darkModeColorFor(*wxWHITE));
+    btn->SetBackgroundColour(Slic3r::GUI::nexus_card_colour());
     m_pageButtons.insert(m_pageButtons.begin() + n, btn);
     m_pageLabels.insert(m_pageLabels.begin() + n, text); // ORCA
     m_pageIcons.insert(m_pageIcons.begin() + n, bmp_name);
