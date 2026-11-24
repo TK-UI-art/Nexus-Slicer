@@ -66,6 +66,8 @@ class ImGuiWrapper
     unsigned m_font_texture{ 0 };
     unsigned m_font_another_texture{ 0 };
     float m_style_scaling{ 1.0 };
+    // Nexus: nesting depth of push_toolbar_style / push_common_window_style; end() frames such windows as cards.
+    static int s_card_window_style_depth;
     unsigned m_mouse_buttons{ 0 };
     bool m_disabled{ false };
     bool m_new_frame_open{ false };
@@ -402,6 +404,8 @@ public:
     static const ImVec4 COL_WINDOW_BG;
     static const ImVec4 COL_WINDOW_BG_DARK;
     static const ImVec4 COL_TOOLBAR_BG;
+    static const ImVec4 COL_CARD_LINE;
+    static const ImVec4 COL_CARD_LINE_DARK;
     static const ImVec4 COL_TOOLBAR_BG_DARK;
     static const ImVec4 COL_SEPARATOR;
     static const ImVec4 COL_SEPARATOR_DARK;

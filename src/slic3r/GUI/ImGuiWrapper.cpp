@@ -209,6 +209,12 @@ const ImVec4 ImGuiWrapper::COL_SEPARATOR_DARK    = { 0.24f, 0.24f, 0.27f, 1.0f }
 const ImVec4 ImGuiWrapper::COL_TITLE_BG          = { 0.745f, 0.745f, 0.745f, 1.0f };
 const ImVec4 ImGuiWrapper::COL_WINDOW_BG         = { 244 / 255.f, 244 / 255.f, 244 / 255.f, 1.f }; // Nexus: Web-Slicer card (NEXUS_CARD)
 const ImVec4 ImGuiWrapper::COL_WINDOW_BG_DARK    = { 42 / 255.f, 43 / 255.f, 46 / 255.f, 1.f }; // Nexus: Web-Slicer dark card
+const ImVec4 ImGuiWrapper::COL_CARD_LINE         = { 176 / 255.f, 176 / 255.f, 176 / 255.f, 1.f }; // Nexus: NEXUS_CARD_LINE
+const ImVec4 ImGuiWrapper::COL_CARD_LINE_DARK    = { 85 / 255.f, 87 / 255.f, 92 / 255.f, 1.f };    // Nexus: NEXUS_CARD_LINE_DARK
+int ImGuiWrapper::s_card_window_style_depth      = 0;
+
+//BBS
+static bool m_is_dark_mode = false;
 const ImVec4 ImGuiWrapper::COL_TOOLBAR_BG        = { 244 / 255.f, 244 / 255.f, 244 / 255.f, 1.f }; // Nexus: card colour, matches toolbar_background.png
 const ImVec4 ImGuiWrapper::COL_TOOLBAR_BG_DARK   = { 57  / 255.f, 60  / 255.f, 66  / 255.f, 1.f }; // ORCA color matches with toolbar_background_dark.png
 const ImVec4 ImGuiWrapper::COL_ORCA              = { NEXUS_ACCENT_F, 1.f };
@@ -951,6 +957,14 @@ bool ImGuiWrapper::begin(const wxString& name, bool* close, int flags)
 
 void ImGuiWrapper::end()
 {
+    // Nexus: a tool window (toolbar or common window style) is a Web-Slicer card; its outline is the window
+    // border, the card shadow goes behind it here, where the window's final size is known.
+    if (s_card_window_style_depth > 0) {
+        const ImGuiWindow* window = ImGui::GetCurrentWindow();
+        if (window != nullptr && (window->Flags & (ImGuiWindowFlags_ChildWindow | ImGuiWindowFlags_Popup | ImGuiWindowFlags_Tooltip)) == 0)
+            draw_drop_shadow(ImGui::GetBackgroundDrawList(), window->Pos, window->Pos + window->Size, window->WindowRounding,
+                             m_style_scaling, m_is_dark_mode);
+    }
     ImGui::End();
 }
 
@@ -2695,9 +2709,6 @@ std::vector<unsigned char> ImGuiWrapper::load_svg(const std::string& bitmap_name
     return data;
 }
 
-//BBS
-static bool m_is_dark_mode = false;
-
 void ImGuiWrapper::on_change_color_mode(bool is_dark)
 {
     m_is_dark_mode = is_dark;
@@ -2763,7 +2774,7 @@ void ImGuiWrapper::push_toolbar_style(const float scale)
         ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f * scale);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(20.0f, 10.0f) * scale);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 14.0f * scale);
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1.0f); // Nexus: card outline
         ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 6.0f * scale);
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 10.0f) * scale);
         ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 0.88f));                                        // 1
@@ -2782,12 +2793,13 @@ void ImGuiWrapper::push_toolbar_style(const float scale)
         ImGui::PushStyleColor(ImGuiCol_ScrollbarGrab, ImVec4(0.42f, 0.42f, 0.42f, 1.00f));                            // 14
         ImGui::PushStyleColor(ImGuiCol_ScrollbarGrabHovered, ImVec4(0.93f, 0.93f, 0.93f, 1.00f));                     // 15
         ImGui::PushStyleColor(ImGuiCol_ScrollbarGrabActive, ImVec4(0.93f, 0.93f, 0.93f, 1.00f));                      // 16
+        ImGui::PushStyleColor(ImGuiCol_Border, COL_CARD_LINE_DARK);                                                     // 17
     }
     else {
         ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f * scale);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(20.0f, 10.0f) * scale);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 14.0f * scale);
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1.0f); // Nexus: card outline
         ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 6.0f * scale);
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 10.0f) * scale);
         ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(50 / 255.0f, 58 / 255.0f, 61 / 255.0f, 1.00f));       // 1
@@ -2806,14 +2818,17 @@ void ImGuiWrapper::push_toolbar_style(const float scale)
         ImGui::PushStyleColor(ImGuiCol_ScrollbarGrab, ImVec4(0.42f, 0.42f, 0.42f, 1.00f));
         ImGui::PushStyleColor(ImGuiCol_ScrollbarGrabHovered, ImVec4(0.93f, 0.93f, 0.93f, 1.00f));
         ImGui::PushStyleColor(ImGuiCol_ScrollbarGrabActive, ImVec4(0.93f, 0.93f, 0.93f, 1.00f));
+        ImGui::PushStyleColor(ImGuiCol_Border, COL_CARD_LINE);                                                           // 17
     }
+    ++s_card_window_style_depth;
 }
 
 void ImGuiWrapper::pop_toolbar_style()
 {
     // size in push toolbar style
-    ImGui::PopStyleColor(16);
+    ImGui::PopStyleColor(17);
     ImGui::PopStyleVar(6);
+    --s_card_window_style_depth;
 }
 
 void ImGuiWrapper::push_menu_style(const float scale)
@@ -2852,7 +2867,7 @@ void ImGuiWrapper::push_common_window_style(const float scale) {
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(20.0f, 10.0f) * scale);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowTitleAlign, ImVec2(0.05f, 0.50f) * scale);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 14.0f * scale);
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1.0f); // Nexus: card outline
         ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 0.88f));                                   // 1
         ImGui::PushStyleColor(ImGuiCol_WindowBg, ImGuiWrapper::COL_WINDOW_BG_DARK);                              // 2
         ImGui::PushStyleColor(ImGuiCol_TitleBg, ImVec4(54 / 255.0f, 54 / 255.0f, 60 / 255.0f, 1.00f));           // 3
@@ -2867,15 +2882,16 @@ void ImGuiWrapper::push_common_window_style(const float scale) {
         ImGui::PushStyleColor(ImGuiCol_CheckMark, ImVec4(1.00f, 1.00f, 1.00f, 1.00f));                           // 12
         ImGui::PushStyleColor(ImGuiCol_TextSelectedBg, ImVec4(43 / 255.0f, 64 / 255.0f, 54 / 255.0f, 1.00f));    // 13
         ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(NEXUS_ACCENT_F, 1.00f));                       // 14
+        ImGui::PushStyleColor(ImGuiCol_Border, COL_CARD_LINE_DARK);                                              // 15
     }
     else {
         ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f * scale);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(20.0f, 10.0f) * scale);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowTitleAlign, ImVec2(0.05f, 0.50f) * scale);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 14.0f * scale);
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1.0f); // Nexus: card outline
         ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(38 / 255.0f, 46 / 255.0f, 48 / 255.0f, 1.00f));              // 1
-        ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(1.00f, 1.00f, 1.00f, 1.00f));                            // 2
+        ImGui::PushStyleColor(ImGuiCol_WindowBg, ImGuiWrapper::COL_WINDOW_BG);                                   // 2
         ImGui::PushStyleColor(ImGuiCol_TitleBg, ImVec4(245 / 255.0f, 245 / 255.0f, 245 / 255.0f, 1.00f));        // 3
         ImGui::PushStyleColor(ImGuiCol_TitleBgActive, ImVec4(245 / 255.0f, 245 / 255.0f, 245 / 255.0f, 1.00f));  // 4
         ImGui::PushStyleColor(ImGuiCol_Separator, ImGuiWrapper::COL_SEPARATOR);                                  // 5
@@ -2888,12 +2904,15 @@ void ImGuiWrapper::push_common_window_style(const float scale) {
         ImGui::PushStyleColor(ImGuiCol_CheckMark, ImVec4(1.00f, 1.00f, 1.00f, 1.00f));                           // 12
         ImGui::PushStyleColor(ImGuiCol_TextSelectedBg, ImGuiWrapper::COL_GREEN_LIGHT);                           // 13
         ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(NEXUS_ACCENT_F, 1.00f));                       // 14
+        ImGui::PushStyleColor(ImGuiCol_Border, COL_CARD_LINE);                                                   // 15
     }
+    ++s_card_window_style_depth;
 }
 
 void ImGuiWrapper::pop_common_window_style() {
-    ImGui::PopStyleColor(14);
+    ImGui::PopStyleColor(15);
     ImGui::PopStyleVar(5);
+    --s_card_window_style_depth;
 }
 
 void ImGuiWrapper::push_confirm_button_style() {

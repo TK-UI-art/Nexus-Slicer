@@ -1,25 +1,18 @@
+/* Nexus: Web-Slicer dark palette (device grey, card, line, ink, mute) */
 body {
-    background-color:#4c4c54;
-    font-family: Arial, sans-serif;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    margin: 0;
+    background-color:#0f1012;
+    color:#f1f1f1;
 }
 
 .container {
-    text-align: center;
-    padding: 30px;
-    border-radius: 10px;
-    background-color: #272727;
-    box-shadow: 0 4px 6px rgba(39, 39, 39, 0.1);
+    background-color: #2a2b2e;
+    box-shadow: 0 0 0 1px #55575c, 0 2px 6px rgba(0, 0, 0, 0.35);
 }
 
 h1 {
-    color: #ffffff;
+    color: #f1f1f1;
 }
 
 p {
-    color: #ffffff;
+    color: #8e9094;
 }
