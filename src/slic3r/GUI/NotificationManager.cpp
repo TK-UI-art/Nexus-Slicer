@@ -3199,9 +3199,6 @@ void NotificationManager::render_notifications(GLCanvas3D &canvas, float overlay
             if (notification->get_state() != PopNotification::EState::Finished) 
 				bottom_up_last_y = notification->get_top() + GAP_WIDTH;
 		}
-		else if (m_object_info_hidden && notification->get_type() == NotificationType::BBLObjectInfo) {
-			continue;
-		}
 		else {
 			if (notification->get_state() != PopNotification::EState::Hidden && notification->get_state() != PopNotification::EState::Finished) {
 				i++;

@@ -379,8 +379,6 @@ public:
 	void apply_in_preview() { set_in_preview(m_in_preview); }
 	// Move to left to avoid colision with variable layer height gizmo.
 	void set_move_from_overlay(bool move) { m_move_from_overlay = move; }
-	// Nexus: skips the object info while a tool panel opens over its corner from the toolbar at the bottom.
-	void set_object_info_hidden(bool hidden) { m_object_info_hidden = hidden; }
 	// perform update_state on each notification and ask for more frames if needed, return true for render needed
 	bool update_notifications(GLCanvas3D& canvas);
 	// returns number of all notifications shown
@@ -1090,7 +1088,6 @@ private:
 	int                          m_in_view{ 0 };
 	// True if the layer editing is enabled in Plater, so that the notifications are shifted left of it.
 	bool                         m_move_from_overlay { false };
-	bool                         m_object_info_hidden { false };
 	// Timestamp of last rendering
 	int64_t						 m_last_render { 0LL };
 	// Notification types that can be shown multiple types at once (compared by text)

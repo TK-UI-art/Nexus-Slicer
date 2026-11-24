@@ -1262,6 +1262,8 @@ public:
     void  place_toolbar_panel(float& y, float& pivot_y) const;
     // The bottom_limit a panel opening from the toolbar row fits above, in the same terms as place_toolbar_panel's `y`.
     float get_toolbar_panel_limit() const;
+    // Top of the toolbar row or of the highest panel open above it (Nexus), in pixels from the canvas top.
+    float get_toolbar_panels_top() const;
     int get_main_toolbar_height() const { return m_main_toolbar.get_height(); }
     int get_main_toolbar_width() const { return m_main_toolbar.get_width(); }
     float get_assemble_view_toolbar_width() const { return m_assemble_view_toolbar.get_width(); }

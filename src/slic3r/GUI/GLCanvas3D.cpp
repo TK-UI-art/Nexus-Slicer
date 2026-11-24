@@ -3352,12 +3352,9 @@ void GLCanvas3D::_render_frame(bool scene_dirty, bool only_init)
             right_margin = SLIDER_RIGHT_MARGIN * scale_factor * GCODE_VIEWER_SLIDER_SCALE;
             bottom_margin = SLIDER_BOTTOM_MARGIN * scale_factor * GCODE_VIEWER_SLIDER_SCALE;
         }
-        // Nexus: above the toolbar row at the bottom, and without the object info while a tool's panel opens
-        // above the row, where the info would cover it.
-        const bool row_at_bottom = is_toolbar_at_bottom() && m_main_toolbar.is_enabled();
-        if (row_at_bottom)
-            bottom_margin = std::max(bottom_margin, float(get_canvas_size().get_height()) - get_toolbar_row_top() + TOOLBAR_PANEL_GAP * get_scale());
-        wxGetApp().plater()->get_notification_manager()->set_object_info_hidden(row_at_bottom && m_gizmos.get_current_type() != GLGizmosManager::Undefined);
+        // Nexus: above the toolbar row at the bottom, and above a tool's panel that opens from it.
+        if (is_toolbar_at_bottom() && m_main_toolbar.is_enabled())
+            bottom_margin = std::max(bottom_margin, float(get_canvas_size().get_height()) - get_toolbar_panels_top() + TOOLBAR_PANEL_GAP * get_scale());
         wxGetApp().plater()->get_notification_manager()->render_notifications(*this, get_overlay_window_width(), bottom_margin, right_margin);
         wxGetApp().plater()->get_dailytips()->render();
     }
@@ -11231,6 +11228,20 @@ void GLCanvas3D::place_toolbar_panel(float& y, float& pivot_y) const
     // Past the row by as much as the panel would be below a row at the top.
     y       = get_toolbar_row_top() - (y - get_top_toolbar_height()) - TOOLBAR_PANEL_GAP * get_scale();
     pivot_y = 1.f - pivot_y;
+}
+
+float GLCanvas3D::get_toolbar_panels_top() const
+{
+    float top = get_toolbar_row_top();
+    if (!is_toolbar_at_bottom())
+        return top;
+    // The panels place_toolbar_panel() put above the row, as last laid out: their bottoms sit on the gap.
+    const float anchor = top - TOOLBAR_PANEL_GAP * get_scale();
+    for (const ImGuiWindow* window : ImGui::GetCurrentContext()->Windows)
+        if (window->WasActive && window->ParentWindow == nullptr && std::strncmp(window->Name, "!!Ntfctn", 8) != 0 &&
+            std::abs(window->Pos.y + window->Size.y - anchor) <= 1.5f)
+            top = std::min(top, window->Pos.y);
+    return top;
 }
 
 float GLCanvas3D::get_toolbar_panel_limit() const
