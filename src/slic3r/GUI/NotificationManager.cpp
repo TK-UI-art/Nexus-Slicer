@@ -329,6 +329,10 @@ void NotificationManager::PopNotification::render(GLCanvas3D& canvas, float init
 	ImVec2 win_pos(1.0f * (float)cnv_size.get_width() - right_gap, 1.0f * (float)cnv_size.get_height() - m_top_y);
 	imgui.set_next_window_pos(win_pos.x, win_pos.y, ImGuiCond_Always, 1.0f, 0.0f);
 	imgui.set_next_window_size(m_window_width, m_window_height, ImGuiCond_Always);
+	// Nexus: the Web-Slicer card shadow.
+	ImGuiWrapper::draw_drop_shadow(ImGui::GetBackgroundDrawList(), ImVec2(win_pos.x - m_window_width, win_pos.y),
+	                               ImVec2(win_pos.x, win_pos.y + m_window_height), m_WindowRadius, canvas.get_scale(), m_is_dark,
+	                               m_current_fade_opacity);
 
 	// find if hovered FIXME:  do it only in update state?
 	if (m_state == EState::Hovered) {

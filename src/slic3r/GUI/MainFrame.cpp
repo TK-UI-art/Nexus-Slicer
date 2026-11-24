@@ -1523,6 +1523,7 @@ void MainFrame::init_tabpanel() {
         }
         //BBS
         wxWindow* panel = m_tabpanel->GetCurrentPage();
+        dock_tab_bar();
         //wxString page_text = m_tabpanel->GetPageText(sel);
         m_last_selected_tab = m_tabpanel->GetSelectedPageName();
         if (panel == m_plater) {
@@ -1591,6 +1592,11 @@ void MainFrame::init_tabpanel() {
     m_plater = new Plater(this, this);
     m_plater->SetBackgroundColour(*wxWHITE);
     m_plater->Hide();
+    // Also when the page comes up without a page-changed event (ChangeSelection); not from inside the show.
+    m_plater->Bind(wxEVT_SHOW, [this](wxShowEvent& e) {
+        e.Skip();
+        CallAfter([this]() { dock_tab_bar(); });
+    });
 
     wxGetApp().plater_ = m_plater;
 
@@ -4257,6 +4263,17 @@ void MainFrame::select_tab(wxPanel* panel)
 void MainFrame::select_prepare_for_gl_init()
 {
     m_tabpanel->ChangeSelection(m_tabpanel->FindPageByName(TAB_ID_PREPARE));
+    dock_tab_bar();
+}
+
+// Nexus: on the Prepare and Preview pages the tabs float above the 3D view, beside the sidebar, which then
+// reaches up to the title bar (Web-Slicer); on the other pages they sit above the page.
+void MainFrame::dock_tab_bar()
+{
+    if (m_tabpanel->GetCurrentPage() == m_plater)
+        m_tabpanel->DockTabBar(m_plater->tab_bar_host(), m_plater->tab_bar_sizer());
+    else
+        m_tabpanel->DockTabBar(nullptr, nullptr);
 }
 
 // The book shows its first page as it is inserted, while the frame is hidden and nothing

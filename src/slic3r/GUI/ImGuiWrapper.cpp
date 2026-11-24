@@ -2703,6 +2703,60 @@ void ImGuiWrapper::on_change_color_mode(bool is_dark)
     m_is_dark_mode = is_dark;
 }
 
+void ImGuiWrapper::draw_drop_shadow(ImDrawList* draw_list, const ImVec2& min, const ImVec2& max, float rounding, float scale, bool dark, float opacity)
+{
+    // CSS blur 6px is a Gaussian of sigma 3px; the shadow is the rect moved 2px down.
+    const float sigma   = 3.f * scale;
+    const float offset  = 2.f * scale;
+    const float reach   = 3.f * sigma + offset; // where the shadow has faded out
+    const float peak    = (dark ? .35f : .2f) * opacity;
+    const float r       = std::max(0.f, std::min(rounding, 0.5f * std::min(max.x - min.x, max.y - min.y)));
+    const ImVec2 center = (min + max) * 0.5f;
+    const ImVec2 half   = (max - min) * 0.5f;
+    // Coverage of the blurred, shifted rounded rect at p: from its signed distance.
+    auto alpha_at = [&](const ImVec2& p) {
+        const float qx = std::abs(p.x - center.x) - (half.x - r);
+        const float qy = std::abs(p.y - (center.y + offset)) - (half.y - r);
+        const float sd = std::sqrt(std::max(qx, 0.f) * std::max(qx, 0.f) + std::max(qy, 0.f) * std::max(qy, 0.f)) +
+                         std::min(std::max(qx, qy), 0.f) - r;
+        return peak * 0.5f * std::erfc(sd / (sigma * 1.41421356f));
+    };
+    // Rings around the rect, `d` pixels out; corner arcs of `seg` steps each.
+    const int seg   = 8;
+    const int count = 4 * (seg + 1);
+    auto ring = [&](float d, std::vector<ImVec2>& out) {
+        out.clear();
+        const ImVec2 corners[4] = {{max.x - r, min.y + r}, {max.x - r, max.y - r}, {min.x + r, max.y - r}, {min.x + r, min.y + r}};
+        for (int c = 0; c < 4; ++c)
+            for (int i = 0; i <= seg; ++i) {
+                const float a = 3.14159265f * (-0.5f + 0.5f * c + 0.5f * float(i) / float(seg));
+                out.emplace_back(corners[c].x + (r + d) * std::cos(a), corners[c].y + (r + d) * std::sin(a));
+            }
+    };
+    const ImVec2 uv = draw_list->_Data->TexUvWhitePixel;
+    std::vector<ImVec2> inner, outer;
+    const float step = std::max(1.f, scale);
+    for (float d = 0.f; d < reach; d += step) {
+        ring(d, inner);
+        ring(d + step, outer);
+        draw_list->PrimReserve(count * 6, count * 2);
+        const ImDrawIdx base = ImDrawIdx(draw_list->_VtxCurrentIdx);
+        for (int i = 0; i < count; ++i) {
+            draw_list->PrimWriteVtx(inner[i], uv, IM_COL32(0, 0, 0, int(255.f * alpha_at(inner[i]) + .5f)));
+            draw_list->PrimWriteVtx(outer[i], uv, IM_COL32(0, 0, 0, int(255.f * alpha_at(outer[i]) + .5f)));
+        }
+        for (int i = 0; i < count; ++i) {
+            const int j = (i + 1) % count;
+            draw_list->PrimWriteIdx(ImDrawIdx(base + 2 * i));
+            draw_list->PrimWriteIdx(ImDrawIdx(base + 2 * i + 1));
+            draw_list->PrimWriteIdx(ImDrawIdx(base + 2 * j + 1));
+            draw_list->PrimWriteIdx(ImDrawIdx(base + 2 * i));
+            draw_list->PrimWriteIdx(ImDrawIdx(base + 2 * j + 1));
+            draw_list->PrimWriteIdx(ImDrawIdx(base + 2 * j));
+        }
+    }
+}
+
 void ImGuiWrapper::push_toolbar_style(const float scale)
 {
     if (m_is_dark_mode) {

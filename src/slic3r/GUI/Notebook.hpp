@@ -60,6 +60,8 @@ public:
     wxWindow* GetOverflowButton() const { return m_overflow_button; }
 
 private:
+    // The Notebook, which gets the selection events also while the bar is docked elsewhere (Notebook::DockTabBar).
+    wxWindow*                       m_owner;
     wxFlexGridSizer*                m_buttons_sizer;
     wxBoxSizer*                     m_sizer;
     // BBS: use Button
@@ -309,7 +311,35 @@ public:
     }
 
     ButtonsListCtrl* GetBtnsListCtrl() const { return static_cast<ButtonsListCtrl*>(m_bookctrl); }
+
+    // Nexus: moves the tab bar to the top of `sizer` in `host`, a window of the current page (above its 3D
+    // view, so that the page's sidebar reaches up to the title bar as in the Web-Slicer), or back above the
+    // pages for a null host.
+    void DockTabBar(wxWindow* host, wxSizer* sizer)
+    {
+        wxWindow* bar    = m_bookctrl;
+        wxWindow* target = host != nullptr ? host : this;
+        if (bar->GetParent() == target)
+            return;
+        if (wxSizer* old = bar->GetContainingSizer())
+            old->Detach(bar);
+        bar->Reparent(target);
+        m_tab_bar_docked = host != nullptr;
+        if (m_tab_bar_docked) {
+            sizer->Insert(0, bar, 0, wxEXPAND);
+            host->Layout();
+        } else
+            m_controlSizer->Add(bar, wxSizerFlags(1).Expand());
+        Layout();
+        DoSize();
+    }
     void SetOverflowButton(wxWindow* button) { GetBtnsListCtrl()->SetOverflowButton(button); }
+
+protected:
+    // A docked tab bar (DockTabBar) leaves the whole client area to the pages.
+    wxRect GetPageRect() const override { return m_tab_bar_docked ? wxRect(GetClientSize()) : wxBookCtrlBase::GetPageRect(); }
+
+public:
 
     // Insertion index just past the first of `ids` that is present, or the end of the bar
     // if none is — lets call sites state tab order as "after X" instead of re-deriving it.
@@ -513,6 +543,7 @@ private:
 
     wxWindow* m_target_page{nullptr}; // page being selected; DoShowPage must not hide it
     std::vector<wxString> m_pageNames; // index-parallel to wxBookCtrlBase::m_pages
+    bool m_tab_bar_docked{false}; // Nexus: the tab bar sits in a page (DockTabBar)
 
     wxShowEffect m_showEffect,
                  m_hideEffect;

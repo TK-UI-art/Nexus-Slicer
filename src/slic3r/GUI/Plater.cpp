@@ -3745,6 +3745,14 @@ Sidebar::Sidebar(Plater *parent)
     slice_row->Add(p->btn_slice_option_sidebar, 0, wxEXPAND | wxLEFT, FromDIP(6));
     sizer->Add(slice_row, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, FromDIP(NEXUS_CARD_GAP));
     SetSizer(sizer);
+    // The slice buttons cast the cards' shadow (Web-Slicer .go).
+    Bind(wxEVT_PAINT, [this](wxPaintEvent&) {
+        wxPaintDC dc(this);
+        wxGCDC    gdc(dc);
+        for (const Button* btn : {p->btn_slice_sidebar, p->btn_slice_option_sidebar})
+            if (btn->IsShown())
+                nexus_paint_shadow(this, gdc, btn->GetRect(), FromDIP(22));
+    });
 }
 
 Sidebar::~Sidebar() {}
@@ -7358,6 +7366,9 @@ struct Plater::priv
     std::map<wxWindow*, DockPane> m_dock_panes;
     wxString m_default_window_layout;
     wxPanel* current_panel{ nullptr };
+    // Nexus: the panel of the 3D views, and the sizer at whose top MainFrame docks the main tab bar.
+    wxPanel* panel_3d{ nullptr };
+    wxSizer* tab_bar_sizer{ nullptr };
     std::vector<wxPanel*> panels;
 
     struct SidebarLayout
@@ -8070,7 +8081,8 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
     this->q->Bind(EVT_ADD_CUSTOM_FILAMENT, &priv::on_add_custom_filament, this);
     main_frame->m_tabpanel->Bind(wxEVT_NOTEBOOK_PAGE_CHANGING, &priv::on_tab_selection_changing, this);
 
-    auto* panel_3d = new wxPanel(q);
+    panel_3d = new wxPanel(q);
+    panel_3d->SetBackgroundColour(StateColor::darkModeColorFor(wxColour(NEXUS_SIDEBAR_BG)));
     view3D = new View3D(panel_3d, bed, &model, config, &background_process);
     //BBS: use partplater's gcode
     preview = new Preview(panel_3d, bed, &model, config, &background_process, partplate_list.get_current_slice_result(), [this]() { schedule_background_process(); });
@@ -8121,7 +8133,9 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
     panel_sizer->Add(view3D, 1, wxEXPAND | wxALL, 0);
     panel_sizer->Add(preview, 1, wxEXPAND | wxALL, 0);
     panel_sizer->Add(assemble_view, 1, wxEXPAND | wxALL, 0);
-    panel_3d->SetSizer(panel_sizer);
+    tab_bar_sizer = new wxBoxSizer(wxVERTICAL);
+    tab_bar_sizer->Add(panel_sizer, 1, wxEXPAND);
+    panel_3d->SetSizer(tab_bar_sizer);
     m_aui_mgr.AddPane(panel_3d, wxAuiPaneInfo().Name("main").CenterPane().PaneBorder(false));
 
     q->Bind(wxEVT_AUI_PANE_CLOSE, [this](wxAuiManagerEvent& evt) {
@@ -16499,6 +16513,8 @@ void Plater::priv::handle_textured_mesh_import(Slic3r::Model& loaded_model, cons
 }
 
 Sidebar&        Plater::sidebar()           { return *p->sidebar; }
+wxWindow*       Plater::tab_bar_host() const { return p->panel_3d; }
+wxSizer*        Plater::tab_bar_sizer() const { return p->tab_bar_sizer; }
 const Model&    Plater::model() const       { return p->model; }
 Model&          Plater::model()             { return p->model; }
 const Print&    Plater::fff_print() const   { return p->fff_print; }

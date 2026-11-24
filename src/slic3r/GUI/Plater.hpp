@@ -367,6 +367,9 @@ public:
 #endif // ENABLE_PROJECT_DIRTY_STATE_DEBUG_WINDOW
 
     Sidebar& sidebar();
+    // Nexus: where MainFrame docks the main tab bar on the Prepare and Preview pages (Notebook::DockTabBar).
+    wxWindow* tab_bar_host() const;
+    wxSizer*  tab_bar_sizer() const;
     const Model& model() const;
     Model& model();
     const Print& fff_print() const;

@@ -573,6 +573,7 @@ public:
     void slice_from_sidebar();
     // Slice the current plate or all plates. The sidebar slice button offers this choice.
     void set_slice_all(bool all);
+    void dock_tab_bar();
     bool slice_all_selected() const { return m_slice_select == eSliceAll; }
 
 #ifdef __APPLE__

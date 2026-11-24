@@ -30,6 +30,7 @@ wxDEFINE_EVENT(wxCUSTOMEVT_NOTEBOOK_SEL_CHANGED, wxCommandEvent);
 
 ButtonsListCtrl::ButtonsListCtrl(wxWindow *parent, wxBoxSizer* side_tools) :
     wxControl(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_NONE | wxTAB_TRAVERSAL)
+    , m_owner(parent)
 {
 #ifdef __WINDOWS__
     SetDoubleBuffered(true);
@@ -215,7 +216,7 @@ bool ButtonsListCtrl::InsertPage(size_t n, const wxString &text, bool bSelect /*
             
             wxCommandEvent evt = wxCommandEvent(wxCUSTOMEVT_NOTEBOOK_SEL_CHANGED);
             evt.SetId(sel);
-            wxPostEvent(this->GetParent(), evt);
+            wxPostEvent(m_owner, evt);
         }
     });
     Slic3r::GUI::wxGetApp().UpdateDarkUI(btn);

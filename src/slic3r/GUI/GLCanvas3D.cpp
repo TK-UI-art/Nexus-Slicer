@@ -11922,6 +11922,15 @@ void GLCanvas3D::_render_return_toolbar() const
     imgui.end();
 }
 
+// Nexus: the Web-Slicer card shadow behind the round canvas button just drawn (its circle fills 35/36 of
+// the icon).
+static void nexus_round_button_shadow(float scale, bool dark)
+{
+    const ImVec2 min  = ImGui::GetItemRectMin();
+    const float  size = ImGui::GetItemRectSize().x * 35.f / 36.f;
+    ImGuiWrapper::draw_drop_shadow(ImGui::GetBackgroundDrawList(), min, min + ImVec2(size, size), 0.5f * size, scale, dark);
+}
+
 void GLCanvas3D::_render_canvas_toolbar() 
 {
     ImGuiWrapper &imgui    = *wxGetApp().imgui();
@@ -11961,7 +11970,9 @@ void GLCanvas3D::_render_canvas_toolbar()
         (m_is_dark ? GLGizmosManager::MENU_ICON_NAME::IC_CANVAS_SECTION_ACTIVE_DARK_HOVER : GLGizmosManager::MENU_ICON_NAME::IC_CANVAS_SECTION_ACTIVE_HOVER) :
         (m_is_dark ? GLGizmosManager::MENU_ICON_NAME::IC_CANVAS_SECTION_DARK_HOVER        : GLGizmosManager::MENU_ICON_NAME::IC_CANVAS_SECTION_HOVER));
 
-    if (ImGui::ImageButton3(s_normal_id, s_hover_id, btn_size)) {
+    const bool section_clicked = ImGui::ImageButton3(s_normal_id, s_hover_id, btn_size);
+    nexus_round_button_shadow(sc, m_is_dark);
+    if (section_clicked) {
         m_section_view->panel_open = !m_section_view->panel_open;
         if (m_section_view->panel_open && !section_view)
             set_section_view_ratio(SECTION_VIEW_START_RATIO);
@@ -11981,7 +11992,9 @@ void GLCanvas3D::_render_canvas_toolbar()
     ImTextureID m_normal_id = m_gizmos.get_icon_texture_id(m_is_dark ? GLGizmosManager::MENU_ICON_NAME::IC_CANVAS_MENU_DARK       : GLGizmosManager::MENU_ICON_NAME::IC_CANVAS_MENU);
     ImTextureID m_hover_id  = m_gizmos.get_icon_texture_id(m_is_dark ? GLGizmosManager::MENU_ICON_NAME::IC_CANVAS_MENU_DARK_HOVER : GLGizmosManager::MENU_ICON_NAME::IC_CANVAS_MENU_HOVER);
 
-    if (ImGui::ImageButton3(m_normal_id, m_hover_id, btn_size)) {
+    const bool menu_clicked = ImGui::ImageButton3(m_normal_id, m_hover_id, btn_size);
+    nexus_round_button_shadow(sc, m_is_dark);
+    if (menu_clicked) {
         if(!ImGui::IsPopupOpen("CanvasToolbarMenu")){
             ImGui::SetNextWindowPos(ImVec2(pos[0] + padding.x, pos[1] - padding.y - (zoom_btn ? (btn_size.y + spacing.y) : 0.f)), ImGuiCond_Always, ImVec2(0, 1)); // pivot bottom-left
             ImGui::OpenPopup("CanvasToolbarMenu");
@@ -11994,7 +12007,9 @@ void GLCanvas3D::_render_canvas_toolbar()
         ImTextureID z_normal_id = m_gizmos.get_icon_texture_id(m_is_dark ? GLGizmosManager::MENU_ICON_NAME::IC_CANVAS_ZOOM_DARK       : GLGizmosManager::MENU_ICON_NAME::IC_CANVAS_ZOOM);
         ImTextureID z_hover_id  = m_gizmos.get_icon_texture_id(m_is_dark ? GLGizmosManager::MENU_ICON_NAME::IC_CANVAS_ZOOM_DARK_HOVER : GLGizmosManager::MENU_ICON_NAME::IC_CANVAS_ZOOM_HOVER);
 
-        if (ImGui::ImageButton3(z_normal_id, z_hover_id, btn_size)) {
+        const bool zoom_clicked = ImGui::ImageButton3(z_normal_id, z_hover_id, btn_size);
+        nexus_round_button_shadow(sc, m_is_dark);
+        if (zoom_clicked) {
 #ifdef SLIC3R_CAD
             // The Design tab selects and sketches outside the canvas's selection and volumes, so
             // it names what to frame. Framed along the current view, which is often square to a
@@ -12347,9 +12362,8 @@ void GLCanvas3D::_render_collapse_toolbar() const
     collapse_toolbar.render(*this);
 }
 
-// Nexus: the outline and the drop shadow of the floating toolbar row, as the Web-Slicer's edit bar
-// (CSS border 1px, box-shadow 0 2px 10px rgba(0,0,0,.18)). The toolbars fill the row themselves; the
-// shadow is drawn as rings outside it, as ImGui draws over the GL toolbars.
+// Nexus: the outline and the drop shadow of the floating toolbar row, as the Web-Slicer's cards. The
+// toolbars fill the row themselves; the shadow is drawn outside it only, as ImGui draws over the GL toolbars.
 void GLCanvas3D::_render_toolbar_row_frame() const
 {
     if (!is_toolbar_at_bottom() || !m_main_toolbar.is_enabled())
@@ -12361,15 +12375,7 @@ void GLCanvas3D::_render_toolbar_row_frame() const
     const float  rounding = 0.5f * (max.y - min.y);
 
     ImDrawList* draw_list = ImGui::GetBackgroundDrawList();
-    const int   layers    = 5;
-    for (int i = layers; i >= 1; --i) {
-        // Shifted down a little, but even the innermost ring stays clear of the row's top edge.
-        const float grow  = float(i + 1) * 1.5f * sc;
-        const ImVec2 off(0.f, 1.f * sc);
-        const int   alpha = (m_is_dark ? 46 : 22) * (layers + 1 - i) / layers;
-        draw_list->AddRect(ImVec2(min.x - grow, min.y - grow) + off, ImVec2(max.x + grow, max.y + grow) + off, IM_COL32(0, 0, 0, alpha),
-                           rounding + grow, 0, 1.5f * sc);
-    }
+    ImGuiWrapper::draw_drop_shadow(draw_list, min, max, rounding, sc, m_is_dark);
     const wxColour line(m_is_dark ? NEXUS_CARD_LINE_DARK : NEXUS_CARD_LINE);
     // On the row's outermost pixels, over the outline the toolbar background draws at its ends only.
     draw_list->AddRect(ImVec2(min.x + .5f, min.y + .5f), ImVec2(max.x - .5f, max.y - .5f), IM_COL32(line.Red(), line.Green(), line.Blue(), 255),

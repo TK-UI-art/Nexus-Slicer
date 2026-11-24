@@ -415,6 +415,9 @@ public:
     //BBS
     static void on_change_color_mode(bool is_dark);
     static void push_toolbar_style(const float scale);
+    // Nexus: the Web-Slicer drop shadow (CSS 0 2px 6px rgba(0,0,0,.2)) around the rounded rect min..max, drawn
+    // outside it only, so it can go over what is under the rect. `scale` is pixels per DIP; `opacity` fades it.
+    static void draw_drop_shadow(ImDrawList* draw_list, const ImVec2& min, const ImVec2& max, float rounding, float scale, bool dark, float opacity = 1.f);
     static void pop_toolbar_style();
     static void push_menu_style(const float scale);
     static void pop_menu_style();
