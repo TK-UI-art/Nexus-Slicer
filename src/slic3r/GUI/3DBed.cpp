@@ -202,7 +202,7 @@ const float Bed3D::Axes::DefaultTipRadius = 2.5f * Bed3D::Axes::DefaultStemRadiu
 const float Bed3D::Axes::DefaultTipLength = 5.0f;
 
 // ORCA make bed colors accessable for 2D bed
-ColorRGBA Bed3D::DEFAULT_MODEL_COLOR             = { 0.3255f, 0.337f, 0.337f, 1.0f };
+ColorRGBA Bed3D::DEFAULT_MODEL_COLOR             = { 0.925f, 0.925f, 0.925f, 1.0f }; // Nexus: light plate (Web-Slicer)
 ColorRGBA Bed3D::DEFAULT_MODEL_COLOR_DARK        = { 0.255f, 0.255f, 0.283f, 1.0f };
 ColorRGBA Bed3D::DEFAULT_SOLID_GRID_COLOR        = { 0.9f, 0.9f, 0.9f, 1.0f };
 ColorRGBA Bed3D::DEFAULT_TRANSPARENT_GRID_COLOR  = { 0.9f, 0.9f, 0.9f, 0.6f };
@@ -833,7 +833,8 @@ void Bed3D::render_default(bool bottom, const Transform3d& view_matrix, const Tr
             // draw background
             glsafe(::glDepthMask(GL_FALSE));
             ColorRGBA color = m_is_dark ? DEFAULT_MODEL_COLOR_DARK : DEFAULT_MODEL_COLOR;   // ORCA add dark mode support
-            color = ColorRGBA(color[0] * 0.8f, color[1] * 0.8f,color[2] * 0.8f, color[3]);  // ORCA shift color a darker tone to fix difference between flat / gouraud_light shader
+            if (m_is_dark) // Nexus: the light plate is drawn as given, as in the Web-Slicer
+                color = ColorRGBA(color[0] * 0.8f, color[1] * 0.8f,color[2] * 0.8f, color[3]);  // ORCA shift color a darker tone to fix difference between flat / gouraud_light shader
             m_triangles.set_color(color);
             m_triangles.render();
             glsafe(::glDepthMask(GL_TRUE));

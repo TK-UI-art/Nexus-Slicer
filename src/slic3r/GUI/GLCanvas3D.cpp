@@ -9982,17 +9982,10 @@ void GLCanvas3D::_render_cad_grid(const Transform3d& view_matrix, const Transfor
     shader->set_uniform("view_model_matrix", view_matrix);
     shader->set_uniform("projection_matrix", projection_matrix);
 
-    // White every 5 cm, grey every 1 cm — the SAME in both themes, deliberately. There is no
-    // "white bed" to vanish against: the plate is dark grey either way, DEFAULT_MODEL_COLOR
-    // {0.326,0.337,0.337} on light and DEFAULT_MODEL_COLOR_DARK {0.255,0.255,0.283} on dark
-    // (3DBed.cpp:185-186), a difference of 0.07. A per-theme palette here would be a branch
-    // that buys nothing and one more thing to keep in step.
-    //
-    // For contrast with what this replaces: the plate's own grid uses LINE_TOP_DARK_COLOR, a
-    // 0.43 grey, for BOTH its thin and its bold family — which is most of why the stock grid
-    // reads as a flat mesh with no scale to it.
-    const ColorRGBA minor_color(0.40f, 0.40f, 0.42f, 1.0f);
-    const ColorRGBA major_color(0.90f, 0.90f, 0.90f, 1.0f);
+    // A major line every 5 cm stands out from the minor 1 cm lines: white on the dark plate,
+    // dark grey on the light plate (Bed3D::DEFAULT_MODEL_COLOR).
+    const ColorRGBA minor_color = m_is_dark ? ColorRGBA(0.40f, 0.40f, 0.42f, 1.0f) : ColorRGBA(0.78f, 0.78f, 0.78f, 1.0f);
+    const ColorRGBA major_color = m_is_dark ? ColorRGBA(0.90f, 0.90f, 0.90f, 1.0f) : ColorRGBA(0.50f, 0.50f, 0.50f, 1.0f);
 
     glsafe(::glLineWidth(1.0f));
     m_cad_grid_minor.set_color(minor_color);

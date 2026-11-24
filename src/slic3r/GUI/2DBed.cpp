@@ -158,7 +158,8 @@ void Bed_2D::repaint(const std::vector<Vec2d>& shape)
 
     // ORCA match colors
     ColorRGBA   bed_rgba   = is_dark ? Bed3D::DEFAULT_MODEL_COLOR_DARK    : Bed3D::DEFAULT_MODEL_COLOR;
-    std::string bed_color  = encode_color(ColorRGBA(bed_rgba[0] * 0.8f, bed_rgba[1] * 0.8f,bed_rgba[2] * 0.8f, bed_rgba[3]));
+    const float bed_shade  = is_dark ? 0.8f : 1.0f; // as the 3D plate (Bed3D::render_default)
+    std::string bed_color  = encode_color(ColorRGBA(bed_rgba[0] * bed_shade, bed_rgba[1] * bed_shade, bed_rgba[2] * bed_shade, bed_rgba[3]));
     ColorRGBA   grid_color = is_dark ? PartPlate::LINE_TOP_SEL_DARK_COLOR : PartPlate::LINE_TOP_SEL_COLOR;
     std::string lines_bold_color = encode_color(grid_color);
     std::string lines_thin_color = encode_color(grid_color * 0.85);
