@@ -28,6 +28,10 @@
 
 wxDEFINE_EVENT(wxCUSTOMEVT_NOTEBOOK_SEL_CHANGED, wxCommandEvent);
 
+// Nexus: the pill around the main tabs, in DIP: just round enough to clear the corners of the tabs inside.
+static constexpr int TAB_PILL_RADIUS = 16;
+static constexpr int TAB_PILL_PAD    = 5;
+
 ButtonsListCtrl::ButtonsListCtrl(wxWindow *parent, wxBoxSizer* side_tools) :
     wxControl(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_NONE | wxTAB_TRAVERSAL)
     , m_owner(parent)
@@ -53,7 +57,7 @@ ButtonsListCtrl::ButtonsListCtrl(wxWindow *parent, wxBoxSizer* side_tools) :
     if (side_tools != NULL)
         m_sizer->AddStretchSpacer(1);
     // Room for the pill's padding and its drop shadow around the tabs.
-    m_sizer->Add(m_buttons_sizer, 0, wxALIGN_CENTER_VERTICAL | wxALL, FromDIP(NEXUS_CARD_PAD + 6));
+    m_sizer->Add(m_buttons_sizer, 0, wxALIGN_CENTER_VERTICAL | wxALL, FromDIP(TAB_PILL_PAD + 6));
 
     if (side_tools != NULL) {
         m_sizer->AddStretchSpacer(1);
@@ -69,7 +73,8 @@ ButtonsListCtrl::ButtonsListCtrl(wxWindow *parent, wxBoxSizer* side_tools) :
 
     Bind(wxEVT_PAINT, [this](wxPaintEvent&) {
         wxPaintDC dc(this);
-        Slic3r::GUI::nexus_paint_cards(this, dc, {std::vector<wxWindow*>(m_pageButtons.begin(), m_pageButtons.end())});
+        Slic3r::GUI::nexus_paint_cards(this, dc, {std::vector<wxWindow*>(m_pageButtons.begin(), m_pageButtons.end())}, TAB_PILL_RADIUS,
+                                       TAB_PILL_PAD);
     });
     Bind(wxEVT_SYS_COLOUR_CHANGED, [this](wxSysColourChangedEvent& e) {
         e.Skip();

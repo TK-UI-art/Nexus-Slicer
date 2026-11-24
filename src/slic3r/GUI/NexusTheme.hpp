@@ -67,8 +67,9 @@
 #define NEXUS_SIDEBAR_BG_DARK   "#18191B"
 #define NEXUS_CARD_LINE         "#B0B0B0"
 #define NEXUS_CARD_LINE_DARK    "#55575C"
-#define NEXUS_CARD_RADIUS       16 // DIP
-#define NEXUS_CARD_PAD          5  // DIP, inset of the card content from the card edge
+#define NEXUS_CARD_RADIUS       26 // DIP, as the Web-Slicer's cards
+#define NEXUS_CARD_PAD          8  // DIP, inset of the card content from the card edge: at most a third of the
+                                   // radius, or the square corners of the content stick out of the rounding
 #define NEXUS_CARD_GAP          8  // DIP, sidebar background visible around and between cards
 
 // Settings group frames (Web-Slicer fieldset): a rounded NEXUS_CARD_LINE outline around each group of a

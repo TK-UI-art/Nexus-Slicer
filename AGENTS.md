@@ -51,6 +51,12 @@ ctest --test-dir ./tests/fff_print -C Release
 - Core algorithms: `src/libslic3r/` (GCode/, Fill/, Support/, Geometry/, Format/, Arachne/)
 - Printer profiles: `resources/profiles/[manufacturer].json`
 
+## Nexus redesign rule
+
+This fork (Nexus) restyles OrcaSlicer after the Web-Slicer 2.0 design. A design change may restyle or move a
+feature, never remove one: every button, menu entry, panel, shortcut and piece of information must stay
+reachable. When something no longer fits where it was, move it; do not hide or drop it.
+
 ## Critical Constraints
 
 - **Backward compatibility required** for .3mf project files and printer profiles

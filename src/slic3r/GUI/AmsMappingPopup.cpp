@@ -88,7 +88,7 @@ const int LEFT_OFFSET = 2;
     : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize)
  {
     m_arraw_bitmap_gray  = ScalableBitmap(this, "drop_down2", FromDIP(8));
-    m_arraw_bitmap_white =  ScalableBitmap(this, "topbar_dropdown", 12);
+    m_arraw_bitmap_white =  ScalableBitmap(this, "topbar_dropdown_white", 12);
     m_transparent_mitem          = ScalableBitmap(this, "transparent_material_up", 20);
     m_filament_wheel_transparent = ScalableBitmap(this,   "filament_transparent", 25);//wxGetApp().dark_mode() ? "filament_dark_transparent"
     //m_ams_wheel_mitem = ScalableBitmap(this, "ams_wheel", FromDIP(25));

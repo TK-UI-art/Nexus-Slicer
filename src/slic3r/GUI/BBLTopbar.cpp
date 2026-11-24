@@ -57,6 +57,10 @@ enum CUSTOM_ID
     ID_AMS_NOTEBOOK,
 };
 
+// Nexus: a light title bar on the app background, with dark text and icons (Web-Slicer).
+static wxColour nexus_topbar_bg() { return StateColor::darkModeColorFor(wxColour(NEXUS_SIDEBAR_BG)); }
+static wxColour nexus_topbar_text() { return StateColor::darkModeColorFor(wxColour("#262E30")); }
+
 CenteredTitle::CenteredTitle(wxWindow* parent)
     : wxControl()
 {
@@ -64,10 +68,10 @@ CenteredTitle::CenteredTitle(wxWindow* parent)
     Create(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_NONE);
     Bind(wxEVT_PAINT, [this](wxPaintEvent&) {
         wxBufferedPaintDC dc(this);
-        dc.SetBackground(wxBrush(wxColour(38, 46, 48)));
+        dc.SetBackground(wxBrush(nexus_topbar_bg()));
         dc.Clear();
 
-        dc.SetTextForeground(*wxWHITE);
+        dc.SetTextForeground(nexus_topbar_text());
 
         wxFontMetrics fm = dc.GetFontMetrics();
         int textHeight = fm.ascent + fm.descent;
@@ -120,7 +124,7 @@ public:
 
 void BBLTopbarArt::DrawBackground(wxDC& dc, wxWindow* wnd, const wxRect& rect)
 {
-    dc.SetBrush(wxBrush(wxColour(38, 46, 48)));
+    dc.SetBrush(wxBrush(nexus_topbar_bg()));
     wxRect clipRect = rect;
     clipRect.y -= 8;
     clipRect.height += 8;
@@ -212,11 +216,7 @@ void BBLTopbarArt::DrawButton(wxDC& dc, wxWindow* wnd, const wxAuiToolBarItem& i
         dc.DrawBitmap(bmp, bmpX, bmpY, true);
 
     // set the item's text color based on if it is disabled
-#ifdef __WINDOWS__
-    dc.SetTextForeground(wxSystemSettings::GetColour(wxSYS_COLOUR_HIGHLIGHTTEXT));
-#else
-    dc.SetTextForeground(*wxWHITE);
-#endif
+    dc.SetTextForeground(nexus_topbar_text());
     if (item.GetState() & wxAUI_BUTTON_STATE_DISABLED)
     {
         dc.SetTextForeground(wxSystemSettings::GetColour(wxSYS_COLOUR_GRAYTEXT));
@@ -292,7 +292,7 @@ void BBLTopbar::Init(wxFrame* parent)
     wxBitmap file_bitmap = create_scaled_bitmap("topbar_file", nullptr, TOPBAR_ICON_SIZE);
     m_file_menu_item = this->AddTool(ID_TOP_FILE_MENU, _L("File"), file_bitmap, wxEmptyString, wxITEM_NORMAL);
 
-    this->SetForegroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_HIGHLIGHTTEXT));
+    this->SetForegroundColour(nexus_topbar_text());
 
     this->AddSpacer(FromDIP(5));
 
