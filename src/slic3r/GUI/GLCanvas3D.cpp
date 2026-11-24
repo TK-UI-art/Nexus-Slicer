@@ -3352,9 +3352,12 @@ void GLCanvas3D::_render_frame(bool scene_dirty, bool only_init)
             right_margin = SLIDER_RIGHT_MARGIN * scale_factor * GCODE_VIEWER_SLIDER_SCALE;
             bottom_margin = SLIDER_BOTTOM_MARGIN * scale_factor * GCODE_VIEWER_SLIDER_SCALE;
         }
-        // Nexus: above the toolbar row at the bottom.
-        if (is_toolbar_at_bottom() && m_main_toolbar.is_enabled())
+        // Nexus: above the toolbar row at the bottom, and without the object info while a tool's panel opens
+        // above the row, where the info would cover it.
+        const bool row_at_bottom = is_toolbar_at_bottom() && m_main_toolbar.is_enabled();
+        if (row_at_bottom)
             bottom_margin = std::max(bottom_margin, float(get_canvas_size().get_height()) - get_toolbar_row_top() + TOOLBAR_PANEL_GAP * get_scale());
+        wxGetApp().plater()->get_notification_manager()->set_object_info_hidden(row_at_bottom && m_gizmos.get_current_type() != GLGizmosManager::Undefined);
         wxGetApp().plater()->get_notification_manager()->render_notifications(*this, get_overlay_window_width(), bottom_margin, right_margin);
         wxGetApp().plater()->get_dailytips()->render();
     }
