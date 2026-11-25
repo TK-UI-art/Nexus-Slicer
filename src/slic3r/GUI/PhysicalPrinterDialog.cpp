@@ -427,10 +427,12 @@ void PhysicalPrinterDialog::build_printhost_settings(ConfigOptionsGroup* m_optgr
         cafile_hint.full_width = 1;
         cafile_hint.widget = [ca_file_hint](wxWindow* parent) {
             auto txt = new wxStaticText(parent, wxID_ANY, from_u8(ca_file_hint));
-            // Nexus: wrap the hint to the width of the fields above it, so that it is not cut off.
+            // Nexus: wrap the hint to the width of the fields above it, so that it is not cut off. It takes the whole
+            // row: at only the width wx measures for its lines, GTK measures them a little wider and wraps them again,
+            // into more lines than its height has room for.
             txt->Wrap(50 * wxGetApp().em_unit());
             auto sizer = new wxBoxSizer(wxHORIZONTAL);
-            sizer->Add(txt);
+            sizer->Add(txt, 1);
             return sizer;
         };
         m_optgroup->append_line(cafile_hint);

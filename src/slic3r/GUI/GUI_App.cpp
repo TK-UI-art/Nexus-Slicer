@@ -268,6 +268,13 @@
 #include "slic3r/GUI/Widgets/WebView.hpp"
 #include <cwchar>
 #include <wx/dataview.h>
+#include <wx/listbox.h>
+#include <wx/listctrl.h>
+#include <wx/rtti.h>
+#include <wx/textentry.h>
+#include <wx/treectrl.h>
+#include "slic3r/GUI/Widgets/RoundedRectangle.hpp"
+#include "slic3r/GUI/Widgets/SideButton.hpp"
 #include <wx/itemattr.h>
 #include <wx/version.h>
 
@@ -4715,7 +4722,9 @@ void GUI_App::UpdateDarkUI(wxWindow* window, bool highlited/* = false*/, bool ju
             fg_col = StateColor::SetLightness(fg_col, 70);
         }
 
-        window->SetForegroundColour(fg_col);
+        // Nexus: a side button keeps dark text on its accent fill in both themes; the contrast fix would lighten it.
+        if (!dynamic_cast<SideButton*>(window))
+            window->SetForegroundColour(fg_col);
     }
     else {
         auto original_col = window->GetBackgroundColour();
@@ -4753,6 +4762,33 @@ static void update_dark_children_ui(wxWindow* window, bool just_buttons_update =
     }
 }
 
+// Nexus: whether a window keeps its white field background in a light dialog. Entries, lists, trees, canvases
+// and web views do, and so do the windows drawn on top of them.
+static bool nexus_keeps_white(wxWindow* window)
+{
+    if (dynamic_cast<wxTextEntry*>(window) || dynamic_cast<wxDataViewCtrl*>(window) || dynamic_cast<wxListBox*>(window) ||
+        dynamic_cast<wxListCtrl*>(window) || dynamic_cast<wxTreeCtrl*>(window) || dynamic_cast<wxGLCanvas*>(window) ||
+        dynamic_cast<RoundedRectangle*>(window)) // the outline around an entry, filled by the entry
+        return true;
+    // Classes of libraries this file does not otherwise use, looked up by name: one that is not linked matches nothing.
+    for (const char* name : {"wxGrid", "wxStyledTextCtrl", "wxWebView"})
+        if (window->IsKindOf(wxClassInfo::FindClass(name)))
+            return true;
+    return false;
+}
+
+// Nexus: in light mode a dialog is a Web-Slicer card (NEXUS_CARD) instead of plain white, as it takes the dark
+// window colour in dark mode. Only the white surfaces change, see nexus_keeps_white().
+static void nexus_card_dialog_ui(wxWindow* window)
+{
+    if (nexus_keeps_white(window))
+        return;
+    if (window->GetBackgroundColour() == *wxWHITE)
+        window->SetBackgroundColour(wxColour(NEXUS_CARD));
+    for (wxWindow* child : window->GetChildren())
+        nexus_card_dialog_ui(child);
+}
+
 // Note: Don't use this function for Dialog contains ScalableButtons
 void GUI_App::UpdateDarkUIWin(wxWindow* win)
 {
@@ -4781,6 +4817,8 @@ void GUI_App::UpdateDlgDarkUI(wxDialog* dlg)
     NppDarkMode::SetDarkTitleBar(dlg->GetHWND());
 #endif
     update_dark_children_ui(dlg);
+    if (!dark_mode())
+        nexus_card_dialog_ui(dlg);
 }
 
 void GUI_App::UpdateFrameDarkUI(wxFrame* dlg)

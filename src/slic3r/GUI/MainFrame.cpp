@@ -1463,6 +1463,8 @@ void MainFrame::show_option(bool show)
             m_print_btn->Hide();
             m_slice_option_btn->Hide();
             m_print_option_btn->Hide();
+            // Nexus: and their panel, whose sidebar grey would otherwise cover the end of the tab pill
+            m_print_btn->GetParent()->Hide();
             Layout();
         }
     } else {
@@ -1471,6 +1473,7 @@ void MainFrame::show_option(bool show)
             m_print_btn->Show();
             m_slice_option_btn->Show();
             m_print_option_btn->Show();
+            m_print_btn->GetParent()->Show();
             Layout();
         }
     }
