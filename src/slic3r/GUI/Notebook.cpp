@@ -76,6 +76,11 @@ ButtonsListCtrl::ButtonsListCtrl(wxWindow *parent, wxBoxSizer* side_tools) :
         Slic3r::GUI::nexus_paint_cards(this, dc, {std::vector<wxWindow*>(m_pageButtons.begin(), m_pageButtons.end())}, TAB_PILL_RADIUS,
                                        TAB_PILL_PAD);
     });
+    // The pill is painted from the tabs' positions, which move with the bar's size: paint it anew.
+    Bind(wxEVT_SIZE, [this](wxSizeEvent& e) {
+        e.Skip();
+        Refresh();
+    });
     Bind(wxEVT_SYS_COLOUR_CHANGED, [this](wxSysColourChangedEvent& e) {
         e.Skip();
         SetBackgroundColour(StateColor::darkModeColorFor(wxColour(NEXUS_SIDEBAR_BG)));

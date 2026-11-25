@@ -411,6 +411,10 @@ function ExecuteDarkMode( DarkCssPath )
 	if( bDarkMode!=null )
 		nMode=1;
 	
+	// Nexus: the app theme, not the system appearance, decides the colours of global.css.
+	if( document.documentElement )
+		document.documentElement.classList.toggle( 'nexus-dark', nMode==1 );
+
 	let nNow=CheckCssLinkExist(DarkCssPath);
 	if( nMode==0 )
 	{

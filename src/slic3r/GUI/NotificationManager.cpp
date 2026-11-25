@@ -200,7 +200,7 @@ NotificationManager::PopNotification::PopNotification(const NotificationData &n,
 
 	m_CurrentColor = m_NormalColor;   //Default
 
-	m_WindowBkgColor = ImVec4(1, 1, 1, 1);
+	m_WindowBkgColor = ImGuiWrapper::COL_WINDOW_BG;
     m_TextColor      = ImVec4(.2f, .2f, .2f, 1.0f);
     m_HyperTextColor = ImVec4(NEXUS_ACCENT_F, 1);
 }
@@ -268,15 +268,16 @@ void NotificationManager::PopNotification::use_bbl_theme()
  //   OldStyle.Colors[ImGuiCol_WindowBg] = m_WindowBkgColor;
  //   OldStyle.Colors[ImGuiCol_Text]     = m_TextColor;
 
-	m_WindowBkgColor = m_is_dark ? ImVec4(45 / 255.f, 45 / 255.f, 49 / 255.f, 1.f) : ImVec4(1, 1, 1, 1);
+	// Nexus: a notification is a Web-Slicer card; its type colour is the bar on the left.
+	m_WindowBkgColor = m_is_dark ? ImGuiWrapper::COL_WINDOW_BG_DARK : ImGuiWrapper::COL_WINDOW_BG;
 	m_TextColor = m_is_dark ? ImVec4(224 / 255.f, 224 / 255.f, 224 / 255.f, 1.f) : ImVec4(.2f, .2f, .2f, 1.0f);
 	m_HyperTextColor = m_is_dark ? ImVec4(NEXUS_ACCENT_F, 1) : ImVec4(39.f / 255.f, 138.f / 255.f, 26.f / 255.f, 1); // NEXUS_ACCENT / NEXUS_ACCENT_TEXT
 	m_HyperTextColorHover = m_is_dark ? ImVec4(NEXUS_ACCENT_HOVER_F, 1) : ImVec4(30.f / 255.f, 110.f / 255.f, 20.f / 255.f, 1);
 
-	m_is_dark ? push_style_color(ImGuiCol_Border, {62 / 255.f, 62 / 255.f, 69 / 255.f, 1.f}, true, m_current_fade_opacity) : push_style_color(ImGuiCol_Border, m_CurrentColor, true, m_current_fade_opacity);
+	push_style_color(ImGuiCol_Border, m_is_dark ? ImGuiWrapper::COL_CARD_LINE_DARK : ImGuiWrapper::COL_CARD_LINE, true, m_current_fade_opacity);
     push_style_color(ImGuiCol_WindowBg, m_WindowBkgColor, true, m_current_fade_opacity);
     push_style_color(ImGuiCol_Text, m_TextColor, true, m_current_fade_opacity);
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, m_WindowRadius / 4);
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1.f); // Nexus: card outline
 }
 
 

@@ -332,6 +332,9 @@ public:
             m_controlSizer->Add(bar, wxSizerFlags(1).Expand());
         Layout();
         DoSize();
+        // The pill behind the tabs is painted from the tabs' positions: a move leaves parts of the old one.
+        bar->Layout();
+        bar->Refresh();
     }
     void SetOverflowButton(wxWindow* button) { GetBtnsListCtrl()->SetOverflowButton(button); }
 

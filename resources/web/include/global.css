@@ -31,6 +31,7 @@
 	--border-color			: #DBDBDB;
 	--icon-color			: #7C8282;
 	--button-fg-light		: #FEFEFE;
+	--button-fg-on-accent	: #101010; /* Nexus: dark text on the green, as on the app's accent buttons */
 	--button-fg-text		: #262E30;
 	--button-fg-disabled	: #6B6B6B;
 	--button-bg-normal		: #DFDFDF;
@@ -46,31 +47,32 @@
 	--alert-color-bg        : #E147471F; /* 12% opacity */
 }
   
-@media (prefers-color-scheme: dark) { 
-:root {
-	--main-color			: #4BC72E;
+/*----Nexus: dark follows the app theme, not the system appearance: globalapi.js puts nexus-dark on
+      <html> from the app theme, the web dialogs' host sets data-orca-theme. Web-Slicer dark palette.----*/
+:root.nexus-dark,
+:root[data-orca-theme="dark"] {
+	--main-color			: #69E84A;
 	--main-color-hover		: #55D636;
 	--main-color-fixed		: #69E84A;
-	--bg-color				: #2D2D31;
-	--bg-color-secondary	: #36363B;
-	--bg-color-alt			: #242428;
-	--bg-color-sidebar  	: #242428;
-	--fg-color-text			: #EFEFF0;
+	--bg-color				: #2A2B2E;
+	--bg-color-secondary	: #333438;
+	--bg-color-alt			: #18191B;
+	--bg-color-sidebar  	: #18191B;
+	--fg-color-text			: #F1F1F1;
 	--fg-color-label		: #B2B3B5;
-	--fg-color-disabled		: #65656A;
-	--focus-bg-item			: #223C3C;
-	--focus-bg-box			: #283232;
-	--border-color			: #4A4A51;
+	--fg-color-disabled		: #6A6C70;
+	--focus-bg-item			: #3A5A35;
+	--focus-bg-box			: #2F3D2D;
+	--border-color			: #55575C;
 	--icon-color			: #949494;
 	--button-fg-light		: #FEFEFE;
-	--button-fg-text		: #EFEFF0;
+	--button-fg-text		: #F1F1F1;
 	--button-fg-disabled	: #818183;
-	--button-bg-normal		: #3E3E45;
-	--button-bg-hover		: #4D4D54;
+	--button-bg-normal		: #3E3F44;
+	--button-bg-hover		: #4A4B51;
 	--button-bg-disabled	: var(--button-bg-normal);
 	--button-bg-alert		: #E14747;
 	--menu-shadow           : 0 10px 28px rgba(0, 0, 0, 0.32); /* requires more opacity for dark mode */
-}
 }
 
 /*////////////////////////////*/
@@ -146,8 +148,8 @@
 	width: 120px;
 }
 
-.ButtonStyleConfirm        { background: var(--main-color        ); color: var(--button-fg-light   )}
-.ButtonStyleConfirm:hover  { background: var(--main-color-hover  ); color: var(--button-fg-light   )}
+.ButtonStyleConfirm        { background: var(--main-color        ); color: var(--button-fg-on-accent)}
+.ButtonStyleConfirm:hover  { background: var(--main-color-hover  ); color: var(--button-fg-on-accent)}
 .ButtonStyleRegular        { background: var(--button-bg-normal  ); color: var(--button-fg-text    )}
 .ButtonStyleRegular:hover  { background: var(--button-bg-hover   ); color: var(--button-fg-text    )}
 .ButtonStyleAlert          { background: var(--button-bg-normal  ); color: var(--button-fg-text    )}

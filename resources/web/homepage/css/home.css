@@ -64,9 +64,8 @@ body
 
 /*------Account rows and account menu------*/
 
-/*----These shadow similar tokens in global.css on purpose: global.css themes on the OS
-      via prefers-color-scheme, while this page themes on the dark.css link that
-      SwitchDarkMode() injects from the app theme, so the two can disagree.----*/
+/*----Page-own tokens; their dark values come with the dark.css link that SwitchDarkMode()
+      injects from the app theme.----*/
 :root
 {
 	--account-avatar-bg    : #E6EBEA;
@@ -1147,3 +1146,100 @@ body.cloud-mode #LeftBoard
 	cursor: pointer!important;
 	pointer-events: auto!important;
 }
+
+/*////////////////////////////*/
+/*   NEXUS: WEB-SLICER LOOK   */
+/*////////////////////////////*/
+/*----The home page sits on the grey app background; the project buttons and the
+      recent files are cards, the navigation entries are pills like the tab bar.
+      The dark values follow the app theme (nexus-dark on <html>, set by globalapi.js).----*/
+:root {
+	--nx-bg     : #E0E0E0;
+	--nx-card   : #F4F4F4;
+	--nx-line   : #B0B0B0;
+	--nx-ink    : #101010;
+	--nx-mute   : #8A8A8A;
+	--nx-hover  : rgba(0, 0, 0, 0.05);
+	--nx-shadow : 0 0 0 1px var(--nx-line), 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+:root.nexus-dark {
+	--nx-bg     : #18191B;
+	--nx-card   : #2A2B2E;
+	--nx-line   : #55575C;
+	--nx-ink    : #F1F1F1;
+	--nx-mute   : #8E9094;
+	--nx-hover  : rgba(255, 255, 255, 0.06);
+	--nx-shadow : 0 0 0 1px var(--nx-line), 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+body,
+#RightBoard,
+#LeftBoard {
+	background: var(--nx-bg);
+}
+
+#LeftBoard {
+	border-right: 0;
+	box-sizing: border-box;
+	padding: 0 8px;
+}
+
+.TextS1, .FileName, .Content-Title, .AccountName { color: var(--nx-ink); }
+.MenuDesc, .FileDate                             { color: var(--nx-mute); }
+
+/*----Navigation pills----*/
+.BtnItem {
+	border: 0;
+	border-radius: 14px;
+	padding-left: 14px;
+	margin-bottom: 4px;
+	color: var(--nx-ink);
+}
+.BtnItem:hover    { background-color: var(--nx-hover); }
+.BtnItemSelected,
+.BtnItemSelected:hover {
+	background-color: var(--main-color-fixed);
+	color: #101010;
+	font-weight: 600;
+}
+.BtnItemSelected .icon16 { background-color: #101010; }
+
+/*----Project buttons and recent files are cards----*/
+.MenuItem {
+	border: 0;
+	border-radius: 22px;
+	background-color: var(--nx-card);
+	box-shadow: var(--nx-shadow);
+}
+.MenuItem:hover {
+	background-color: var(--nx-card);
+	box-shadow: 0 0 0 2px var(--main-color-fixed), 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.FileImg {
+	border-radius: 22px;
+	background: var(--nx-card);
+	box-shadow: var(--nx-shadow);
+	overflow: hidden;
+}
+.FileItem img { border-radius: 22px; }
+.FileItem:hover .FileImg {
+	background-color: var(--nx-card);
+	box-shadow: 0 0 0 2px var(--main-color-fixed), 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+/*----The account sits on a card above the navigation----*/
+#LoginArea {
+	border-bottom: 0;
+	margin: 8px 0 0;
+	border-radius: 22px;
+	background-color: var(--nx-card);
+	box-shadow: var(--nx-shadow);
+}
+.AccountRow { border-radius: 14px; }
+.AccountRow:hover { background-color: var(--nx-hover); }
+#BtnArea { margin-top: 16px; }
+
+/*----Accent text on a card: the darker accent in light, the lighter one in dark----*/
+.AccountSignIn                    { color: #278A1A; }
+:root.nexus-dark .AccountSignIn   { color: #7AEB5E; }

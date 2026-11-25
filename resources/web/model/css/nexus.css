@@ -1,0 +1,35 @@
+/*----Nexus: the project page in the Web-Slicer look. Its rules are prefixed with html so they win over
+      both palettes whatever order dark.css is linked in; the dark values follow the app theme (nexus-dark on <html>, set by globalapi.js).----*/
+:root {
+	--nx-bg     : #E0E0E0;
+	--nx-card   : #F4F4F4;
+	--nx-line   : #B0B0B0;
+	--nx-ink    : #101010;
+	--nx-mute   : #8A8A8A;
+	--nx-shadow : 0 0 0 1px var(--nx-line), 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+:root.nexus-dark {
+	--nx-bg     : #18191B;
+	--nx-card   : #2A2B2E;
+	--nx-line   : #55575C;
+	--nx-ink    : #F1F1F1;
+	--nx-mute   : #8E9094;
+	--nx-shadow : 0 0 0 1px var(--nx-line), 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+html body                    { background-color: var(--nx-bg); color: var(--nx-mute); }
+html .Text_Title,
+html .Text_Value             { color: var(--nx-ink); }
+html .Text_TitleBoard        { border-bottom-color: var(--nx-line); }
+html #EmptyArea img          { content: url(../img/nexus_empty.svg); }
+
+html .Block_BKGA,
+html .InfoBlock,
+html .FileItem               { background-color: var(--nx-card); }
+html .Block_BKGB,
+html .File_Board             { background-color: var(--nx-bg); }
+html .InfoBlock,
+html #LeftProcessBlock       { border-radius: 22px; box-shadow: var(--nx-shadow); }
+html .FileItem               { border-radius: 14px; }
+html .LeftProcessBar         { border-left-color: var(--nx-line); }
+html .ProcessBarSelected     { border-left-color: #69E84A; }
