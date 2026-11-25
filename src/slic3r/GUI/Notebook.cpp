@@ -28,8 +28,8 @@
 
 wxDEFINE_EVENT(wxCUSTOMEVT_NOTEBOOK_SEL_CHANGED, wxCommandEvent);
 
-// Nexus: the pill around the main tabs, in DIP: just round enough to clear the corners of the tabs inside.
-static constexpr int TAB_PILL_RADIUS = 16;
+// Nexus: the pill around the main tabs (Web-Slicer mode switch), rounded to half its height; its padding in DIP.
+static constexpr int TAB_PILL_RADIUS = -1;
 static constexpr int TAB_PILL_PAD    = 5;
 
 ButtonsListCtrl::ButtonsListCtrl(wxWindow *parent, wxBoxSizer* side_tools) :

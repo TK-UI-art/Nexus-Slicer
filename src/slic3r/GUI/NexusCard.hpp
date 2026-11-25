@@ -12,6 +12,7 @@
 #include <wx/pen.h>
 #include <wx/window.h>
 
+#include <algorithm>
 #include <iterator>
 #include <vector>
 
@@ -63,13 +64,12 @@ inline void nexus_paint_shadow(const wxWindow* win, wxGCDC& gdc, const wxRect& r
 }
 
 // Paints Web-Slicer cards (rounded, outlined, soft drop shadow) on `parent` behind each group of
-// child windows. A card covers the union of its shown windows, inflated by `pad_dip`.
-// Call from the parent's wxEVT_PAINT handler.
+// child windows. A card covers the union of its shown windows, inflated by `pad_dip`. A negative `radius_dip`
+// rounds each card into a pill (half its height). Call from the parent's wxEVT_PAINT handler.
 inline void nexus_paint_cards(wxWindow* parent, wxPaintDC& dc, const std::vector<std::vector<wxWindow*>>& cards,
                               int radius_dip = NEXUS_CARD_RADIUS, int pad_dip = NEXUS_CARD_PAD)
 {
     wxGCDC    gdc(dc);
-    const int radius = parent->FromDIP(radius_dip);
     for (const auto& card : cards) {
         wxRect rc;
         for (const wxWindow* w : card)
@@ -78,6 +78,7 @@ inline void nexus_paint_cards(wxWindow* parent, wxPaintDC& dc, const std::vector
         if (rc.IsEmpty())
             continue;
         rc.Inflate(parent->FromDIP(pad_dip));
+        const int radius = radius_dip < 0 ? std::min(rc.width, rc.height) / 2 : parent->FromDIP(radius_dip);
 
         nexus_paint_shadow(parent, gdc, rc, radius);
         gdc.SetPen(wxPen(StateColor::darkModeColorFor(wxColour(NEXUS_CARD_LINE)), 1));
