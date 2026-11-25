@@ -11299,7 +11299,9 @@ float GLCanvas3D::get_toolbar_panels_top() const
     // The panels place_toolbar_panel() put above the row, as last laid out: their bottoms sit on the gap.
     const float anchor = top - TOOLBAR_PANEL_GAP * get_scale();
     for (const ImGuiWindow* window : ImGui::GetCurrentContext()->Windows)
-        if (window->WasActive && window->ParentWindow == nullptr && std::strncmp(window->Name, "!!Ntfctn", 8) != 0 &&
+        // Top-level windows, and pop-ups such as the toolbar row's list of tools (their parent is the window opening them).
+        if (window->WasActive && (window->ParentWindow == nullptr || (window->Flags & ImGuiWindowFlags_Popup) != 0) &&
+            std::strncmp(window->Name, "!!Ntfctn", 8) != 0 &&
             std::abs(window->Pos.y + window->Size.y - anchor) <= 1.5f)
             top = std::min(top, window->Pos.y);
     return top;

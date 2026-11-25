@@ -1514,6 +1514,17 @@ void MainFrame::init_tabpanel() {
 #endif
     m_tabpanel->Hide();
     m_settings_dialog.set_tabpanel(m_tabpanel);
+    // Nexus: fit the tab labels again when the bar or the print button beside it changes size outside of a fit.
+    m_tabpanel->GetBtnsListCtrl()->Bind(wxEVT_SIZE, [this](wxSizeEvent& e) {
+        e.Skip();
+        if (e.GetSize() != m_fit_tab_bar_size)
+            fit_tab_labels();
+    });
+    m_print_btn->Bind(wxEVT_SIZE, [this](wxSizeEvent& e) {
+        e.Skip();
+        if (e.GetSize() != m_fit_print_btn_size)
+            fit_tab_labels();
+    });
 
 #ifdef __WXMSW__
     m_tabpanel->Bind(wxEVT_BOOKCTRL_PAGE_CHANGED, [this](wxBookCtrlEvent& e) {
@@ -1817,9 +1828,15 @@ void MainFrame::fit_tab_labels()
         return;
     m_fit_tab_labels_pending = true;
     CallAfter([this]() {
-        m_fit_tab_labels_pending = false;
-        if (!wxGetApp().is_closing())
+        // Still pending while fitting: the size events the fit itself causes do not ask for another one.
+        if (!wxGetApp().is_closing()) {
             do_fit_tab_labels();
+            if (m_tabpanel && m_print_btn) {
+                m_fit_print_btn_size = m_print_btn->GetSize();
+                m_fit_tab_bar_size   = m_tabpanel->GetBtnsListCtrl()->GetSize();
+            }
+        }
+        m_fit_tab_labels_pending = false;
     });
 }
 

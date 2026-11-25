@@ -500,6 +500,10 @@ public:
     void fit_tab_labels();
     void do_fit_tab_labels();
     bool m_fit_tab_labels_pending{false};
+    // Sizes of the print button and the tab bar when the labels were last fitted: a size event that differs from
+    // them (the button's label changed after a printer change, the bar was resized) fits the labels again.
+    wxSize m_fit_print_btn_size;
+    wxSize m_fit_tab_bar_size;
     // True while either of the two tabs backed by m_plater is selected.
     bool is_prepare_or_preview_tab() const;
     PluginPages& plugin_pages() { return *m_plugin_pages; }
