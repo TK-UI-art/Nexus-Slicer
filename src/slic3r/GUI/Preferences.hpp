@@ -32,8 +32,7 @@ namespace Slic3r { namespace GUI {
 #define DESIGN_WINDOW_SIZE wxSize(FromDIP(640), FromDIP(640))
 #define DESIGN_TITLE_SIZE wxSize(FromDIP(280), -1)
 #define DESIGN_COMBOBOX_SIZE wxSize(FromDIP(120), -1)
-// Nexus: wide enough for "Metric (mm, g)" between the pill padding and the arrow
-#define DESIGN_LARGE_COMBOBOX_SIZE wxSize(FromDIP(160), -1)
+#define DESIGN_LARGE_COMBOBOX_SIZE wxSize(FromDIP(120), -1)
 #define DESIGN_INPUT_SIZE wxSize(FromDIP(120), -1)
 #define DESIGN_LEFT_MARGIN 25
 

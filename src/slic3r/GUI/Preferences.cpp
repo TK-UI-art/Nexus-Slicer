@@ -90,6 +90,10 @@
 #endif // _MSW_DARK_MODE
 #endif //__WINDOWS__
 
+// Nexus: wide enough for "Metric (mm, g)" between the pill padding and the arrow. Not DESIGN_LARGE_COMBOBOX_SIZE,
+// which several dialog headers define alike.
+#define NEXUS_PREFS_COMBOBOX_SIZE wxSize(FromDIP(160), -1)
+
 namespace Slic3r { namespace GUI {
 
 class ColorSwatchButton : public Button
@@ -388,7 +392,7 @@ std::tuple<wxBoxSizer*, ComboBox*> PreferencesDialog::create_item_combobox_base(
 
     wxBoxSizer *m_sizer = create_item_label(title, tip, wiki_url);
 
-    auto combobox = new ::ComboBox(m_parent, wxID_ANY, wxEmptyString, wxDefaultPosition, DESIGN_LARGE_COMBOBOX_SIZE, 0, nullptr, wxCB_READONLY);
+    auto combobox = new ::ComboBox(m_parent, wxID_ANY, wxEmptyString, wxDefaultPosition, NEXUS_PREFS_COMBOBOX_SIZE, 0, nullptr, wxCB_READONLY);
     combobox->GetDropDown().SetUseContentWidth(true);
     combobox->SetToolTip(tip);
     combobox->SetName(param);   // select_tab() finds the row by this name
@@ -506,7 +510,7 @@ wxBoxSizer *PreferencesDialog::create_item_language_combobox(wxString title, wxS
 
     wxBoxSizer *m_sizer = create_item_label(title, tip);
 
-    auto combobox = new ::ComboBox(m_parent, wxID_ANY, wxEmptyString, wxDefaultPosition, DESIGN_LARGE_COMBOBOX_SIZE, 0, nullptr, wxCB_READONLY);
+    auto combobox = new ::ComboBox(m_parent, wxID_ANY, wxEmptyString, wxDefaultPosition, NEXUS_PREFS_COMBOBOX_SIZE, 0, nullptr, wxCB_READONLY);
     combobox->GetDropDown().SetUseContentWidth(true);
     combobox->SetToolTip(tip);
 
@@ -666,7 +670,7 @@ wxBoxSizer *PreferencesDialog::create_item_region_combobox(wxString title, wxStr
 
     wxBoxSizer *m_sizer = create_item_label(title, tip);
 
-    auto combobox = new ::ComboBox(m_parent, wxID_ANY, wxEmptyString, wxDefaultPosition, DESIGN_LARGE_COMBOBOX_SIZE, 0, nullptr, wxCB_READONLY);
+    auto combobox = new ::ComboBox(m_parent, wxID_ANY, wxEmptyString, wxDefaultPosition, NEXUS_PREFS_COMBOBOX_SIZE, 0, nullptr, wxCB_READONLY);
     combobox->GetDropDown().SetUseContentWidth(true);
     combobox->SetToolTip(tip);
 
@@ -1403,7 +1407,7 @@ wxBoxSizer *PreferencesDialog::create_item_network_plugin_version(wxString title
 {
     wxBoxSizer *m_sizer = create_item_label(title, tooltip);
 
-    m_network_version_combo = new ::ComboBox(m_parent, wxID_ANY, wxEmptyString, wxDefaultPosition, DESIGN_LARGE_COMBOBOX_SIZE, 0, nullptr, wxCB_READONLY);
+    m_network_version_combo = new ::ComboBox(m_parent, wxID_ANY, wxEmptyString, wxDefaultPosition, NEXUS_PREFS_COMBOBOX_SIZE, 0, nullptr, wxCB_READONLY);
     m_network_version_combo->GetDropDown().SetUseContentWidth(true);
     m_network_version_combo->SetToolTip(tooltip);
 
