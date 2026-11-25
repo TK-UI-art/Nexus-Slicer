@@ -2418,8 +2418,8 @@ void PartPlate::render_grid(bool bottom) {
 		else
             color = m_partplate_list->m_is_dark ? LINE_TOP_DARK_COLOR : LINE_TOP_COLOR;
 	}
-    m_gridlines.set_color(color);
-    m_gridlines.render();
+    // Nexus: the plate shows only the main grid lines (every fifth step), as the Web-Slicer's calmer plate;
+    // m_gridlines (the fine lines) is left undrawn. The 2D bed shape preview still draws them.
 
     shader->stop_using();
 
