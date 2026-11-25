@@ -3055,6 +3055,39 @@ static constexpr float CANVAS_TOOLBAR_SPACING = 6.f;
 static constexpr float TOOLBAR_ROW_MARGIN = 16.f;
 static constexpr float TOOLBAR_PANEL_GAP  = 8.f;
 
+// Nexus: the optional tools the user added to the toolbar row, as a comma separated list in the app config.
+static const char* TOOLBAR_TOOLS_KEY = "nexus_toolbar_tools";
+
+static std::set<std::string>& toolbar_tools_shown()
+{
+    static std::set<std::string> shown;
+    static bool                  loaded = false;
+    if (!loaded && wxGetApp().app_config != nullptr) {
+        loaded = true;
+        std::stringstream list(wxGetApp().app_config->get(TOOLBAR_TOOLS_KEY));
+        for (std::string id; std::getline(list, id, ',');)
+            if (!id.empty())
+                shown.insert(id);
+    }
+    return shown;
+}
+
+bool GLCanvas3D::is_toolbar_tool_shown(const std::string& id) { return toolbar_tools_shown().count(id) > 0; }
+
+void GLCanvas3D::set_toolbar_tool_shown(const std::string& id, bool shown)
+{
+    std::set<std::string>& tools = toolbar_tools_shown();
+    if (shown)
+        tools.insert(id);
+    else
+        tools.erase(id);
+    std::string list;
+    for (const std::string& tool : tools)
+        list += (list.empty() ? "" : ",") + tool;
+    if (wxGetApp().app_config != nullptr)
+        wxGetApp().app_config->set(TOOLBAR_TOOLS_KEY, list);
+}
+
 // What the corner takes at the left edge of the canvas: the 3D navigator, or else the canvas toolbar.
 static float canvas_corner_height()
 {
@@ -8306,6 +8339,16 @@ bool GLCanvas3D::_init_main_toolbar()
 
     GLToolbarItem::Data item;
 
+    // Nexus: an item of the bottom toolbar row that shows once the user added it with the row's plus button, and
+    // while it is pressed (opened from a shortcut or a menu).
+    auto make_optional = [this](GLToolbarItem::Data& data) {
+        if (!is_toolbar_at_bottom())
+            return;
+        data.visibility_callback = [this, visible = data.visibility_callback, name = data.name]() {
+            return visible() && (is_toolbar_tool_shown(name) || m_main_toolbar.is_item_pressed(name));
+        };
+    };
+
     item.name = "add";
     item.icon_filename = m_is_dark ? "toolbar_open_dark.svg" : "toolbar_open.svg";
     item.sprite_id = 0;
@@ -8375,6 +8418,7 @@ bool GLCanvas3D::_init_main_toolbar()
     item.visibility_callback = GLToolbarItem::Default_Visibility_Callback;
     item.left.toggable = false;
     item.enabling_callback = []()->bool { return wxGetApp().plater()->can_increase_instances(); };
+    make_optional(item);
     if (!m_main_toolbar.add_item(item))
         return false;
 
@@ -8386,6 +8430,7 @@ bool GLCanvas3D::_init_main_toolbar()
     item.visibility_callback = GLToolbarItem::Default_Visibility_Callback;
     item.left.toggable = false;
     item.enabling_callback = []()->bool { return wxGetApp().plater()->can_decrease_instances(); };
+    make_optional(item);
     if (!m_main_toolbar.add_item(item))
         return false;
 
@@ -8398,6 +8443,7 @@ bool GLCanvas3D::_init_main_toolbar()
     item.visibility_callback = GLToolbarItem::Default_Visibility_Callback;
     item.left.toggable = false;
     item.enabling_callback = []()->bool { return wxGetApp().plater()->can_split_to_objects(); };
+    make_optional(item);
     if (!m_main_toolbar.add_item(item))
         return false;
 
@@ -8408,6 +8454,7 @@ bool GLCanvas3D::_init_main_toolbar()
     item.left.action_callback = [this]() { if (m_canvas != nullptr) wxPostEvent(m_canvas, SimpleEvent(EVT_GLTOOLBAR_SPLIT_VOLUMES)); };
     item.visibility_callback = GLToolbarItem::Default_Visibility_Callback;
     item.enabling_callback = []()->bool { return wxGetApp().plater()->can_split_to_volumes(); };
+    make_optional(item);
     if (!m_main_toolbar.add_item(item))
         return false;
 
@@ -8426,6 +8473,7 @@ bool GLCanvas3D::_init_main_toolbar()
         return res;
     };
     item.enabling_callback = []()->bool { return wxGetApp().plater()->can_layers_editing(); };
+    make_optional(item);
     if (!m_main_toolbar.add_item(item))
         return false;
 
@@ -10922,7 +10970,8 @@ void GLCanvas3D::_check_and_update_toolbar_icon_scale()
     float top_tb_width = m_main_toolbar.get_width() + m_gizmos.get_scaled_total_width() + m_assemble_view_toolbar.get_width() + m_separator_toolbar.get_width() + collapse_toolbar_width * 2;
     int   items_cnt = m_main_toolbar.get_visible_items_cnt() + m_gizmos.get_selectable_icons_cnt() + m_assemble_view_toolbar.get_visible_items_cnt() + m_separator_toolbar.get_visible_items_cnt() + (at_bottom ? 0 : collapse_toolbar.get_visible_items_cnt());
     float noitems_width = top_tb_width - size * items_cnt; // width of separators and borders in top toolbars
-    const float row_width = cnv_size.get_width() - (at_bottom ? get_canvas_toolbar_right() + 2.f * TOOLBAR_ROW_MARGIN * get_scale() : 0.f);
+    const float row_width = cnv_size.get_width() - (at_bottom ? get_canvas_toolbar_right() + 2.f * TOOLBAR_ROW_MARGIN * get_scale() +
+                                                                     get_toolbar_tools_button_width() : 0.f);
 
     // calculate scale needed for items in all top toolbars
     float new_h_scale = (row_width - noitems_width) / (items_cnt * GLToolbar::Default_Icons_Size);
@@ -10980,6 +11029,7 @@ void GLCanvas3D::_render_overlays()
     m_gizmos.render_overlay_input_window();
 
     _render_toolbar_row_frame();
+    _render_toolbar_tools_button();
 
     if (m_layers_editing.last_object_id >= 0 && m_layers_editing.object_max_z() > 0.0f)
         m_layers_editing.render_variable_layer_height_dialog(*this);
@@ -11258,7 +11308,8 @@ int GLCanvas3D::get_main_toolbar_offset() const
     if (is_toolbar_at_bottom()) {
         // Centred on the canvas, clear of the navigator and the canvas buttons in the bottom-left corner.
         const float left_min = get_canvas_toolbar_right() + TOOLBAR_ROW_MARGIN * get_scale();
-        return int(std::max(left_min, 0.5f * (cnv_width - get_top_toolbar_width())));
+        // The plus button after the row is centred with it.
+        return int(std::max(left_min, 0.5f * (cnv_width - get_top_toolbar_width() - get_toolbar_tools_button_width())));
     }
     const float collapse_toolbar_width = get_collapse_toolbar_width() * 2;
     const float toolbar_total_width    = get_top_toolbar_width() + collapse_toolbar_width;
@@ -12392,6 +12443,110 @@ void GLCanvas3D::_render_toolbar_row_frame() const
     // On the row's outermost pixels, over the outline the toolbar background draws at its ends only.
     draw_list->AddRect(ImVec2(min.x + .5f, min.y + .5f), ImVec2(max.x - .5f, max.y - .5f), IM_COL32(line.Red(), line.Green(), line.Blue(), 255),
                        rounding, 0, 1.f);
+}
+
+float GLCanvas3D::get_toolbar_tools_button_width() const
+{
+    if (!is_toolbar_at_bottom() || !m_main_toolbar.is_enabled())
+        return 0.f;
+    // A round button as high as the row, a panel gap after it.
+    return get_top_toolbar_height() + TOOLBAR_PANEL_GAP * get_scale();
+}
+
+// Nexus: a round plus button after the toolbar row (Web-Slicer card), which lists the optional tools of the row to
+// add them to it or take them off again. Every tool stays reachable from its shortcut and menu entry as well.
+void GLCanvas3D::_render_toolbar_tools_button()
+{
+    if (!is_toolbar_at_bottom() || !m_main_toolbar.is_enabled())
+        return;
+
+    ImGuiWrapper& imgui    = *wxGetApp().imgui();
+    const float   sc       = get_scale();
+    const float   diameter = get_top_toolbar_height();
+    const ImVec2  pos(float(get_main_toolbar_offset()) + get_top_toolbar_width() + TOOLBAR_PANEL_GAP * sc, get_toolbar_row_top());
+
+    ImGui::SetNextWindowPos(pos, ImGuiCond_Always);
+    ImGui::SetNextWindowSize(ImVec2(diameter, diameter), ImGuiCond_Always);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.f, 0.f));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.f);
+    ImGui::Begin("##nexus_toolbar_tools", nullptr,
+                 ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoMove |
+                     ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoBringToFrontOnFocus);
+    ImGui::PopStyleVar(2);
+
+    const char* popup_id = "##nexus_toolbar_tools_list";
+    const bool  clicked  = ImGui::InvisibleButton("##plus", ImVec2(diameter, diameter));
+    const bool  hovered  = ImGui::IsItemHovered();
+    const bool  open     = ImGui::IsPopupOpen(popup_id);
+    if (clicked)
+        ImGui::OpenPopup(popup_id);
+    if (hovered && !open)
+        // TRN Tooltip of the plus button at the end of the toolbar row in the 3D view.
+        imgui.tooltip(_u8L("More tools"), ImGui::GetFontSize() * 20.f);
+
+    const ImVec2 min(pos.x, pos.y), max(pos.x + diameter, pos.y + diameter);
+    const ImVec2 center(pos.x + 0.5f * diameter, pos.y + 0.5f * diameter);
+    const float  radius = 0.5f * diameter;
+    ImGuiWrapper::draw_drop_shadow(ImGui::GetBackgroundDrawList(), min, max, radius, sc, m_is_dark);
+    ImDrawList*  draw_list = ImGui::GetWindowDrawList();
+    const ImVec4 card      = m_is_dark ? ImGuiWrapper::COL_WINDOW_BG_DARK : ImGuiWrapper::COL_WINDOW_BG;
+    const ImVec4 fill      = open ? ImVec4(NEXUS_ACCENT_F, 1.f) :
+                             hovered ? (m_is_dark ? ImVec4(0.21f, 0.21f, 0.23f, 1.f) : ImVec4(1.f, 1.f, 1.f, 1.f)) : card;
+    draw_list->AddCircleFilled(center, radius, ImGui::GetColorU32(fill), 48);
+    draw_list->AddCircle(center, radius - .5f, ImGui::GetColorU32(m_is_dark ? ImGuiWrapper::COL_CARD_LINE_DARK : ImGuiWrapper::COL_CARD_LINE), 48, 1.f);
+    const ImU32 ink  = open ? ImGui::GetColorU32(ImVec4(NEXUS_ON_ACCENT_F, 1.f)) :
+                              ImGui::GetColorU32(m_is_dark ? ImVec4(0.945f, 0.945f, 0.945f, 1.f) : ImVec4(NEXUS_ON_ACCENT_F, 1.f));
+    const float arm  = 0.24f * diameter;
+    const float line = std::max(1.5f, 1.5f * sc);
+    draw_list->AddLine(ImVec2(center.x - arm, center.y), ImVec2(center.x + arm, center.y), ink, line);
+    draw_list->AddLine(ImVec2(center.x, center.y - arm), ImVec2(center.x, center.y + arm), ink, line);
+
+    // The list opens upwards from the button, right-aligned with it.
+    ImGui::SetNextWindowPos(ImVec2(max.x, pos.y - TOOLBAR_PANEL_GAP * sc), ImGuiCond_Always, ImVec2(1.f, 1.f));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 14.f * sc);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1.f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(14.f * sc, 12.f * sc));
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8.f * sc, 8.f * sc));
+    ImGui::PushStyleColor(ImGuiCol_PopupBg, card);
+    ImGui::PushStyleColor(ImGuiCol_Border, m_is_dark ? ImGuiWrapper::COL_CARD_LINE_DARK : ImGuiWrapper::COL_CARD_LINE);
+    ImGui::PushStyleColor(ImGuiCol_Text, m_is_dark ? ImVec4(0.945f, 0.945f, 0.945f, 1.f) : ImVec4(NEXUS_ON_ACCENT_F, 1.f));
+    if (ImGui::BeginPopup(popup_id)) {
+        ImGuiWrapper::draw_drop_shadow(ImGui::GetBackgroundDrawList(), ImGui::GetWindowPos(), ImGui::GetWindowPos() + ImGui::GetWindowSize(),
+                                       14.f * sc, sc, m_is_dark);
+        ImGui::PushStyleColor(ImGuiCol_Text, m_is_dark ? ImVec4(0.557f, 0.565f, 0.580f, 1.f) : ImVec4(0.541f, 0.541f, 0.541f, 1.f));
+        // TRN Heading of the list the plus button at the end of the 3D view's toolbar row opens.
+        imgui.text(_u8L("Show in toolbar"));
+        ImGui::PopStyleColor();
+
+        bool changed = false;
+        auto entry   = [&imgui, &changed](const std::string& id, const std::string& label) {
+            bool shown = is_toolbar_tool_shown(id);
+            if (imgui.bbl_checkbox(wxString::FromUTF8(label), shown)) {
+                set_toolbar_tool_shown(id, shown);
+                changed = true;
+            }
+        };
+        // The less used items of the main toolbar, then the gizmos.
+        entry("more", _u8L("Add instance"));
+        entry("fewer", _u8L("Remove instance"));
+        entry("splitobjects", _u8L("Split to objects"));
+        entry("splitvolumes", _u8L("Split to parts"));
+        if (current_printer_technology() == ptFFF)
+            entry("layersediting", _u8L("Variable layer height"));
+        for (GLGizmosManager::EType type : m_gizmos.get_optional_tools())
+            entry(GLGizmosManager::optional_tool_id(type), m_gizmos.get_gizmo(type)->get_name());
+
+        if (changed) {
+            m_main_toolbar.update_items_state();
+            set_as_dirty();
+            request_extra_frame();
+        }
+        ImGui::EndPopup();
+    }
+    ImGui::PopStyleColor(3);
+    ImGui::PopStyleVar(4);
+
+    ImGui::End();
 }
 
 //BBS reander assemble toolbar

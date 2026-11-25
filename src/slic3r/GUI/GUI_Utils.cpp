@@ -41,6 +41,7 @@
 
 #ifdef __WXGTK__
 #include <gtk/gtk.h>
+#include "slic3r/GUI/NexusTheme.hpp"
 #endif 
 
 #include <wx/toplevel.h>
@@ -817,6 +818,40 @@ void SetGaugeColor(wxGauge* gauge, const wxString& barColor, const wxString& tro
 
     g_object_unref(provider);
 
+#endif
+}
+
+void apply_nexus_gtk_css(bool dark)
+{
+#if GTK_CHECK_VERSION(3, 0, 0) && !GTK_CHECK_VERSION(4, 0, 0)
+    // One provider for the whole screen, replaced when the theme changes.
+    static GtkCssProvider* provider = nullptr;
+    GdkScreen* screen = gdk_screen_get_default();
+    if (!screen)
+        return;
+    if (provider) {
+        gtk_style_context_remove_provider_for_screen(screen, GTK_STYLE_PROVIDER(provider));
+        g_object_unref(provider);
+    }
+    provider = gtk_css_provider_new();
+
+    // Selected list rows take the accent tint with ink text (Web-Slicer selection), hovered menu items and selected
+    // text the accent fill with its dark text, instead of the GTK theme's blue.
+    const char* tint = dark ? NEXUS_ACCENT_TINT25_DARK : NEXUS_ACCENT_TINT25;
+    const char* ink  = dark ? "#F1F1F1" : "#101010";
+    const wxString css = wxString::Format(
+        "treeview.view:selected, treeview.view:selected:focus, list row:selected, iconview:selected"
+        " { background-color: %s; color: %s; }"
+        "menu menuitem:hover, .menu menuitem:hover, menuitem:hover"
+        " { background-color: %s; color: %s; }"
+        "selection, entry selection, textview text selection, label selection"
+        " { background-color: %s; color: %s; }",
+        tint, ink, NEXUS_ACCENT, NEXUS_ON_ACCENT, NEXUS_ACCENT, NEXUS_ON_ACCENT);
+
+    gtk_css_provider_load_from_data(provider, css.utf8_str(), -1, nullptr);
+    gtk_style_context_add_provider_for_screen(screen, GTK_STYLE_PROVIDER(provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+#else
+    (void) dark;
 #endif
 }
 

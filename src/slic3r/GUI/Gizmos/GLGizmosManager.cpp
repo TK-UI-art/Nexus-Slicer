@@ -87,7 +87,33 @@ GLGizmosManager::GLGizmosManager(GLCanvas3D& parent)
     m_timer_set_color.Bind(wxEVT_TIMER, &GLGizmosManager::on_set_color_timer, this);
 }
 
-std::vector<size_t> GLGizmosManager::get_selectable_idxs() const
+const char* GLGizmosManager::optional_tool_id(EType type)
+{
+    switch (type) {
+    case MeshBoolean:         return "gizmo_mesh_boolean";
+    case FuzzySkin:           return "gizmo_fuzzy_skin";
+    case PaintedModifier:     return "gizmo_painted_modifier";
+    case TextureDisplacement: return "gizmo_texture_displacement";
+    case Emboss:              return "gizmo_text";
+    case Svg:                 return "gizmo_svg";
+    case Measure:             return "gizmo_measure";
+    case Assembly:            return "gizmo_assembly";
+    case Simplify:            return "gizmo_simplify";
+    case BrimEars:            return "gizmo_brim_ears";
+    default:                  return nullptr;
+    }
+}
+
+std::vector<GLGizmosManager::EType> GLGizmosManager::get_optional_tools() const
+{
+    std::vector<EType> out;
+    for (size_t i = 0; i < m_gizmos.size(); ++i)
+        if (optional_tool_id(EType(i)) != nullptr && m_gizmos[i]->is_selectable())
+            out.push_back(EType(i));
+    return out;
+}
+
+std::vector<size_t> GLGizmosManager::get_selectable_idxs(bool include_hidden) const
 {
     std::vector<size_t> out;
     out.reserve(m_gizmos.size());
@@ -101,9 +127,15 @@ std::vector<size_t> GLGizmosManager::get_selectable_idxs() const
                 out.push_back(i);
     }
     else {
-        for (size_t i = 0; i < m_gizmos.size(); ++i)
-            if (m_gizmos[i]->is_selectable())
+        for (size_t i = 0; i < m_gizmos.size(); ++i) {
+            if (!m_gizmos[i]->is_selectable())
+                continue;
+            // Nexus: an optional gizmo has an icon once the user added it, and while it is open (from its shortcut
+            // or a menu), so that its panel has a place to open from.
+            const char* id = optional_tool_id(EType(i));
+            if (include_hidden || id == nullptr || i == size_t(m_current) || GLCanvas3D::is_toolbar_tool_shown(id))
                 out.push_back(i);
+        }
     }
     return out;
 }
@@ -1406,7 +1438,7 @@ GLGizmoBase* GLGizmosManager::get_gizmo(GLGizmosManager::EType type) const
 
 GLGizmosManager::EType GLGizmosManager::get_gizmo_from_name(const std::string& gizmo_name) const
 {
-    std::vector<size_t> selectable_idxs = get_selectable_idxs();
+    std::vector<size_t> selectable_idxs = get_selectable_idxs(true);
     for (size_t idx = 0; idx < selectable_idxs.size(); ++idx)
     {
         std::string filename = m_gizmos[selectable_idxs[idx]]->get_icon_filename();

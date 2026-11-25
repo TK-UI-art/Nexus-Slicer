@@ -1604,22 +1604,34 @@ bool GLToolbar::update_items_visibility()
 {
     bool ret = false;
 
-    for (GLToolbarItem* item : m_items) {
-        ret |= item->update_visibility();
-    }
+    // Separators are placed below, from the items around them.
+    for (GLToolbarItem* item : m_items)
+        if (!item->is_separator())
+            ret |= item->update_visibility();
 
     if (ret)
         m_layout.dirty = true;
 
     // updates separators visibility to avoid having two of them consecutive
+    // Nexus: or one at an end of the toolbar, which the optional tools of the toolbar row can leave (see
+    // GLCanvas3D::is_toolbar_tool_shown()): a separator shows only between visible items.
     bool any_item_visible = false;
-    for (GLToolbarItem* item : m_items) {
-        if (!item->is_separator())
+    for (size_t i = 0; i < m_items.size(); ++i) {
+        GLToolbarItem* item = m_items[i];
+        if (!item->is_separator()) {
             any_item_visible |= item->is_visible();
-        else {
-            item->set_visible(any_item_visible);
-            any_item_visible = false;
+            continue;
         }
+        bool any_item_after = false;
+        for (size_t j = i + 1; j < m_items.size() && !m_items[j]->is_separator(); ++j)
+            any_item_after |= m_items[j]->is_visible();
+        const bool visible = any_item_visible && any_item_after;
+        if (visible != item->is_visible()) {
+            item->set_visible(visible);
+            m_layout.dirty = true;
+        }
+        if (visible)
+            any_item_visible = false;
     }
 
     return ret;

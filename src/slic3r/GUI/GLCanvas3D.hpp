@@ -1264,6 +1264,11 @@ public:
     float get_toolbar_panel_limit() const;
     // Top of the toolbar row or of the highest panel open above it (Nexus), in pixels from the canvas top.
     float get_toolbar_panels_top() const;
+    // Nexus: optional tools of the toolbar row (the less used main toolbar items and gizmos) show only once the user
+    // adds them with the plus button at the row's end; `id` is the main toolbar item name or the gizmo's tool id.
+    // Kept in the app config, so the choice holds for every canvas and session.
+    static bool is_toolbar_tool_shown(const std::string& id);
+    static void set_toolbar_tool_shown(const std::string& id, bool shown);
     int get_main_toolbar_height() const { return m_main_toolbar.get_height(); }
     int get_main_toolbar_width() const { return m_main_toolbar.get_width(); }
     float get_assemble_view_toolbar_width() const { return m_assemble_view_toolbar.get_width(); }
@@ -1732,6 +1737,9 @@ private:
     bool _is_mouse_over_top_toolbar(const Vec2d& mouse_pos) const;
     void _render_collapse_toolbar() const;
     void _render_toolbar_row_frame() const;
+    // Nexus: the plus button at the end of the toolbar row and its list of optional tools.
+    void _render_toolbar_tools_button();
+    float get_toolbar_tools_button_width() const;
     // BBS
     //void _render_view_toolbar() const;
     void _render_paint_toolbar() const;

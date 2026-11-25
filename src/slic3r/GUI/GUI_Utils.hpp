@@ -534,6 +534,8 @@ void sample_screen_color(std::function<void(std::optional<ColorRGBA>)> done);
 void RemoveButtonBorder(wxWindow* win);   // for wxButton/wxBitmapToggleButton based controls (SwitchButton, CheckBox)
 void RemoveInputBorder(wxWindow* win);    // for TextCtrl based controls (TextInput, ComboBox, SpinInput..)
 void SetGaugeColor(wxGauge* gauge, const wxString& barColor, const wxString& troughColor);
+// Nexus: app-wide GTK colours for what native widgets draw themselves (list selection, menu hover, text selection).
+void apply_nexus_gtk_css(bool dark);
 #endif
 
 #if defined(__WXOSX__) || defined(__linux__)

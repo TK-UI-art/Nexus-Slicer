@@ -146,7 +146,8 @@ private:
     //BBS: GUI refactor: add object manipulation
     GizmoObjectManipulation m_object_manipulation;
 
-    std::vector<size_t> get_selectable_idxs() const;
+    // The gizmos with an icon in the toolbar row; include_hidden adds the optional ones the user has not added to it.
+    std::vector<size_t> get_selectable_idxs(bool include_hidden = false) const;
     EType get_gizmo_from_mouse(const Vec2d &mouse_pos) const;
 
     bool activate_gizmo(EType type);
@@ -299,6 +300,11 @@ public:
     void update_section_view();
 
     EType get_current_type() const { return m_current; }
+    // Nexus: the toolbar row's tool id of a gizmo shown only once added with the row's plus button, or nullptr for
+    // the gizmos always shown (see GLCanvas3D::is_toolbar_tool_shown()).
+    static const char* optional_tool_id(EType type);
+    // The optional gizmos that would have an icon in the toolbar row, shown or not.
+    std::vector<EType> get_optional_tools() const;
     GLGizmoBase* get_current() const;
     GLGizmoBase *get_gizmo(GLGizmosManager::EType type) const;
     EType get_gizmo_from_name(const std::string& gizmo_name) const;

@@ -4802,6 +4802,9 @@ void GUI_App::apply_native_appearance()
     // and so runs the usual colour update. Windows keeps its NppDarkMode handling.
     SetAppearance(dark_mode() ? wxApp::Appearance::Dark : wxApp::Appearance::Light);
 #endif
+#ifdef __WXGTK__
+    apply_nexus_gtk_css(dark_mode());
+#endif
 }
 
 void GUI_App::Update_dark_mode_flag()
