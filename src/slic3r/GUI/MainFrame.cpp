@@ -1834,7 +1834,10 @@ void MainFrame::fit_tab_labels()
 
     // Compact (last to first)
     for (size_t i = count - 1; i >= 1; --i) {
-        int right = ScreenToClient(m_print_option_btn->ClientToScreen({})).x;
+        // Up to the side tools, or to the bar's right edge on pages without them (show_option() hides their panel,
+        // which leaves the button at a stale position).
+        int right = m_print_option_btn->IsShown() ? ScreenToClient(m_print_option_btn->ClientToScreen({})).x :
+                                                     ScreenToClient(ctrl->ClientToScreen({ctrl->GetClientSize().GetWidth(), 0})).x;
         // The tab buttons may be centred, so measure up to their right edge
         int left  = ScreenToClient(ctrl->ClientToScreen(sizer->GetPosition())).x + sizer->GetSize().GetWidth();
         // The overflow button sits between the tab buttons and the side tools, so it is not free space.
