@@ -276,8 +276,10 @@ ParamsPanel::ParamsPanel( wxWindow* parent, wxWindowID id, const wxPoint& pos, c
 
     if (dynamic_cast<Notebook*>(parent)) {
         // BBS: new layout
-        m_top_panel = new StaticBox(this, wxID_ANY, wxDefaultPosition);
-        m_top_panel->SetBackgroundColor(0xFFFFFF); // Nexus: title blends into its sidebar card
+        // Nexus: the title blends into its sidebar card: no outline, and square so that no corners show.
+        m_top_panel = new StaticBox(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_NONE);
+        m_top_panel->SetBackgroundColor(0xFFFFFF);
+        m_top_panel->SetCornerRadius(0);
 
         m_process_icon = new ScalableButton(m_top_panel, wxID_ANY, "nexus_card_process", wxEmptyString, wxDefaultSize,
                                             wxDefaultPosition, wxBU_EXACTFIT | wxNO_BORDER, false, 22);

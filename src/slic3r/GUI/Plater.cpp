@@ -2850,6 +2850,8 @@ Sidebar::Sidebar(Plater *parent)
         // 1.1 create title bar resources
         p->m_panel_printer_title = new StaticBox(p->scrolled, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL | wxBORDER_NONE);
         p->m_panel_printer_title->SetBackgroundColor(title_bg);
+        // Nexus: square, so that no corners of the sidebar grey show inside the card around the title.
+        p->m_panel_printer_title->SetCornerRadius(0);
 
         p->m_printer_icon = new ScalableButton(p->m_panel_printer_title, wxID_ANY, "nexus_card_printer", wxEmptyString, wxDefaultSize,
                                                wxDefaultPosition, wxBU_EXACTFIT | wxNO_BORDER, false, 22);
@@ -3289,6 +3291,7 @@ Sidebar::Sidebar(Plater *parent)
     // add filament title
     p->m_panel_filament_title = new StaticBox(p->scrolled, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL | wxBORDER_NONE);
     p->m_panel_filament_title->SetBackgroundColor(title_bg);
+    p->m_panel_filament_title->SetCornerRadius(0); // Nexus: as the printer title
     // ORCA Bind with LEFT_DOWN, since closing a dialog over the title bar can send it a stray LEFT_UP
     auto toggle_filament_section = ([this](wxMouseEvent &e) {
         if (!p || !p->m_filament_area_wrapper || !m_scrolled_sizer || !p->m_bpButton_set_filament || !p->m_purge_mode_btn || !p->m_flushing_volume_btn || !p->m_bpButton_add_filament || !ams_btn)

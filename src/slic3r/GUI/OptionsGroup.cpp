@@ -550,7 +550,8 @@ bool OptionsGroup::activate(std::function<void()> throw_if_canceled /* = [](){}*
             sizer     = new wxStaticBoxSizer(stb, wxVERTICAL);
         } else {
             // BBS: new layout
-            ::StaticLine* stl = new ::StaticLine(m_parent, false, _(title), icon);
+            // Nexus: the title alone, without the group icon in front of it (Web-Slicer fieldset legend).
+            ::StaticLine* stl = new ::StaticLine(m_parent, false, _(title));
             stl->SetFont(Label::Head_14);
             stl->SetForegroundColour("#363636"); // ORCA Match Parameters title color with tab title color
             sizer = new wxBoxSizer(wxVERTICAL);
