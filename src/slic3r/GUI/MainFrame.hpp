@@ -495,7 +495,11 @@ public:
 
     //SoftFever
     void show_device(bool should_use_native);
-    void fit_tab_labels(); // ORCA
+    // ORCA: compacts tab labels that do not fit. Nexus: runs once the pending events are handled, so that it measures
+    // the bar after a whole change (a printer change swaps the device tab, then relays out the plugin tabs).
+    void fit_tab_labels();
+    void do_fit_tab_labels();
+    bool m_fit_tab_labels_pending{false};
     // True while either of the two tabs backed by m_plater is selected.
     bool is_prepare_or_preview_tab() const;
     PluginPages& plugin_pages() { return *m_plugin_pages; }

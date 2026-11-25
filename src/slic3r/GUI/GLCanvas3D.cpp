@@ -11001,6 +11001,16 @@ void GLCanvas3D::_check_and_update_toolbar_icon_scale()
     // set minimum scale as a auto scale for the toolbars
     float new_scale = std::min(new_h_scale, new_v_scale);
     new_scale /= get_scale();
+    // Nexus: the row at the bottom holds few tools since the others are added with its plus button; it fills the
+    // width at 75 % of the full icon size at most (GUI_App::set_auto_toolbar_icon_scale() takes the same unit).
+    if (is_toolbar_at_bottom()) {
+#ifdef __APPLE__
+        const float full_size = 1.f;
+#else
+        const float full_size = wxGetApp().em_unit() * 0.1f;
+#endif
+        new_scale = std::min(new_scale, 0.75f * full_size);
+    }
     // Only a canvas with toolbars to fit sets the shared size: a collapse button alone (the Design
     // tab's canvas) always fits at the largest.
     if (items_cnt > collapse_toolbar.get_visible_items_cnt() && fabs(new_scale - scale) > 0.05) // scale is changed by 5% and more
@@ -12518,6 +12528,15 @@ void GLCanvas3D::_render_toolbar_tools_button()
         imgui.text(_u8L("Show in toolbar"));
         ImGui::PopStyleColor();
 
+        // Outlined boxes on the card, filled with the accent when ticked (bbl_checkbox).
+        const ImVec4 box = m_is_dark ? ImVec4(0.208f, 0.212f, 0.227f, 1.f) : ImVec4(1.f, 1.f, 1.f, 1.f);
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.f);
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 4.f * sc);
+        ImGui::PushStyleColor(ImGuiCol_FrameBg, box);
+        ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, box);
+        ImGui::PushStyleColor(ImGuiCol_FrameBgActive, box);
+        ImGui::PushStyleColor(ImGuiCol_CheckMark, ImVec4(NEXUS_ON_ACCENT_F, 1.f));
+
         bool changed = false;
         auto entry   = [&imgui, &changed](const std::string& id, const std::string& label) {
             bool shown = is_toolbar_tool_shown(id);
@@ -12533,8 +12552,21 @@ void GLCanvas3D::_render_toolbar_tools_button()
         entry("splitvolumes", _u8L("Split to parts"));
         if (current_printer_technology() == ptFFF)
             entry("layersediting", _u8L("Variable layer height"));
-        for (GLGizmosManager::EType type : m_gizmos.get_optional_tools())
-            entry(GLGizmosManager::optional_tool_id(type), m_gizmos.get_gizmo(type)->get_name());
+        for (GLGizmosManager::EType type : m_gizmos.get_optional_tools()) {
+            // The gizmo's name without the hint some add while they cannot be used ("Measure:\nPlease select ..."),
+            // then its shortcut.
+            const GLGizmoBase* gizmo = m_gizmos.get_gizmo(type);
+            const std::string  name  = gizmo->get_name(false);
+            const std::string  full  = gizmo->get_name(true);
+            std::string        label = name.substr(0, name.find('\n'));
+            if (!label.empty() && label.back() == ':')
+                label.pop_back();
+            if (full.compare(0, name.size(), name) == 0)
+                label += full.substr(name.size());
+            entry(GLGizmosManager::optional_tool_id(type), label);
+        }
+        ImGui::PopStyleColor(4);
+        ImGui::PopStyleVar(2);
 
         if (changed) {
             m_main_toolbar.update_items_state();

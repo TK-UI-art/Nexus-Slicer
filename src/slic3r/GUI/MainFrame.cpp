@@ -1813,6 +1813,18 @@ bool MainFrame::is_prepare_or_preview_tab() const
 
 void MainFrame::fit_tab_labels()
 {
+    if (m_fit_tab_labels_pending)
+        return;
+    m_fit_tab_labels_pending = true;
+    CallAfter([this]() {
+        m_fit_tab_labels_pending = false;
+        if (!wxGetApp().is_closing())
+            do_fit_tab_labels();
+    });
+}
+
+void MainFrame::do_fit_tab_labels()
+{
     if (!m_tabpanel || !m_print_option_btn) // ignore layout change while slice/print buttons not visible
         return;
 
