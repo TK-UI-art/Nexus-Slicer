@@ -19,6 +19,8 @@ public:
 
     // A tab's sidebar pane: docked left by default, movable to the right or floating, no close button.
     static wxAuiPaneInfo sidebar_pane_info();
+    // The smallest width of the docked sidebar, at which a settings row fits its card.
+    static int sidebar_min_width();
 
     wxAuiFloatingFrame* CreateFloatingFrame(wxWindow* parent, const wxAuiPaneInfo& pane) override;
 };

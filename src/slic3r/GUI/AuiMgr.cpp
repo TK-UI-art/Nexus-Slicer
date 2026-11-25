@@ -13,6 +13,9 @@
 #include <wx/colour.h>
 #include <wx/event.h>
 #include <wx/gdicmn.h>
+#include <wx/settings.h>
+
+#include <algorithm>
 
 namespace Slic3r { namespace GUI {
 
@@ -77,7 +80,17 @@ wxAuiPaneInfo AuiMgr::sidebar_pane_info()
         .CloseButton(false)
         .TopDockable(false)
         .BottomDockable(false)
-        .BestSize(wxSize(39 * wxGetApp().em_unit(), 90 * wxGetApp().em_unit()));
+        .MinSize(wxSize(sidebar_min_width(), -1))
+        .BestSize(wxSize(sidebar_min_width(), 90 * wxGetApp().em_unit()));
+}
+
+int AuiMgr::sidebar_min_width()
+{
+    // Nexus: a settings row takes 34 em (2 em title inset, 20 em label column, 12 em field), and the cards the
+    // settings sit in add their insets and the undo buttons (about 64 DIP) and the page may show a vertical
+    // scroll bar. At OrcaSlicer's 39 em the fields stuck out past the right edge of their card.
+    const int em = wxGetApp().em_unit();
+    return std::max(39 * em, 41 * em + wxSystemSettings::GetMetric(wxSYS_VSCROLL_X));
 }
 
 wxAuiFloatingFrame* AuiMgr::CreateFloatingFrame(wxWindow* parent, const wxAuiPaneInfo& pane)

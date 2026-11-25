@@ -162,8 +162,7 @@ public:
     const wxString  icon;
     const wxString  title;
     bool            m_labels_hidden{false};
-    // Nexus: 19 em, so that the fields fit the sidebar between its card insets (at 20 em they stuck out a few pixels).
-    size_t			label_width = 19 ;// {200};
+    size_t			label_width = 20 ;// {200};
     wxSizer*		sizer {nullptr};
 	OG_CustomCtrl*  custom_ctrl{ nullptr };
 	int				ctrl_horiz_alignment{ wxALIGN_LEFT};

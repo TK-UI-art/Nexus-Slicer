@@ -2794,7 +2794,7 @@ void Sidebar::update_sync_ams_btn_enable(wxUpdateUIEvent &e)
  }
 
 Sidebar::Sidebar(Plater *parent)
-    : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxSize(39 * wxGetApp().em_unit(), -1)), p(new priv(parent))
+    : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxSize(AuiMgr::sidebar_min_width(), -1)), p(new priv(parent))
 {
     Choice::register_dynamic_list("support_filament", &dynamic_physical_filament_list);
     Choice::register_dynamic_list("support_interface_filament", &dynamic_physical_filament_list);
@@ -3758,14 +3758,6 @@ Sidebar::Sidebar(Plater *parent)
     slice_row->Add(p->btn_slice_option_sidebar, 0, wxEXPAND | wxLEFT, FromDIP(6));
     sizer->Add(slice_row, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, FromDIP(NEXUS_CARD_GAP));
     SetSizer(sizer);
-    // The slice buttons cast the cards' shadow (Web-Slicer .go).
-    Bind(wxEVT_PAINT, [this](wxPaintEvent&) {
-        wxPaintDC dc(this);
-        wxGCDC    gdc(dc);
-        for (const Button* btn : {p->btn_slice_sidebar, p->btn_slice_option_sidebar})
-            if (btn->IsShown())
-                nexus_paint_shadow(this, gdc, btn->GetRect(), FromDIP(22));
-    });
 }
 
 Sidebar::~Sidebar() {}
@@ -5630,7 +5622,7 @@ void Sidebar::update_filaments_counter(bool force_layout)
 
 void Sidebar::msw_rescale()
 {
-    SetMinSize(wxSize(39 * wxGetApp().em_unit(), -1));
+    SetMinSize(wxSize(AuiMgr::sidebar_min_width(), -1));
     p->m_panel_printer_title->GetSizer()->SetMinSize(-1, 3 * wxGetApp().em_unit());
     p->m_panel_filament_title->GetSizer()
         ->SetMinSize(-1, 3 * wxGetApp().em_unit());
@@ -8189,6 +8181,11 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
             }
 
             sidebar_layout.is_collapsed = !sidebar.IsShown();
+            // A layout saved by an older version may hold a narrower sidebar, at which the settings fields don't fit.
+            const int min_width = AuiMgr::sidebar_min_width();
+            sidebar.MinSize(min_width, -1);
+            if (sidebar.best_size.GetWidth() < min_width)
+                sidebar.BestSize(min_width, sidebar.best_size.GetHeight());
         }
 
         // Keep tracking the current sidebar size, by storing it using `best_size`, which will be stored
