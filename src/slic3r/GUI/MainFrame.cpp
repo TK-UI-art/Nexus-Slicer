@@ -1514,15 +1514,11 @@ void MainFrame::init_tabpanel() {
 #endif
     m_tabpanel->Hide();
     m_settings_dialog.set_tabpanel(m_tabpanel);
-    // Nexus: fit the tab labels again when the bar or the print button beside it changes size outside of a fit.
-    m_tabpanel->GetBtnsListCtrl()->Bind(wxEVT_SIZE, [this](wxSizeEvent& e) {
+    // Nexus: fit the tab labels again when the room for them changed outside of a fit. A printer change moves the
+    // side tools after its own fit (the print button takes another label), without a size event to go by.
+    Bind(wxEVT_IDLE, [this](wxIdleEvent& e) {
         e.Skip();
-        if (e.GetSize() != m_fit_tab_bar_size)
-            fit_tab_labels();
-    });
-    m_print_btn->Bind(wxEVT_SIZE, [this](wxSizeEvent& e) {
-        e.Skip();
-        if (e.GetSize() != m_fit_print_btn_size)
+        if (!m_fit_tab_labels_pending && tab_labels_room() != m_fit_tab_labels_room)
             fit_tab_labels();
     });
 
@@ -1822,6 +1818,16 @@ bool MainFrame::is_prepare_or_preview_tab() const
     return tab == TAB_ID_PREPARE || tab == TAB_ID_PREVIEW;
 }
 
+wxSize MainFrame::tab_labels_room() const
+{
+    if (!m_tabpanel || !m_print_option_btn)
+        return {};
+    const auto* ctrl = m_tabpanel->GetBtnsListCtrl();
+    // The bar's width and where the side tools start in it (-1 while they are hidden).
+    const int side_tools = m_print_option_btn->IsShown() ? ctrl->ScreenToClient(m_print_option_btn->GetScreenPosition()).x : -1;
+    return {ctrl->GetSize().GetWidth(), side_tools};
+}
+
 void MainFrame::fit_tab_labels()
 {
     if (m_fit_tab_labels_pending)
@@ -1831,10 +1837,7 @@ void MainFrame::fit_tab_labels()
         // Still pending while fitting: the size events the fit itself causes do not ask for another one.
         if (!wxGetApp().is_closing()) {
             do_fit_tab_labels();
-            if (m_tabpanel && m_print_btn) {
-                m_fit_print_btn_size = m_print_btn->GetSize();
-                m_fit_tab_bar_size   = m_tabpanel->GetBtnsListCtrl()->GetSize();
-            }
+            m_fit_tab_labels_room = tab_labels_room();
         }
         m_fit_tab_labels_pending = false;
     });

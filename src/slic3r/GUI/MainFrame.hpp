@@ -499,11 +499,11 @@ public:
     // the bar after a whole change (a printer change swaps the device tab, then relays out the plugin tabs).
     void fit_tab_labels();
     void do_fit_tab_labels();
+    // The tab bar's width and the position of the side tools in it; when it differs from the room at the last fit
+    // (m_fit_tab_labels_room), the labels are fitted again.
+    wxSize tab_labels_room() const;
     bool m_fit_tab_labels_pending{false};
-    // Sizes of the print button and the tab bar when the labels were last fitted: a size event that differs from
-    // them (the button's label changed after a printer change, the bar was resized) fits the labels again.
-    wxSize m_fit_print_btn_size;
-    wxSize m_fit_tab_bar_size;
+    wxSize m_fit_tab_labels_room;
     // True while either of the two tabs backed by m_plater is selected.
     bool is_prepare_or_preview_tab() const;
     PluginPages& plugin_pages() { return *m_plugin_pages; }
