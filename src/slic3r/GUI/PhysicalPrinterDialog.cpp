@@ -427,6 +427,8 @@ void PhysicalPrinterDialog::build_printhost_settings(ConfigOptionsGroup* m_optgr
         cafile_hint.full_width = 1;
         cafile_hint.widget = [ca_file_hint](wxWindow* parent) {
             auto txt = new wxStaticText(parent, wxID_ANY, from_u8(ca_file_hint));
+            // Nexus: wrap the hint to the width of the fields above it, so that it is not cut off.
+            txt->Wrap(50 * wxGetApp().em_unit());
             auto sizer = new wxBoxSizer(wxHORIZONTAL);
             sizer->Add(txt);
             return sizer;
