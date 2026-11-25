@@ -44,10 +44,11 @@ SideButton::SideButton(wxWindow* parent, wxString text, wxString icon, long stly
     border_color.append(NEXUS_ACCENT_RGB, StateColor::Normal);
     border_color.setTakeFocusedAsHovered(false);
 
+    // Nexus: dark text on the accent fill, like the selected tab; white on the light green is hard to read.
     text_color.append(0xACACAC, StateColor::Disabled);
-    text_color.append(0xFEFEFE, StateColor::Pressed);
-    text_color.append(0xFEFEFE, StateColor::Hovered);
-    text_color.append(0xFEFEFE, StateColor::Normal);
+    text_color.append(wxColour(NEXUS_ON_ACCENT), StateColor::Pressed);
+    text_color.append(wxColour(NEXUS_ON_ACCENT), StateColor::Hovered);
+    text_color.append(wxColour(NEXUS_ON_ACCENT), StateColor::Normal);
 
     background_color.append(0x6B6B6B, StateColor::Disabled);
     background_color.append(wxColour(NEXUS_ACCENT_PRESSED), StateColor::Pressed);

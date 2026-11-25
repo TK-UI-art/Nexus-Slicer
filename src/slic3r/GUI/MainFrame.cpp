@@ -1813,11 +1813,21 @@ void MainFrame::fit_tab_labels()
     auto* sizer = ctrl->GetBtnsSizer();
     int   count = sizer->GetItemCount();
 
+    // Nexus: on Prepare and Preview the bar is docked in the Plater (Notebook::DockTabBar), whose layout
+    // MainFrame::Layout() does not redo. The bar keeps its width when only its tabs change size, so it gets no
+    // size event either: lay out its parent and the bar itself before measuring, or the tabs keep their old widths.
+    auto relayout = [this, ctrl]() {
+        m_tabpanel->Refresh();
+        Layout();
+        if (ctrl->GetParent() != m_tabpanel)
+            ctrl->GetParent()->Layout();
+        ctrl->Layout();
+    };
+
     // Restore all
     for (size_t i = 1; i < count; ++i)
         ctrl->SetCompact(i, false);
-    m_tabpanel->Refresh();
-    Layout();
+    relayout();
 
     // Compact (last to first)
     for (size_t i = count - 1; i >= 1; --i) {
@@ -1829,8 +1839,7 @@ void MainFrame::fit_tab_labels()
             left += overflow->GetSize().GetWidth();
         if (right - left - FromDIP(15) > 0) return;
         ctrl->SetCompact(i, true);
-        m_tabpanel->Refresh();
-        Layout();
+        relayout();
     }
 }
 

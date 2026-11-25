@@ -988,11 +988,14 @@ void GCodeViewer::SequentialView::GCodeWindow::render(float top, float bottom, f
         return ret;
     };
 
-    static const ImVec4 LINE_NUMBER_COLOR    = ImGuiWrapper::COL_ORANGE_LIGHT;
-    static const ImVec4 SELECTION_RECT_COLOR = ImGuiWrapper::COL_ORANGE_DARK;
-    static const ImVec4 COMMAND_COLOR        = {0.8f, 0.8f, 0.0f, 1.0f};
-    static const ImVec4 PARAMETERS_COLOR     = { 1.0f, 1.0f, 1.0f, 1.0f };
-    static const ImVec4 COMMENT_COLOR        = { 0.7f, 0.7f, 0.7f, 1.0f };
+    // Nexus: the G-code window is a card like the legend above it: mute line numbers and comments, ink parameters,
+    // accent-text commands and an accent frame around the current line.
+    const bool   is_dark              = wxGetApp().dark_mode();
+    const ImVec4 LINE_NUMBER_COLOR    = is_dark ? ImVec4(142 / 255.f, 144 / 255.f, 148 / 255.f, 1.f) : ImVec4(138 / 255.f, 138 / 255.f, 138 / 255.f, 1.f);
+    const ImVec4 SELECTION_RECT_COLOR = ImVec4(NEXUS_ACCENT_F, 1.0f);
+    const ImVec4 COMMAND_COLOR        = is_dark ? ImVec4(122 / 255.f, 235 / 255.f, 94 / 255.f, 1.f) : ImVec4(39 / 255.f, 138 / 255.f, 26 / 255.f, 1.f);
+    const ImVec4 PARAMETERS_COLOR     = is_dark ? ImVec4(241 / 255.f, 241 / 255.f, 241 / 255.f, 1.f) : ImVec4(16 / 255.f, 16 / 255.f, 16 / 255.f, 1.f);
+    const ImVec4 COMMENT_COLOR        = LINE_NUMBER_COLOR;
 
     if (!wxGetApp().show_gcode_window() || m_filename.empty() || m_lines_ends.empty() || curr_line_id == 0)
         return;
@@ -1065,9 +1068,14 @@ void GCodeViewer::SequentialView::GCodeWindow::render(float top, float bottom, f
     //BBS: GUI refactor: move to right
     imgui.set_next_window_pos(right, top + 6 * m_scale, ImGuiCond_Always, 1.0f, 0.0f); // ORCA add a small gap between legend and code viewer
     ImGui::SetNextWindowSize(ImVec2(required_width, wnd_height), ImGuiCond_Always);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 14.0f * m_scale); // ORCA add window rounding to modernize / match style
-    ImGui::SetNextWindowBgAlpha(0.8f);
+    const float rounding = 14.0f * m_scale;
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, rounding); // ORCA add window rounding to modernize / match style
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1.0f);
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, is_dark ? ImGuiWrapper::COL_WINDOW_BG_DARK : ImGuiWrapper::COL_WINDOW_BG);
+    ImGui::PushStyleColor(ImGuiCol_Border, is_dark ? ImGuiWrapper::COL_CARD_LINE_DARK : ImGuiWrapper::COL_CARD_LINE);
     imgui.begin(std::string("G-code"), ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove);
+    ImGuiWrapper::draw_drop_shadow(ImGui::GetBackgroundDrawList(), ImGui::GetWindowPos(), ImGui::GetWindowPos() + ImGui::GetWindowSize(),
+                                   rounding, m_scale, is_dark);
 
     // center the text in the window by pushing down the first line
     const float f_lines_count = static_cast<float>(lines_count);
@@ -1130,7 +1138,8 @@ void GCodeViewer::SequentialView::GCodeWindow::render(float top, float bottom, f
     }
 
     imgui.end();
-    ImGui::PopStyleVar();
+    ImGui::PopStyleColor(2);
+    ImGui::PopStyleVar(2);
 }
 
 void GCodeViewer::SequentialView::GCodeWindow::stop_mapping_file()

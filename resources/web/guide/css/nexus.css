@@ -1,0 +1,88 @@
+/*----Nexus: the setup wizard and the printer and filament selection dialogs in the Web-Slicer look. Linked last;
+      the rules are prefixed with html so they win over both palettes whatever order dark.css is linked in. The dark
+      values follow the app theme (nexus-dark on <html>, set by globalapi.js).----*/
+:root {
+	--nx-bg     : #E0E0E0;
+	--nx-card   : #F4F4F4;
+	--nx-line   : #B0B0B0;
+	--nx-ink    : #101010;
+	--nx-mute   : #8A8A8A;
+	--nx-accent : #69E84A;
+	--nx-hover  : #FFFFFF;
+	--nx-shadow : 0 0 0 1px var(--nx-line), 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+:root.nexus-dark {
+	--nx-bg     : #18191B;
+	--nx-card   : #2A2B2E;
+	--nx-line   : #55575C;
+	--nx-ink    : #F1F1F1;
+	--nx-mute   : #8E9094;
+	--nx-hover  : #35363A;
+	--nx-shadow : 0 0 0 1px var(--nx-line), 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+/*----Page: grey background, ink title----*/
+html,
+html body                         { background-color: var(--nx-bg); }
+html #Title,
+html #Title div                   { color: var(--nx-ink); }
+html #STip                        { color: var(--nx-mute); }
+html #Title div.TitleUnselected   { color: var(--nx-mute); }
+
+/*----Vendor sections: the sticky banner sits on the page, a neutral rule under it----*/
+html .BlockBanner                 { background-color: var(--nx-bg); border-bottom: 1px solid var(--nx-line); }
+html .BlockBanner a               { color: var(--nx-ink); }
+html .BlockBanner .modelCount     { color: var(--nx-mute); }
+
+/*----Printer and filament tiles are cards; the hovered one gets the accent ring----*/
+html .PrinterArea                 { gap: 10px; padding: 10px 2px; }
+html .PrinterBlock                { background-color: var(--nx-card); border: 0; border-radius: 14px; box-shadow: var(--nx-shadow); }
+html .PrinterBlock:hover          { background-color: var(--nx-card); box-shadow: 0 0 0 2px var(--nx-accent), 0 2px 6px rgba(0, 0, 0, 0.2); }
+html .PImg                        { border-radius: 10px; }
+html .ModelCheckBox               { border-radius: 3px; }
+html .PrinterInfo                 { background: var(--nx-card); border-radius: 14px; }
+html .PrinterInfoMark             { color: var(--nx-ink); }
+
+/*----Small controls are pills----*/
+html .LayoutSelector .TabGroup    { border-radius: 16px; background-color: var(--nx-card); box-shadow: var(--nx-shadow); }
+html .LayoutSelector .TabButton   { border-radius: 14px; }
+html .LayoutSelector .TabButton.selected .icon16 { background: #101010; }
+html .searchTerm                  { border-radius: 17px; }
+html .SidebarBtn                  { border-radius: 17px; }
+html #Sidebar                     { background: var(--nx-card); }
+html #NoticeBody                  { border-radius: 14px; background-color: var(--nx-card); overflow: hidden; }
+html #NoticeBar                   { color: var(--nx-ink); }
+
+/*----Regular buttons and the search and sidebar buttons sit on the grey page as small cards----*/
+html .ButtonStyleRegular,
+html .ButtonStyleAlert,
+html .SidebarBtn,
+html .search:not(:focus-within, [hasvalue="1"]) .searchTerm { background: var(--nx-card); box-shadow: inset 0 0 0 1px var(--nx-line); color: var(--nx-ink); }
+html .ButtonStyleRegular:hover,
+html .SidebarBtn:hover,
+html .search:not(:focus-within, [hasvalue="1"]) .searchTerm:hover { background: var(--nx-hover); }
+html .ButtonStyleAlert:hover      { background: var(--button-bg-alert); color: var(--button-fg-light); box-shadow: none; }
+
+/*----Region page: the list is a card with pill rows, the globe a Nexus icon----*/
+html #EarthIcon img               { content: url(../11/nexus_earth.svg); width: 160px; min-width: 0; }
+html #RegionList                  { border: 0; border-radius: 22px; background: var(--nx-card); box-shadow: var(--nx-shadow); padding: 8px; }
+html .RegionItem                  { border-radius: 20px; padding-left: 0; color: var(--nx-ink); }
+html .RegionItem:hover            { background-color: var(--nx-bg); }
+html .RegionSelected,
+html .RegionSelected:hover        { background-color: var(--nx-accent); color: #101010; }
+
+/*----Filament page: the column browser is one card, divided by thin lines----*/
+html .cbr-browser-container       { border: 0; border-radius: 22px; overflow: hidden; background: var(--nx-card); box-shadow: var(--nx-shadow); }
+html .cbr-column:last-child       { border-top-color: var(--nx-line); }
+html .cbr-column:nth-child(-n+2)  { border-right-color: var(--nx-line); }
+html .cbr-column-title-container  { background: var(--nx-card); border-bottom-color: var(--nx-line); }
+html .cbr-search-bar              { background: var(--nx-card); }
+html .cbr-filter-bar              { background: var(--nx-bg); border-color: var(--nx-bg); border-radius: 15px; }
+html .cbr-content,
+html .cbr-content label,
+html .cbr-search-placeholder      { color: var(--nx-ink); }
+
+/*----Stealth mode page: the explanation is a card, the note mute----*/
+html #FeatureText                 { background: var(--nx-card); border-radius: 22px; box-shadow: var(--nx-shadow); padding: 18px 24px; }
+html #FeatureText .TextS1         { color: var(--nx-ink); }
+html #FeatureText .TextS2         { color: var(--nx-mute); }
