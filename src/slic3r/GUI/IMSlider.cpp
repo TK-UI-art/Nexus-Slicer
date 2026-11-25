@@ -1262,7 +1262,9 @@ bool IMSlider::render(int canvas_width, int canvas_height)
     ImGui::PushStyleVar(ImGuiStyleVar_::ImGuiStyleVar_FramePadding, ImVec2(0.0f, 0.0f));
     ImGui::PushStyleVar(ImGuiStyleVar_::ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
     ImGui::PushStyleColor(ImGuiCol_::ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
-    ImGui::PushStyleColor(ImGuiCol_::ImGuiCol_Text, ImGuiWrapper::COL_ORCA); // ORCA: Use orca color for slider value text
+    // Nexus: the value labels are small cards, so their text uses the ink colour like any other card text.
+    ImGui::PushStyleColor(ImGuiCol_::ImGuiCol_Text, wxGetApp().dark_mode() ? ImVec4(241 / 255.f, 241 / 255.f, 241 / 255.f, 1.f)
+                                                                            : ImVec4(16 / 255.f, 16 / 255.f, 16 / 255.f, 1.f));
 
     int windows_flag = ImGuiWindowFlags_NoTitleBar
                        | ImGuiWindowFlags_NoCollapse
