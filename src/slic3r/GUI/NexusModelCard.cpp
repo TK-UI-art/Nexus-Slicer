@@ -187,6 +187,7 @@ void NexusModelCard::build_content(wxWindow* parent)
     // (the account button) lists all of them and can remove them.
     m_recent_heading = new Label(parent, Label::Body_12, _L("Recent"));
     m_recent_heading->SetForegroundColour(StateColor::darkModeColorFor(wxColour("#6B6B6B")));
+    m_recent_heading->Hide(); // until update_recent() finds recent projects
     content->Add(m_recent_heading, 0, wxLEFT | wxTOP | wxBOTTOM, gap);
     m_recent_grid = new wxGridSizer(3, gap, gap);
     content->Add(m_recent_grid, 0, wxEXPAND | wxLEFT | wxRIGHT, gap);
