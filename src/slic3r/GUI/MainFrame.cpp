@@ -2269,6 +2269,7 @@ const char* print_select_type_key(MainFrame::PrintSelectType type)
     }
     return "";
 }
+} // namespace
 
 // Orca: single source for the print button and print dropdown labels
 wxString print_select_type_label(MainFrame::PrintSelectType type)
@@ -2287,7 +2288,6 @@ wxString print_select_type_label(MainFrame::PrintSelectType type)
     }
     return _L("Print plate");
 }
-} // namespace
 
 std::vector<MainFrame::PrintSelectType> MainFrame::available_print_actions() const
 {
