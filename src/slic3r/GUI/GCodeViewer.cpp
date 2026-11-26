@@ -4664,7 +4664,9 @@ void GCodeViewer::render_legend(float &legend_height, int canvas_width, int canv
     const float max_height = 0.75f * static_cast<float>(cnv_size.get_height());
     const float child_height = 0.3333f * max_height;
     ImGui::SetNextWindowSizeConstraints({ 0.0f, 0.0f }, { -1.0f, max_height });
-    imgui.begin(std::string("Legend"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove);
+    // Nexus: no built-in scrollbar; ImGui puts it against the window edge, over the card's rounded corners and
+    // outline. render_legend_scrollbar() draws the same scrollbar inside the card.
+    imgui.begin(std::string("Legend"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar);
     ImGuiWrapper::draw_drop_shadow(ImGui::GetBackgroundDrawList(), ImGui::GetWindowPos(), ImGui::GetWindowPos() + ImGui::GetWindowSize(),
                                    legend_rounding, m_scale, m_is_dark);
 
@@ -6233,9 +6235,30 @@ void GCodeViewer::render_legend(float &legend_height, int canvas_width, int canv
 
 
     legend_height = ImGui::GetCurrentWindow()->Size.y;
+    render_legend_scrollbar(legend_rounding);
     imgui.end();
     ImGui::PopStyleColor(9);
     ImGui::PopStyleVar(3);
+}
+
+// Nexus: the legend's vertical scrollbar, inside the card: clear of the outline and between the rounded corners.
+void GCodeViewer::render_legend_scrollbar(float rounding) const
+{
+    ImGuiWindow* window = ImGui::GetCurrentWindow();
+    if (window->ScrollMax.y <= 0.0f)
+        return;
+    const float width = 10.0f * m_scale; // ImGui insets the grab by 3 px on each side
+    const float inset = 2.0f * m_scale;
+    const ImRect bb(ImVec2(window->Pos.x + window->Size.x - inset - width, window->Pos.y + rounding),
+                    ImVec2(window->Pos.x + window->Size.x - inset, window->Pos.y + window->Size.y - rounding));
+    ImGui::PushClipRect(window->Rect().Min, window->Rect().Max, false);
+    ImGui::PushStyleColor(ImGuiCol_ScrollbarBg, ImVec4(0.f, 0.f, 0.f, 0.f));
+    ImGui::PushStyleVar(ImGuiStyleVar_ScrollbarRounding, width);
+    ImGui::ScrollbarEx(bb, ImGui::GetWindowScrollbarID(window, ImGuiAxis_Y), ImGuiAxis_Y, &window->Scroll.y,
+                       window->InnerRect.GetHeight(), window->ContentSize.y + window->WindowPadding.y * 2.0f, ImDrawFlags_RoundCornersAll);
+    ImGui::PopStyleVar();
+    ImGui::PopStyleColor();
+    ImGui::PopClipRect();
 }
 
 void GCodeViewer::push_combo_style()

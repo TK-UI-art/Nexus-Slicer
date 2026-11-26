@@ -611,6 +611,7 @@ private:
 
     //BBS: GUI refactor: add canvas size
     void render_legend(float &legend_height, int canvas_width, int canvas_height, int right_margin);
+    void render_legend_scrollbar(float rounding) const;
     void render_legend_color_arr_recommen(float window_padding);
     void render_slider(int canvas_width, int canvas_height);
 };
