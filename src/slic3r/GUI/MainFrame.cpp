@@ -1600,6 +1600,9 @@ void MainFrame::init_tabpanel() {
             WebViewPanel::ensure()->load_url(url);
         });
         m_tabpanel->AddPage(TAB_ID_HOME, m_home_page, "", "tab_home_active");
+        // Nexus: Home has no tab. Its tasks are in the Prepare sidebar's model card, whose account button
+        // and recent list open the page; EVT_LOAD_URL and the Go to Home shortcut still select it.
+        m_tabpanel->GetBtnsListCtrl()->ShowPageButton(m_tabpanel->FindPageByName(TAB_ID_HOME), false);
         m_param_panel = new ParamsPanel(m_tabpanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBK_LEFT | wxTAB_TRAVERSAL);
     }
 

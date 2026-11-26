@@ -211,8 +211,12 @@ void AppConfig::set_defaults()
         if (get("use_inches").empty())
             set("use_inches", "0");
 
-        if (get("default_page").empty())
-            set("default_page", "0");
+        // Nexus: start on Prepare. Home lost its tab (its tasks are in the Prepare sidebar), so a configuration
+        // from before that starts on Prepare once; the Default page preference can still choose Home.
+        if (get("default_page").empty() || get("nexus_home_tabless").empty())
+            set("default_page", "1");
+        if (get("nexus_home_tabless").empty())
+            set("nexus_home_tabless", "1");
     }
     else {
 #ifdef _WIN32

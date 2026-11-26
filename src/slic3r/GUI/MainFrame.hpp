@@ -475,6 +475,7 @@ public:
     void        add_to_recent_projects(const wxString& filename);
     void        get_recent_projects(boost::property_tree::wptree &tree, int images);
     void        open_recent_project(size_t file_id, wxString const & filename);
+    const FileHistory& recent_projects() const { return m_recent_projects; }
     void        remove_recent_project(size_t file_id, wxString const &filename);
 
     void        technology_changed();

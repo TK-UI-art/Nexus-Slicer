@@ -38861,3 +38861,23 @@ msgstr ""
 # AI Translated
 #~ msgid "import SVG failed: could not parse imported svg data."
 #~ msgstr "SVG-Import fehlgeschlagen: Die importierten SVG-Daten konnten nicht analysiert werden."
+
+# AI Translated
+msgid "Account, cloud and recent projects"
+msgstr "Konto, Cloud und zuletzt geöffnete Projekte"
+
+# AI Translated
+msgid "Shapes"
+msgstr "Formen"
+
+# AI Translated
+msgid "Test models"
+msgstr "Testmodelle"
+
+# AI Translated
+msgid "No recent projects"
+msgstr "Keine zuletzt geöffneten Projekte"
+
+# AI Translated
+msgid "Show all recent projects"
+msgstr "Alle zuletzt geöffneten Projekte anzeigen"

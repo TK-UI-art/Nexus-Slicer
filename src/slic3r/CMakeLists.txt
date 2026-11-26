@@ -252,6 +252,8 @@ set(SLIC3R_GUI_SOURCES
     GUI/GUI_Colors.cpp
     GUI/GUI_Colors.hpp
     GUI/NexusCard.hpp
+    GUI/NexusModelCard.cpp
+    GUI/NexusModelCard.hpp
     GUI/NexusFrame.hpp
     GUI/NexusTheme.hpp
     GUI/GUI.cpp

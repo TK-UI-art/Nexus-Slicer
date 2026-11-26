@@ -286,6 +286,15 @@ void ButtonsListCtrl::SetPageText(size_t n, const wxString& strText)
 }
 
 // ORCA
+void ButtonsListCtrl::ShowPageButton(size_t n, bool show)
+{
+    if (n >= m_pageButtons.size())
+        return;
+    m_pageButtons[n]->Show(show);
+    m_sizer->Layout();
+    Refresh();
+}
+
 void ButtonsListCtrl::SetCompact(size_t n, bool compact)
 {
     int em = em_unit(this);

@@ -1,6 +1,7 @@
 #include "Plater.hpp"
 #include "slic3r/GUI/NexusTheme.hpp"
 #include "slic3r/GUI/NexusCard.hpp"
+#include "slic3r/GUI/NexusModelCard.hpp"
 #include "LazyPage.hpp"
 #include "../Utils/NetworkAgent.hpp"
 #include "IPrinterAgent.hpp"
@@ -987,6 +988,7 @@ struct Sidebar::priv
     wxPanel*   m_panel_printer_separator = nullptr;
     // Nexus: windows that make up each sidebar step card; the card is painted behind their union.
     std::vector<std::vector<wxWindow*>> nexus_cards;
+    std::unique_ptr<NexusModelCard> model_card; // Nexus: projects, shapes and test models (the Home page's tasks)
     void nexus_apply_card_colours()
     {
         for (const auto& card : nexus_cards)
@@ -2844,6 +2846,9 @@ Sidebar::Sidebar(Plater *parent)
     p->scrolled->SetDoubleBuffered(true);
 #endif //__WINDOWS__
 
+    // Nexus: the model card comes first, as in the Web-Slicer.
+    p->model_card = std::make_unique<NexusModelCard>(p->scrolled, scrolled_sizer, card_margin);
+
     // add printer
     {
         /***************** 1. create printer title bar    **************/
@@ -3674,6 +3679,7 @@ Sidebar::Sidebar(Plater *parent)
     // Nexus: Web-Slicer step cards. Each card is painted on p->scrolled behind the union of its
     // windows, so the sections keep their parent and their layout code; only margins were added.
     p->nexus_cards = {
+        p->model_card->card_windows(),
         {p->m_panel_printer_title, p->m_panel_printer_separator, p->m_panel_printer_content},
         {p->m_panel_filament_title, p->m_panel_filament_separator, p->m_filament_area_wrapper},
         {p->m_search_bar, p->m_object_list},
@@ -5623,6 +5629,7 @@ void Sidebar::update_filaments_counter(bool force_layout)
 void Sidebar::msw_rescale()
 {
     SetMinSize(wxSize(AuiMgr::sidebar_min_width(), -1));
+    p->model_card->msw_rescale();
     p->m_panel_printer_title->GetSizer()->SetMinSize(-1, 3 * wxGetApp().em_unit());
     p->m_panel_filament_title->GetSizer()
         ->SetMinSize(-1, 3 * wxGetApp().em_unit());
@@ -5732,6 +5739,7 @@ void Sidebar::sys_color_changed()
     SetBackgroundColour(StateColor::darkModeColorFor(wxColour(NEXUS_SIDEBAR_BG)));
     p->scrolled->SetBackgroundColour(StateColor::darkModeColorFor(wxColour(NEXUS_SIDEBAR_BG)));
     p->scrolled->Refresh();
+    p->model_card->sys_color_changed();
 
 #if 0
     for (wxWindow* win : std::vector<wxWindow*>{ this, p->sliced_info->GetStaticBox(), p->object_info->GetStaticBox(), p->btn_reslice, p->btn_export_gcode })
@@ -19810,8 +19818,8 @@ void Plater::reset_with_confirm()
                                                   wxString(SLIC3R_APP_FULL_NAME) + " - " + _L("Delete All"), wxYES_NO | wxCANCEL | wxYES_DEFAULT | wxCENTRE)
                                             .ShowModal() == wxID_YES) {
         reset();
-        // BBS: jump to plater panel
-        wxGetApp().mainframe->select_tab(TAB_ID_HOME);
+        // BBS: jump to plater panel (Nexus: Prepare, as Home has no tab)
+        wxGetApp().mainframe->select_tab(TAB_ID_PREPARE);
     }
 }
 
