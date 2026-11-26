@@ -2,7 +2,6 @@
 
 #include "GUI_App.hpp"
 #include "GUI_Factories.hpp"
-#include "GUI_ObjectList.hpp"
 #include "I18N.hpp"
 #include "MainFrame.hpp"
 #include "NexusCard.hpp"
@@ -22,26 +21,25 @@
 #include <wx/menu.h>
 #include <wx/panel.h>
 #include <wx/utils.h>
-#include <wx/wrapsizer.h>
 
 #include <functional>
 #include <string>
 
 namespace Slic3r { namespace GUI {
 
-// A tile of the model card (Web-Slicer tile): a rounded grey field with an icon above its label, or a
-// text-only pill when it has no icon.
+// A tile of the model card (Web-Slicer tile): a rounded grey field with an icon or picture above its label.
 class NexusTile : public wxWindow
 {
 public:
-    NexusTile(wxWindow* parent, const wxString& label, const std::string& icon, std::function<void(NexusTile*)> on_click)
+    NexusTile(wxWindow* parent, const wxString& label, const std::string& icon, int icon_px, std::function<void(NexusTile*)> on_click)
         : wxWindow(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_NONE | wxFULL_REPAINT_ON_RESIZE)
         , m_label(label)
         , m_icon_name(icon)
+        , m_icon_px(icon_px)
         , m_on_click(std::move(on_click))
     {
         SetBackgroundStyle(wxBG_STYLE_PAINT);
-        SetFont(m_icon_name.empty() ? Label::Body_12 : Label::Body_11);
+        SetFont(Label::Body_11);
         SetToolTip(label);
         msw_rescale();
         Bind(wxEVT_PAINT, &NexusTile::on_paint, this);
@@ -56,20 +54,12 @@ public:
 
     void msw_rescale()
     {
-        if (!m_icon_name.empty())
-            m_icon = ScalableBitmap(this, m_icon_name, ICON_PX);
-        wxClientDC dc(this);
-        dc.SetFont(GetFont());
-        const wxSize text = dc.GetTextExtent(m_label);
-        const wxSize best = m_icon_name.empty() ? wxSize(text.x + FromDIP(24), FromDIP(28))
-                                                : wxSize(FromDIP(64), FromDIP(ICON_PX + 30));
-        SetMinSize(best);
+        m_icon = ScalableBitmap(this, m_icon_name, m_icon_px);
+        SetMinSize(wxSize(FromDIP(64), FromDIP(m_icon_px + 30)));
         Refresh();
     }
 
 private:
-    static constexpr int ICON_PX = 34;
-
     void on_paint(wxPaintEvent&)
     {
         wxAutoBufferedPaintDC dc(this);
@@ -83,16 +73,12 @@ private:
                                       : wxColour(dark ? "#3A3C41" : "#E4E4E4");
         gdc.SetPen(*wxTRANSPARENT_PEN);
         gdc.SetBrush(wxBrush(fill));
-        gdc.DrawRoundedRectangle(rc, m_icon_name.empty() ? rc.height / 2.0 : FromDIP(10));
+        gdc.DrawRoundedRectangle(rc, FromDIP(10));
 
         gdc.SetFont(GetFont());
         gdc.SetTextForeground(dark ? wxColour("#E8E8E8") : wxColour("#262626"));
         wxString     text = wxControl::Ellipsize(m_label, gdc, wxELLIPSIZE_END, rc.width - FromDIP(6));
         const wxSize ts   = gdc.GetTextExtent(text);
-        if (m_icon_name.empty()) {
-            gdc.DrawText(text, (rc.width - ts.x) / 2, (rc.height - ts.y) / 2);
-            return;
-        }
         const wxBitmap& bmp = m_icon.bmp();
         const wxSize    bs  = ScalableBitmap::GetBmpSize(bmp);
         const int       top = (rc.height - bs.y - FromDIP(4) - ts.y) / 2;
@@ -102,6 +88,7 @@ private:
 
     wxString                        m_label;
     std::string                     m_icon_name;
+    int                             m_icon_px;
     ScalableBitmap                  m_icon;
     std::function<void(NexusTile*)> m_on_click;
     bool                            m_hover{false};
@@ -165,8 +152,9 @@ void NexusModelCard::build_content(wxWindow* parent)
         label->SetForegroundColour(StateColor::darkModeColorFor(wxColour("#6B6B6B")));
         content->Add(label, 0, wxLEFT | wxTOP | wxBOTTOM, gap);
     };
-    auto add_tile = [&](wxSizer* row, const wxString& label, const std::string& icon, std::function<void(NexusTile*)> on_click) {
-        auto* tile = new NexusTile(parent, label, icon, std::move(on_click));
+    auto add_tile = [&](wxSizer* row, const wxString& label, const std::string& icon, int icon_px,
+                        std::function<void(NexusTile*)> on_click) {
+        auto* tile = new NexusTile(parent, label, icon, icon_px, std::move(on_click));
         m_tiles.push_back(tile);
         row->Add(tile, 1, wxEXPAND);
         return tile;
@@ -174,42 +162,26 @@ void NexusModelCard::build_content(wxWindow* parent)
 
     // Projects
     auto* projects = new wxGridSizer(4, gap, gap);
-    add_tile(projects, _L("New Project"), "nexus_tile_new", [](NexusTile*) { plater()->new_project(); });
-    add_tile(projects, _L("Open Project"), "nexus_tile_open", [](NexusTile*) { plater()->load_project(); });
-    add_tile(projects, _L("Import Model"), "nexus_tile_import", [](NexusTile*) {
+    add_tile(projects, _L("New Project"), "nexus_tile_new", 34, [](NexusTile*) { plater()->new_project(); });
+    add_tile(projects, _L("Open Project"), "nexus_tile_open", 34, [](NexusTile*) { plater()->load_project(); });
+    add_tile(projects, _L("Import Model"), "nexus_tile_import", 34, [](NexusTile*) {
 #ifdef __APPLE__
         plater()->add_model();
 #else
         plater()->add_file();
 #endif
     });
-    add_tile(projects, _L("Recent"), "nexus_tile_recent", [this](NexusTile* tile) { show_recent_menu(tile); });
+    add_tile(projects, _L("Recent"), "nexus_tile_recent", 34, [this](NexusTile* tile) { show_recent_menu(tile); });
     content->Add(projects, 0, wxEXPAND | wxLEFT | wxRIGHT | wxTOP, gap);
 
-    // Built-in shapes, added as objects at their default size (Add Primitive in the plate's context menu).
-    add_heading(_L("Shapes"));
-    auto* shapes = new wxGridSizer(3, gap, gap);
-    const std::pair<const char*, const char*> shape_list[] = {
-        {L("Cube"), "nexus_shape_cube"}, {L("Cylinder"), "nexus_shape_cylinder"}, {L("Sphere"), "nexus_shape_sphere"},
-        {L("Cone"), "nexus_shape_cone"}, {L("Disc"), "nexus_shape_disc"},         {L("Torus"), "nexus_shape_torus"}};
-    for (const auto& [name, icon] : shape_list) {
-        const std::string type_name = name;
-        add_tile(shapes, _(name), icon, [type_name](NexusTile*) {
-            plater()->deselect_all();
-            wxGetApp().obj_list()->load_shape_object(type_name, false);
-        });
-    }
-    content->Add(shapes, 0, wxEXPAND | wxLEFT | wxRIGHT, gap);
-
-    // Handy test models (Add Handy models in the plate's context menu).
+    // Handy test models (Add Handy models in the plate's context menu), pictured. The built-in shapes stay in
+    // the plate's context menu (Add Primitive).
     add_heading(_L("Test models"));
-    auto* models = new wxWrapSizer(wxHORIZONTAL, 0); // chips keep their width, none stretches to the line end
-    const auto& handy = MenuFactory::handy_models();
-    for (size_t i = 0; i < handy.size(); ++i) {
-        auto* chip = new NexusTile(parent, _(handy[i].label), "", [i](NexusTile*) { MenuFactory::load_handy_model(i); });
-        m_tiles.push_back(chip);
-        models->Add(chip, 0, wxRIGHT | wxBOTTOM, gap);
-    }
+    auto*       models = new wxGridSizer(3, gap, gap);
+    const auto& handy  = MenuFactory::handy_models();
+    for (size_t i = 0; i < handy.size(); ++i)
+        add_tile(models, _(handy[i].label), std::string("nexus_handy_") + handy[i].key, 56,
+                 [i](NexusTile*) { MenuFactory::load_handy_model(i); });
     content->Add(models, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, gap);
 
     parent->SetSizer(content);
