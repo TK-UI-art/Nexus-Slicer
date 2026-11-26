@@ -580,6 +580,12 @@ public:
     // Nexus: the sidebar's Slice button runs the same action as the top-bar slice button.
     bool slice_button_enabled() const;
     void slice_from_sidebar();
+    // Nexus: the sidebar's slice button turns into the print button once the plate is sliced (the top-bar print
+    // button stays as the hidden owner of the print action and its choice of actions).
+    bool print_button_enabled() const;
+    void print_from_sidebar();
+    wxString print_action_label() const;
+    PrintSelectType print_action() const { return m_print_select; }
     // Slice the current plate or all plates. The sidebar slice button offers this choice.
     void set_slice_all(bool all);
     void dock_tab_bar();
@@ -612,6 +618,9 @@ wxDECLARE_EVENT(EVT_CHECK_PRIVACY_SHOW, wxCommandEvent);
 wxDECLARE_EVENT(EVT_SHOW_IP_DIALOG, wxCommandEvent);
 wxDECLARE_EVENT(EVT_UPDATE_MACHINE_LIST, wxCommandEvent);
 wxDECLARE_EVENT(EVT_UPDATE_PRESET_CB, SimpleEvent);
+
+// The label of a print action, as the print button and its choice of actions show it.
+wxString print_select_type_label(MainFrame::PrintSelectType type);
 
 
 

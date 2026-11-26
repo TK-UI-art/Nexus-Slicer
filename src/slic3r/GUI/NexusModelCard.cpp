@@ -116,7 +116,7 @@ NexusModelCard::NexusModelCard(wxWindow* parent, wxBoxSizer* sizer, int card_mar
     m_title->SetCornerRadius(0);
 
     m_icon = new ScalableButton(m_title, wxID_ANY, "nexus_card_model", wxEmptyString, wxDefaultSize, wxDefaultPosition,
-                                wxBU_EXACTFIT | wxNO_BORDER, false, 22);
+                                wxBU_EXACTFIT | wxNO_BORDER, false, NEXUS_CARD_ICON);
     m_title_text = new Label(m_title, _L("Model"), LB_PROPAGATE_MOUSE_EVENT | wxST_ELLIPSIZE_END);
     m_title_text->SetFont(Label::Body_16);
 
@@ -131,15 +131,14 @@ NexusModelCard::NexusModelCard(wxWindow* parent, wxBoxSizer* sizer, int card_mar
     m_help_btn->SetToolTip(_L("Wiki"));
     m_help_btn->Bind(wxEVT_BUTTON, [](wxCommandEvent&) { wxLaunchDefaultBrowser("https://orcaslicer.com/wiki", wxBROWSER_NEW_WINDOW); });
 
-    const int em    = wxGetApp().em_unit();
     auto*     title = new wxBoxSizer(wxHORIZONTAL);
-    title->Add(m_icon, 0, wxALIGN_CENTER | wxLEFT, m_parent->FromDIP(SidebarProps::TitlebarMargin()));
+    title->Add(m_icon, 0, wxALIGN_CENTER | wxLEFT, m_parent->FromDIP(NEXUS_CARD_ICON_INSET));
     title->AddSpacer(m_parent->FromDIP(SidebarProps::ElementSpacing()));
     title->Add(m_title_text, 1, wxALIGN_CENTER | wxRIGHT, m_parent->FromDIP(SidebarProps::WideSpacing()));
     title->Add(m_account_btn, 0, wxALIGN_CENTER | wxRIGHT, m_parent->FromDIP(SidebarProps::WideSpacing()));
     title->Add(m_help_btn, 0, wxALIGN_CENTER);
     title->AddSpacer(m_parent->FromDIP(SidebarProps::TitlebarMargin()));
-    title->SetMinSize(-1, 3 * em);
+    title->SetMinSize(-1, m_parent->FromDIP(NEXUS_CARD_TITLE_H));
     m_title->SetSizer(title);
     m_title->Bind(wxEVT_LEFT_DOWN, [this](wxMouseEvent&) { toggle(); });
     m_title->Bind(wxEVT_LEFT_DCLICK, [this](wxMouseEvent&) { toggle(); });
@@ -256,7 +255,7 @@ std::vector<wxWindow*> NexusModelCard::card_windows() const { return {m_title, m
 
 void NexusModelCard::msw_rescale()
 {
-    m_title->GetSizer()->SetMinSize(-1, 3 * wxGetApp().em_unit());
+    m_title->GetSizer()->SetMinSize(-1, m_parent->FromDIP(NEXUS_CARD_TITLE_H));
     for (ScalableButton* btn : {m_icon, m_account_btn, m_help_btn})
         btn->msw_rescale();
     for (NexusTile* tile : m_tiles)

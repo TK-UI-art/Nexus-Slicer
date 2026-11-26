@@ -7,6 +7,7 @@
 #include "libslic3r/PresetBundle.hpp"
 #include "libslic3r/Preset.hpp"
 #include "ParamsPanel.hpp"
+#include "NexusTheme.hpp"
 #include "Tab.hpp"
 #include "MainFrame.hpp"
 #include "GUI_App.hpp"
@@ -282,7 +283,7 @@ ParamsPanel::ParamsPanel( wxWindow* parent, wxWindowID id, const wxPoint& pos, c
         m_top_panel->SetCornerRadius(0);
 
         m_process_icon = new ScalableButton(m_top_panel, wxID_ANY, "nexus_card_process", wxEmptyString, wxDefaultSize,
-                                            wxDefaultPosition, wxBU_EXACTFIT | wxNO_BORDER, false, 22);
+                                            wxDefaultPosition, wxBU_EXACTFIT | wxNO_BORDER, false, NEXUS_CARD_ICON);
 
         m_title_label = new Label(m_top_panel, _L("Process"));
         m_title_label->SetFont(Label::Body_16); // Nexus: Web-Slicer card title
@@ -446,7 +447,7 @@ void ParamsPanel::create_layout()
 
     if (m_top_panel) {
         m_mode_sizer = new wxBoxSizer( wxHORIZONTAL );
-        m_mode_sizer->Add(m_process_icon, 0, wxALIGN_CENTER | wxLEFT , FromDIP(SidebarProps::TitlebarMargin()));
+        m_mode_sizer->Add(m_process_icon, 0, wxALIGN_CENTER | wxLEFT , FromDIP(NEXUS_CARD_ICON_INSET));
         m_mode_sizer->Add(m_title_label , 0, wxALIGN_CENTER | wxLEFT , FromDIP(SidebarProps::ElementSpacing()));
         m_mode_sizer->Add(m_mode_region , 0, wxALIGN_CENTER | wxLEFT , FromDIP(SidebarProps::WideSpacing()));
         m_mode_sizer->Add(m_tips_arrow  , 0, wxALIGN_CENTER | wxLEFT , FromDIP(SidebarProps::ElementSpacing()));
@@ -458,7 +459,7 @@ void ParamsPanel::create_layout()
         m_mode_sizer->Add(m_compare_btn , 0, wxALIGN_CENTER | wxRIGHT, FromDIP(SidebarProps::TitlebarMargin()));
         //m_mode_sizer->Add( m_search_btn, 0, wxALIGN_CENTER );
         //m_mode_sizer->AddSpacer(16);
-        m_mode_sizer->SetMinSize(-1, FromDIP(30));
+        m_mode_sizer->SetMinSize(-1, FromDIP(NEXUS_CARD_TITLE_H));
         m_top_panel->SetSizer(m_mode_sizer);
         //m_left_sizer->Add( m_top_panel, 0, wxEXPAND );
     }
@@ -733,7 +734,7 @@ void ParamsPanel::msw_rescale()
     if (m_tips_arrow) m_tips_arrow->msw_rescale();
     m_left_sizer->SetMinSize(wxSize(40 * em_unit(this), -1));
     if (m_mode_sizer)
-        m_mode_sizer->SetMinSize(-1, 3 * em_unit(this));
+        m_mode_sizer->SetMinSize(-1, FromDIP(NEXUS_CARD_TITLE_H));
     if (m_mode_region)
         ((SwitchButton* )m_mode_region)->Rescale();
     if (m_mode_icon) m_mode_icon->msw_rescale();

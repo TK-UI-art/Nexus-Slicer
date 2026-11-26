@@ -1476,7 +1476,6 @@ void MainFrame::show_option(bool show)
             m_print_btn->Show();
             m_slice_option_btn->Show();
             m_print_option_btn->Show();
-            m_print_btn->GetParent()->Show();
             Layout();
             fit_tab_labels();
         }
@@ -1827,7 +1826,7 @@ wxSize MainFrame::tab_labels_room() const
         return {};
     const auto* ctrl = m_tabpanel->GetBtnsListCtrl();
     // The bar's width and where the side tools start in it (-1 while they are hidden).
-    const int side_tools = m_print_option_btn->IsShown() ? ctrl->ScreenToClient(m_print_option_btn->GetScreenPosition()).x : -1;
+    const int side_tools = m_print_option_btn->IsShownOnScreen() ? ctrl->ScreenToClient(m_print_option_btn->GetScreenPosition()).x : -1;
     return {ctrl->GetSize().GetWidth(), side_tools};
 }
 
@@ -1875,7 +1874,7 @@ void MainFrame::do_fit_tab_labels()
     for (size_t i = count - 1; i >= 1; --i) {
         // Up to the side tools, or to the bar's right edge on pages without them (show_option() hides their panel,
         // which leaves the button at a stale position).
-        int right = m_print_option_btn->IsShown() ? ScreenToClient(m_print_option_btn->ClientToScreen({})).x :
+        int right = m_print_option_btn->IsShownOnScreen() ? ScreenToClient(m_print_option_btn->ClientToScreen({})).x :
                                                      ScreenToClient(ctrl->ClientToScreen({ctrl->GetClientSize().GetWidth(), 0})).x;
         // The tab buttons may be centred, so measure up to their right edge
         int left  = ScreenToClient(ctrl->ClientToScreen(sizer->GetPosition())).x + sizer->GetSize().GetWidth();
@@ -2416,6 +2415,8 @@ wxBoxSizer* MainFrame::create_side_tools()
     // Nexus: slicing is started from the sidebar slice button (Web-Slicer layout), which offers the
     // plate/all choice itself. The top-bar slice button stays as the hidden owner of that action.
     slice_panel->Hide();
+    // Nexus: so is printing — the sidebar's slice button turns into the print button once the plate is sliced.
+    print_panel->Hide();
     sizer->Add(slice_panel);
     sizer->Add(print_panel);
     sizer->Add(FromDIP(19), 0, 0, 0, 0);
@@ -2794,6 +2795,19 @@ void MainFrame::slice_from_sidebar()
     wxCommandEvent evt(wxEVT_BUTTON, m_slice_btn->GetId());
     evt.SetEventObject(m_slice_btn);
     m_slice_btn->GetEventHandler()->ProcessEvent(evt);
+}
+
+bool MainFrame::print_button_enabled() const { return m_print_btn && m_print_btn->IsEnabled(); }
+
+wxString MainFrame::print_action_label() const { return print_select_type_label(m_print_select); }
+
+void MainFrame::print_from_sidebar()
+{
+    if (!print_button_enabled())
+        return;
+    wxCommandEvent evt(wxEVT_BUTTON, m_print_btn->GetId());
+    evt.SetEventObject(m_print_btn);
+    m_print_btn->GetEventHandler()->ProcessEvent(evt);
 }
 
 void MainFrame::update_slice_print_status(SlicePrintEventType event, bool can_slice, bool can_print)

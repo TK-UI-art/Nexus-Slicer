@@ -997,6 +997,8 @@ struct Sidebar::priv
     }
     Button*    btn_slice_sidebar = nullptr;
     Button*    btn_slice_option_sidebar = nullptr;
+    bool       sidebar_button_prints = false; // Nexus: the slice button currently runs the print action
+    wxString   sidebar_button_label;
     ScalableButton* m_printer_icon = nullptr;
     ScalableButton* m_printer_connect = nullptr;
     ScalableButton* m_printer_bbl_sync = nullptr;
@@ -2859,7 +2861,7 @@ Sidebar::Sidebar(Plater *parent)
         p->m_panel_printer_title->SetCornerRadius(0);
 
         p->m_printer_icon = new ScalableButton(p->m_panel_printer_title, wxID_ANY, "nexus_card_printer", wxEmptyString, wxDefaultSize,
-                                               wxDefaultPosition, wxBU_EXACTFIT | wxNO_BORDER, false, 22);
+                                               wxDefaultPosition, wxBU_EXACTFIT | wxNO_BORDER, false, NEXUS_CARD_ICON);
         p->m_text_printer_settings = new Label(p->m_panel_printer_title, _L("Printer"), LB_PROPAGATE_MOUSE_EVENT | wxST_ELLIPSIZE_END);
         p->m_text_printer_settings->SetFont(Label::Body_16); // Nexus: Web-Slicer card title
 
@@ -2892,7 +2894,7 @@ Sidebar::Sidebar(Plater *parent)
             });
 
         wxBoxSizer* h_sizer_title = new wxBoxSizer(wxHORIZONTAL);
-        h_sizer_title->Add(p->m_printer_icon, 0, wxALIGN_CENTRE | wxLEFT, FromDIP(SidebarProps::TitlebarMargin()));
+        h_sizer_title->Add(p->m_printer_icon, 0, wxALIGN_CENTRE | wxLEFT, FromDIP(NEXUS_CARD_ICON_INSET));
         h_sizer_title->AddSpacer(FromDIP(SidebarProps::ElementSpacing()));
         h_sizer_title->Add(p->m_text_printer_settings, 1, wxALIGN_CENTER | wxRIGHT, FromDIP(SidebarProps::WideSpacing()));
         //h_sizer_title->AddStretchSpacer();
@@ -2900,7 +2902,7 @@ Sidebar::Sidebar(Plater *parent)
         h_sizer_title->Add(p->m_printer_bbl_sync, 0, wxALIGN_CENTER | wxRIGHT, FromDIP(SidebarProps::WideSpacing())); // used larger margin to prevent accidental clicks
         h_sizer_title->Add(p->m_printer_setting, 0, wxALIGN_CENTER);
         h_sizer_title->AddSpacer(FromDIP(SidebarProps::TitlebarMargin()));
-        h_sizer_title->SetMinSize(-1, 3 * em);
+        h_sizer_title->SetMinSize(-1, FromDIP(NEXUS_CARD_TITLE_H));
 
         p->m_panel_printer_title->SetSizer(h_sizer_title);
         p->m_panel_printer_title->Layout();
@@ -3323,12 +3325,12 @@ Sidebar::Sidebar(Plater *parent)
     wxBoxSizer* bSizer39;
     bSizer39 = new wxBoxSizer( wxHORIZONTAL );
     p->m_filament_icon = new ScalableButton(p->m_panel_filament_title, wxID_ANY, "nexus_card_filament", wxEmptyString, wxDefaultSize,
-                                            wxDefaultPosition, wxBU_EXACTFIT | wxNO_BORDER, false, 22);
+                                            wxDefaultPosition, wxBU_EXACTFIT | wxNO_BORDER, false, NEXUS_CARD_ICON);
     p->m_staticText_filament_settings = new Label(p->m_panel_filament_title, _L("Project Filaments"), LB_PROPAGATE_MOUSE_EVENT);
     p->m_staticText_filament_settings->SetFont(Label::Body_16); // Nexus: Web-Slicer card title
-    bSizer39->Add(p->m_filament_icon, 0, wxALIGN_CENTER | wxLEFT, FromDIP(SidebarProps::TitlebarMargin()));
+    bSizer39->Add(p->m_filament_icon, 0, wxALIGN_CENTER | wxLEFT, FromDIP(NEXUS_CARD_ICON_INSET));
     bSizer39->Add(p->m_staticText_filament_settings, 0, wxALIGN_CENTER | wxLEFT | wxRIGHT, FromDIP(SidebarProps::ElementSpacing()));
-    bSizer39->SetMinSize(-1, FromDIP(30));
+    bSizer39->SetMinSize(-1, FromDIP(NEXUS_CARD_TITLE_H));
 
     p->m_staticText_filament_count = new Label(p->m_panel_filament_title, "(0)", LB_PROPAGATE_MOUSE_EVENT);
     bSizer39->Add(p->m_staticText_filament_count, 0, wxALIGN_CENTER );
@@ -3712,8 +3714,9 @@ Sidebar::Sidebar(Plater *parent)
     auto *sizer = new wxBoxSizer(wxVERTICAL);
     sizer->Add(p->scrolled, 1, wxEXPAND);
 
-    // Nexus: Slice button at the foot of the sidebar (Web-Slicer "Slice Plate"). It runs the top-bar
-    // slice button's action and mirrors its enabled state.
+    // Nexus: Slice button at the foot of the sidebar (Web-Slicer "Slice Plate"). It runs the top-bar slice
+    // button's action and mirrors its enabled state; once the plate is sliced (nothing left to slice) it is the
+    // print button, running the top-bar print button's chosen action (print, send or export).
     SetBackgroundColour(StateColor::darkModeColorFor(wxColour(NEXUS_SIDEBAR_BG)));
     p->btn_slice_sidebar = new Button(this, _L("Slice plate"));
     p->btn_slice_sidebar->SetStyle(ButtonStyle::Confirm, ButtonType::Expanded);
@@ -3727,20 +3730,36 @@ Sidebar::Sidebar(Plater *parent)
                               std::make_pair(wxColour(NEXUS_ACCENT), (int) StateColor::Normal));
     p->btn_slice_sidebar->SetBackgroundColor(slice_bg);
     p->btn_slice_sidebar->SetBorderColor(slice_bg);
-    p->btn_slice_sidebar->Bind(wxEVT_BUTTON, [](wxCommandEvent&) {
-        if (MainFrame* mainframe = wxGetApp().mainframe)
+    p->btn_slice_sidebar->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) {
+        MainFrame* mainframe = wxGetApp().mainframe;
+        if (!mainframe)
+            return;
+        if (p->sidebar_button_prints)
+            mainframe->print_from_sidebar();
+        else
             mainframe->slice_from_sidebar();
     });
-    p->btn_slice_sidebar->Bind(wxEVT_UPDATE_UI, [](wxUpdateUIEvent& e) {
-        e.Enable(wxGetApp().mainframe && wxGetApp().mainframe->slice_button_enabled());
+    p->btn_slice_sidebar->Bind(wxEVT_UPDATE_UI, [this](wxUpdateUIEvent& e) {
+        MainFrame* mainframe = wxGetApp().mainframe;
+        const bool slice = mainframe && mainframe->slice_button_enabled();
+        const bool print = !slice && mainframe && mainframe->print_button_enabled();
+        p->sidebar_button_prints = print;
+        e.Enable(slice || print);
+        const wxString label = print ? mainframe->print_action_label() :
+                               mainframe && mainframe->slice_all_selected() ? _L("Slice all") : _L("Slice plate");
+        if (label != p->sidebar_button_label) {
+            p->sidebar_button_label = label;
+            p->btn_slice_sidebar->SetLabel(label);
+            Layout();
+        }
     });
-    // Choice between slicing the current plate and all plates (the former top-bar dropdown)
+    // Slicing the current plate or all plates, and the print or export action (the former top-bar dropdowns)
     p->btn_slice_option_sidebar = new Button(this, "", "nexus_slice_dropdown", 0, 14);
     p->btn_slice_option_sidebar->SetBackgroundColor(slice_bg);
     p->btn_slice_option_sidebar->SetBorderColor(slice_bg);
     p->btn_slice_option_sidebar->SetMinSize(wxSize(FromDIP(44), FromDIP(44)));
     p->btn_slice_option_sidebar->SetCornerRadius(FromDIP(22));
-    p->btn_slice_option_sidebar->SetToolTip(_L("Choose whether to slice the current plate or all plates"));
+    p->btn_slice_option_sidebar->SetToolTip(_L("Choose what to slice and how to print or export"));
     p->btn_slice_option_sidebar->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) {
         MainFrame* mainframe = wxGetApp().mainframe;
         if (!mainframe)
@@ -3749,13 +3768,17 @@ Sidebar::Sidebar(Plater *parent)
         wxMenuItem* plate = menu.AppendRadioItem(wxID_ANY, _L("Slice plate"));
         wxMenuItem* all   = menu.AppendRadioItem(wxID_ANY, _L("Slice all"));
         (mainframe->slice_all_selected() ? all : plate)->Check();
-        auto select = [this, mainframe](bool slice_all) {
-            mainframe->set_slice_all(slice_all);
-            p->btn_slice_sidebar->SetLabel(slice_all ? _L("Slice all") : _L("Slice plate"));
-            Layout();
-        };
-        menu.Bind(wxEVT_MENU, [select](wxCommandEvent&) { select(false); }, plate->GetId());
-        menu.Bind(wxEVT_MENU, [select](wxCommandEvent&) { select(true); }, all->GetId());
+        menu.Bind(wxEVT_MENU, [mainframe](wxCommandEvent&) { mainframe->set_slice_all(false); }, plate->GetId());
+        menu.Bind(wxEVT_MENU, [mainframe](wxCommandEvent&) { mainframe->set_slice_all(true); }, all->GetId());
+        // The print and export actions of the former top-bar print button; the chosen one is what the button
+        // does once the plate is sliced.
+        menu.AppendSeparator();
+        for (MainFrame::PrintSelectType type : mainframe->available_print_actions()) {
+            wxMenuItem* item = menu.AppendRadioItem(wxID_ANY, print_select_type_label(type));
+            if (type == mainframe->print_action())
+                item->Check();
+            menu.Bind(wxEVT_MENU, [mainframe, type](wxCommandEvent&) { mainframe->select_print_action(type); }, item->GetId());
+        }
         p->btn_slice_option_sidebar->PopupMenu(&menu, 0, p->btn_slice_option_sidebar->GetSize().y);
     });
 
@@ -5630,9 +5653,8 @@ void Sidebar::msw_rescale()
 {
     SetMinSize(wxSize(AuiMgr::sidebar_min_width(), -1));
     p->model_card->msw_rescale();
-    p->m_panel_printer_title->GetSizer()->SetMinSize(-1, 3 * wxGetApp().em_unit());
-    p->m_panel_filament_title->GetSizer()
-        ->SetMinSize(-1, 3 * wxGetApp().em_unit());
+    p->m_panel_printer_title->GetSizer()->SetMinSize(-1, FromDIP(NEXUS_CARD_TITLE_H));
+    p->m_panel_filament_title->GetSizer()->SetMinSize(-1, FromDIP(NEXUS_CARD_TITLE_H));
     p->m_printer_icon->msw_rescale();
     p->m_printer_connect->msw_rescale();
     p->m_printer_bbl_sync->msw_rescale();

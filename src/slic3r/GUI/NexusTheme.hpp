@@ -76,6 +76,11 @@
 #define NEXUS_CARD_PAD          8  // DIP, inset of the card content from the card edge: at most a third of the
                                    // radius, or the square corners of the content stick out of the rounding
 #define NEXUS_CARD_GAP          8  // DIP, sidebar background visible around and between cards
+// Card title icon (the green dot): centred on the centre of the card's corner rounding, so that it sits
+// concentric with the corner. Title height and left inset follow from the radius, pad and icon size.
+#define NEXUS_CARD_ICON         28 // DIP
+#define NEXUS_CARD_TITLE_H      (2 * (NEXUS_CARD_RADIUS - NEXUS_CARD_PAD))                   // DIP
+#define NEXUS_CARD_ICON_INSET   (NEXUS_CARD_RADIUS - NEXUS_CARD_PAD - NEXUS_CARD_ICON / 2)   // DIP
 
 // Settings group frames (Web-Slicer fieldset): a rounded NEXUS_CARD_LINE outline around each group of a
 // settings page, the group title set into its top edge. DIP.
