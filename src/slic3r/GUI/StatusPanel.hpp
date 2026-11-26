@@ -448,7 +448,7 @@ protected:
 
     /* title panel */
     wxPanel *       media_ctrl_panel;
-    wxPanel *       m_panel_monitoring_title;
+    wxPanel *       m_panel_monitoring_title{nullptr};
     wxPanel *       m_panel_printing_title;
     wxPanel *       m_panel_control_title;
 
@@ -470,7 +470,7 @@ protected:
     wxStaticBitmap* m_camera_switch_button;
 
 
-    wxMediaCtrl3 *  m_media_ctrl;
+    wxMediaCtrl3 *  m_media_ctrl{nullptr};
     MediaPlayCtrl * m_media_play_ctrl{nullptr};
 
     Label *         m_staticText_printing;
@@ -577,12 +577,12 @@ protected:
     Button*         m_calibration_btn;
     StepIndicator*  m_calibration_flow;
 
-    wxPanel *       m_machine_ctrl_panel;
+    wxPanel *       m_machine_ctrl_panel{nullptr};
     void            bind_nexus_cards();
     void            track_nexus_card(wxWindow* w);
     wxPanel *       m_scale_panel;
     wxStaticBitmap* m_img_filament_loading;
-    PrintingTaskPanel *       m_project_task_panel;
+    PrintingTaskPanel *       m_project_task_panel{nullptr};
 
     FilamentLoad* m_filament_step;
     wxStaticBitmap *m_filament_load_img;

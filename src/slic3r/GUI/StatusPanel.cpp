@@ -1415,6 +1415,10 @@ StatusBasePanel::StatusBasePanel(wxWindow *parent, wxWindowID id, const wxPoint 
     add_build_step([this, bSizer_left] {
         auto m_monitoring_sizer = create_monitoring_page();
         bSizer_left->Add(m_monitoring_sizer, 1, wxEXPAND | wxALL, 0);
+        // Nexus: the camera card's windows exist only from this build step on.
+        for (wxWindow* w : {static_cast<wxWindow*>(m_panel_monitoring_title), static_cast<wxWindow*>(m_media_ctrl),
+                            static_cast<wxWindow*>(m_custom_camera_view), static_cast<wxWindow*>(m_media_play_ctrl)})
+            track_nexus_card(w);
 
         auto m_panel_separotor1 = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL);
         m_panel_separotor1->SetBackgroundColour(STATUS_PAGE_BG);
@@ -1493,10 +1497,8 @@ void StatusBasePanel::bind_nexus_cards()
                 {m_machine_ctrl_panel}};
     };
     Bind(wxEVT_SIZE, [this](wxSizeEvent& e) { Refresh(); e.Skip(); });
-    for (wxWindow* w : {static_cast<wxWindow*>(m_panel_monitoring_title), static_cast<wxWindow*>(m_media_ctrl),
-                        static_cast<wxWindow*>(m_custom_camera_view), static_cast<wxWindow*>(m_media_play_ctrl),
-                        static_cast<wxWindow*>(m_machine_ctrl_panel)})
-        track_nexus_card(w);
+    // The camera and print progress cards are built in later build steps, which track their windows.
+    track_nexus_card(m_machine_ctrl_panel);
     Bind(wxEVT_PAINT, [this, card_windows](wxPaintEvent&) {
         wxPaintDC dc(this);
         nexus_paint_cards(this, dc, card_windows());
