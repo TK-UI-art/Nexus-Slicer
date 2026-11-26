@@ -585,7 +585,7 @@ public:
     bool print_button_enabled() const;
     void print_from_sidebar();
     wxString print_action_label() const;
-    PrintSelectType print_action() const { return m_print_select; }
+    PrintSelectType print_action() const { return PrintSelectType(m_print_select); }
     // Slice the current plate or all plates. The sidebar slice button offers this choice.
     void set_slice_all(bool all);
     void dock_tab_bar();
