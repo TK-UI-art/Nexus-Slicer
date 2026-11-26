@@ -14,25 +14,32 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - label: nexus
-            os: macos-15-intel
-            run_id: 45741868774
-          - label: upstream
-            os: macos-15-intel
-            run_id: 45747388022
-          - label: nexus
-            os: macos-15
-            run_id: 45741868774
+        os: [macos-15-intel, macos-15]
+        config: [fresh, configured]
+        dark: [light, dark]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/mactest
       - uses: actions/download-artifact@v4
         with:
           name: OrcaSlicer_Mac_universal_V2.6.0-dev
-          run-id: ${{ matrix.run_id }}
+          run-id: 45741868774
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: art
+      - name: Prepare
+        shell: bash
+        run: |
+          if [ "${{ matrix.config }}" = configured ]; then
+            d="$HOME/Library/Application Support/OrcaSlicer"; mkdir -p "$d"
+            tar xzf .github/mactest/config.tgz -C "$d"; ls "$d"
+          fi
+          if [ "${{ matrix.dark }}" = dark ]; then
+            osascript -e 'tell application "System Events" to tell appearance preferences to set dark mode to true' || defaults write -g AppleInterfaceStyle Dark
+          fi
+          defaults read -g AppleInterfaceStyle || echo light
       - name: Launch
         shell: bash
         run: |
@@ -66,9 +73,10 @@ jobs:
           cp ~/Library/Logs/DiagnosticReports/*Orca* out/ 2>/dev/null || true
           ls -la ~/Library/Logs/DiagnosticReports/ | tail
           cp -R "$HOME/Library/Application Support/OrcaSlicer/log" out/orca_log 2>/dev/null || true
+          for f in out/orca_log/*; do echo "== $f"; tail -40 "$f"; done
           for f in out/*.ips; do [ -f "$f" ] && head -c 20000 "$f"; done
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: launch-${{ matrix.label }}-${{ matrix.os }}
+          name: launch-${{ matrix.os }}-${{ matrix.config }}-${{ matrix.dark }}
           path: out
