@@ -18,10 +18,11 @@
 #include <wx/dcbuffer.h>
 #include <wx/dcgraph.h>
 #include <wx/filename.h>
-#include <wx/menu.h>
+#include <wx/mstream.h>
 #include <wx/panel.h>
 #include <wx/utils.h>
 
+#include <algorithm>
 #include <functional>
 #include <string>
 
@@ -31,11 +32,13 @@ namespace Slic3r { namespace GUI {
 class NexusTile : public wxWindow
 {
 public:
-    NexusTile(wxWindow* parent, const wxString& label, const std::string& icon, int icon_px, std::function<void(NexusTile*)> on_click)
+    NexusTile(wxWindow* parent, const wxString& label, const std::string& icon, int icon_px, std::function<void(NexusTile*)> on_click,
+              const wxImage& picture = wxImage())
         : wxWindow(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_NONE | wxFULL_REPAINT_ON_RESIZE)
         , m_label(label)
         , m_icon_name(icon)
         , m_icon_px(icon_px)
+        , m_picture(picture)
         , m_on_click(std::move(on_click))
     {
         SetBackgroundStyle(wxBG_STYLE_PAINT);
@@ -52,9 +55,20 @@ public:
         SetCursor(wxCursor(wxCURSOR_HAND));
     }
 
+    // A tile showing a picture (a project thumbnail) instead of an icon resource.
+    NexusTile(wxWindow* parent, const wxString& label, const wxImage& picture, int icon_px, std::function<void(NexusTile*)> on_click)
+        : NexusTile(parent, label, std::string(), icon_px, std::move(on_click), picture)
+    {}
+
     void msw_rescale()
     {
-        m_icon = ScalableBitmap(this, m_icon_name, m_icon_px);
+        if (m_picture.IsOk()) {
+            const int    px = FromDIP(m_icon_px);
+            const double k  = std::min(double(px) / m_picture.GetWidth(), double(px) / m_picture.GetHeight());
+            m_icon_bmp      = wxBitmap(m_picture.Scale(std::max(1, int(m_picture.GetWidth() * k)), std::max(1, int(m_picture.GetHeight() * k)),
+                                                       wxIMAGE_QUALITY_HIGH));
+        } else
+            m_icon_bmp = ScalableBitmap(this, m_icon_name, m_icon_px).bmp();
         SetMinSize(wxSize(FromDIP(64), FromDIP(m_icon_px + 30)));
         Refresh();
     }
@@ -79,7 +93,7 @@ private:
         gdc.SetTextForeground(dark ? wxColour("#E8E8E8") : wxColour("#262626"));
         wxString     text = wxControl::Ellipsize(m_label, gdc, wxELLIPSIZE_END, rc.width - FromDIP(6));
         const wxSize ts   = gdc.GetTextExtent(text);
-        const wxBitmap& bmp = m_icon.bmp();
+        const wxBitmap& bmp = m_icon_bmp;
         const wxSize    bs  = ScalableBitmap::GetBmpSize(bmp);
         const int       top = (rc.height - bs.y - FromDIP(4) - ts.y) / 2;
         gdc.DrawBitmap(bmp, (rc.width - bs.x) / 2, top, true);
@@ -89,7 +103,8 @@ private:
     wxString                        m_label;
     std::string                     m_icon_name;
     int                             m_icon_px;
-    ScalableBitmap                  m_icon;
+    wxImage                         m_picture;
+    wxBitmap                        m_icon_bmp;
     std::function<void(NexusTile*)> m_on_click;
     bool                            m_hover{false};
 };
@@ -161,7 +176,7 @@ void NexusModelCard::build_content(wxWindow* parent)
     };
 
     // Projects
-    auto* projects = new wxGridSizer(4, gap, gap);
+    auto* projects = new wxGridSizer(3, gap, gap);
     add_tile(projects, _L("New Project"), "nexus_tile_new", 34, [](NexusTile*) { plater()->new_project(); });
     add_tile(projects, _L("Open Project"), "nexus_tile_open", 34, [](NexusTile*) { plater()->load_project(); });
     add_tile(projects, _L("Import Model"), "nexus_tile_import", 34, [](NexusTile*) {
@@ -171,8 +186,20 @@ void NexusModelCard::build_content(wxWindow* parent)
         plater()->add_file();
 #endif
     });
-    add_tile(projects, _L("Recent"), "nexus_tile_recent", 34, [this](NexusTile* tile) { show_recent_menu(tile); });
     content->Add(projects, 0, wxEXPAND | wxLEFT | wxRIGHT | wxTOP, gap);
+
+    // The latest recent projects, pictured by their thumbnails; refreshed when the list changes. The Home page
+    // (the account button) lists all of them and can remove them.
+    m_recent_heading = new Label(parent, Label::Body_12, _L("Recent"));
+    m_recent_heading->SetForegroundColour(StateColor::darkModeColorFor(wxColour("#6B6B6B")));
+    content->Add(m_recent_heading, 0, wxLEFT | wxTOP | wxBOTTOM, gap);
+    m_recent_grid = new wxGridSizer(3, gap, gap);
+    content->Add(m_recent_grid, 0, wxEXPAND | wxLEFT | wxRIGHT, gap);
+    update_recent();
+    parent->Bind(wxEVT_IDLE, [this](wxIdleEvent& e) {
+        e.Skip();
+        update_recent();
+    });
 
     // Handy test models (Add Handy models in the plate's context menu), pictured. The built-in shapes stay in
     // the plate's context menu (Add Primitive).
@@ -187,31 +214,47 @@ void NexusModelCard::build_content(wxWindow* parent)
     parent->SetSizer(content);
 }
 
-void NexusModelCard::show_recent_menu(wxWindow* anchor)
+void NexusModelCard::update_recent()
 {
+    static constexpr size_t MAX_RECENT = 6;
     MainFrame* frame = wxGetApp().mainframe;
-    wxMenu     menu;
-    const auto&    history = frame->recent_projects();
-    for (size_t i = 0; i < history.GetCount() && i < 12; ++i) {
-        const wxString path = history.GetHistoryFile(i);
-        menu.Append(wxID_FILE1 + int(i), wxFileName(path).GetFullName(), path);
-    }
-    if (history.GetCount() == 0) {
-        menu.Append(wxID_ANY, _L("No recent projects"))->Enable(false);
-    }
-    menu.AppendSeparator();
-    // The Home page lists them with previews and can remove them from the list.
-    menu.Append(wxID_HIGHEST + 1, _L("Show all recent projects"));
+    if (frame == nullptr)
+        return;
+    const auto&           history = frame->recent_projects();
+    std::vector<wxString> files;
+    for (size_t i = 0; i < history.GetCount() && files.size() < MAX_RECENT; ++i)
+        files.push_back(history.GetHistoryFile(i));
+    if (files == m_recent_files && m_recent_thumbs == (history.GetCount() > 0 && !history.GetThumbnail(0).empty()))
+        return;
+    m_recent_files  = files;
+    m_recent_thumbs = history.GetCount() > 0 && !history.GetThumbnail(0).empty(); // thumbnails load after startup
 
-    menu.Bind(wxEVT_MENU, [frame](wxCommandEvent& evt) {
-        if (evt.GetId() == wxID_HIGHEST + 1) {
-            frame->select_tab(TAB_ID_HOME);
-            return;
+    for (NexusTile* tile : m_recent_tiles)
+        m_tiles.erase(std::remove(m_tiles.begin(), m_tiles.end(), tile), m_tiles.end());
+    m_recent_tiles.clear();
+    m_recent_grid->Clear(true);
+
+    for (size_t i = 0; i < files.size(); ++i) {
+        const std::string& png = history.GetThumbnail(i);
+        wxImage            picture;
+        if (!png.empty()) {
+            wxMemoryInputStream stream(png.data(), png.size());
+            picture.LoadFile(stream, wxBITMAP_TYPE_PNG);
         }
-        const size_t file_id = size_t(evt.GetId() - wxID_FILE1);
-        frame->open_recent_project(file_id, frame->recent_projects().GetHistoryFile(file_id));
-    });
-    anchor->PopupMenu(&menu, 0, anchor->GetSize().y);
+        const wxString path = files[i];
+        auto on_click = [frame, i, path](NexusTile*) { frame->open_recent_project(i, path); };
+        auto* tile = picture.IsOk() ? new NexusTile(m_content, wxFileName(path).GetName(), picture, 56, on_click)
+                                    : new NexusTile(m_content, wxFileName(path).GetName(), "nexus_tile_open", 56, on_click);
+        tile->SetToolTip(path);
+        m_recent_grid->Add(tile, 1, wxEXPAND);
+        m_recent_tiles.push_back(tile);
+        m_tiles.push_back(tile);
+    }
+    m_recent_heading->Show(!files.empty());
+    m_content->Layout();
+    m_sizer->Layout();
+    m_parent->Layout();
+    m_parent->Refresh();
 }
 
 void NexusModelCard::toggle()

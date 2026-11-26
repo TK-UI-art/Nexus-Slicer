@@ -289,6 +289,8 @@ class MainFrame : public DPIFrame
     {
         FileHistory(int max) : wxFileHistory(max) {}
         std::wstring GetThumbnailUrl(int index) const;
+        // PNG data of a recent 3mf's thumbnail, empty when it has none.
+        const std::string& GetThumbnail(size_t index) const { static const std::string none; return index < m_thumbnails.size() ? m_thumbnails[index] : none; }
         bool        GetPublished(int index) const;
 
         virtual void AddFileToHistory(const wxString &file);

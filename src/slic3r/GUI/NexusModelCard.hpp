@@ -3,9 +3,12 @@
 #include <wx/sizer.h>
 #include <wx/window.h>
 
+#include <wx/string.h>
+
 #include <vector>
 
 class wxPanel;
+class wxGridSizer;
 class ScalableButton;
 class StaticBox;
 class Label;
@@ -15,9 +18,9 @@ namespace Slic3r { namespace GUI {
 class NexusTile;
 
 // Nexus: the "Model" card at the top of the Prepare sidebar (Web-Slicer model card). It gathers what the
-// Home page offered — new, open and recent projects, the Orca Cloud account and the wiki — with the handy
-// test models as pictured tiles. The Home page itself stays as a page without a tab; the card's account
-// button and the recent list's last entry open it.
+// Home page offered — new and open projects, the recent projects as pictured tiles, the Orca Cloud account
+// and the wiki — with the handy test models as pictured tiles. The Home page itself stays as a page without a
+// tab, opened by the card's account button (it lists all recent projects and can remove them).
 class NexusModelCard
 {
 public:
@@ -33,7 +36,7 @@ public:
 private:
     void build_content(wxWindow* parent);
     void toggle();
-    void show_recent_menu(wxWindow* anchor);
+    void update_recent();
 
     wxWindow*          m_parent;
     wxBoxSizer*        m_sizer;
@@ -44,6 +47,11 @@ private:
     ScalableButton*    m_help_btn{nullptr};
     wxPanel*           m_content{nullptr};
     std::vector<NexusTile*> m_tiles;
+    Label*                  m_recent_heading{nullptr};
+    wxGridSizer*            m_recent_grid{nullptr};
+    std::vector<NexusTile*> m_recent_tiles;
+    std::vector<wxString>   m_recent_files;
+    bool                    m_recent_thumbs{false};
 };
 
 }} // namespace Slic3r::GUI

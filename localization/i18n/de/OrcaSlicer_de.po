@@ -38871,13 +38871,5 @@ msgid "Test models"
 msgstr "Testmodelle"
 
 # AI Translated
-msgid "No recent projects"
-msgstr "Keine zuletzt geöffneten Projekte"
-
-# AI Translated
-msgid "Show all recent projects"
-msgstr "Alle zuletzt geöffneten Projekte anzeigen"
-
-# AI Translated
 msgid "Choose what to slice and how to print or export"
 msgstr "Wählen, was gesliced und wie gedruckt oder exportiert wird"
