@@ -1,6 +1,7 @@
 #pragma once
 
 #include "NexusTheme.hpp"
+#include "OG_CustomCtrl.hpp"
 #include "Widgets/StateColor.hpp"
 #include "Widgets/StaticLine.hpp"
 
@@ -13,6 +14,8 @@
 #include <wx/sizer.h>
 #include <wx/window.h>
 
+#include <algorithm>
+
 namespace Slic3r { namespace GUI {
 
 // The union of the shown windows a sizer lays out, nested sizers included.
@@ -22,8 +25,14 @@ inline void nexus_union_shown_windows(const wxSizer* sizer, wxRect& rc)
         if (!item->IsShown())
             continue;
         if (const wxWindow* w = item->GetWindow()) {
-            if (w->IsShown())
-                rc = rc.IsEmpty() ? w->GetRect() : rc.Union(w->GetRect());
+            if (!w->IsShown())
+                continue;
+            wxRect wr = w->GetRect();
+            // A settings grid stretches over the page's width, its lines end at its minimum width: the
+            // frame follows the lines, not the empty space right of them.
+            if (dynamic_cast<const OG_CustomCtrl*>(w) && w->GetMinSize().x > 0)
+                wr.width = std::min(wr.width, w->GetMinSize().x);
+            rc = rc.IsEmpty() ? wr : rc.Union(wr);
         } else if (const wxSizer* sub = item->GetSizer())
             nexus_union_shown_windows(sub, rc);
     }
