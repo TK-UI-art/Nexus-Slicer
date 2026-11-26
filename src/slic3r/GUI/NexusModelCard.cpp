@@ -203,7 +203,7 @@ void NexusModelCard::build_content(wxWindow* parent)
 
     // Handy test models (Add Handy models in the plate's context menu).
     add_heading(_L("Test models"));
-    auto* models = new wxWrapSizer(wxHORIZONTAL);
+    auto* models = new wxWrapSizer(wxHORIZONTAL, 0); // chips keep their width, none stretches to the line end
     const auto& handy = MenuFactory::handy_models();
     for (size_t i = 0; i < handy.size(); ++i) {
         auto* chip = new NexusTile(parent, _(handy[i].label), "", [i](NexusTile*) { MenuFactory::load_handy_model(i); });

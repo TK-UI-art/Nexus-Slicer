@@ -28,10 +28,16 @@ inline void nexus_union_shown_windows(const wxSizer* sizer, wxRect& rc)
             if (!w->IsShown())
                 continue;
             wxRect wr = w->GetRect();
-            // A settings grid stretches over the page's width, its lines end at its minimum width: the
-            // frame follows the lines, not the empty space right of them.
-            if (dynamic_cast<const OG_CustomCtrl*>(w) && w->GetMinSize().x > 0)
-                wr.width = std::min(wr.width, w->GetMinSize().x);
+            // A settings grid stretches over the page's width, while its lines end at their last field: the
+            // frame follows the fields, not the empty space right of them.
+            if (dynamic_cast<const OG_CustomCtrl*>(w)) {
+                int right = 0;
+                for (const wxWindow* field : w->GetChildren())
+                    if (field->IsShown())
+                        right = std::max(right, field->GetRect().GetRight() + 1);
+                if (right > 0)
+                    wr.width = std::min(wr.width, right);
+            }
             rc = rc.IsEmpty() ? wr : rc.Union(wr);
         } else if (const wxSizer* sub = item->GetSizer())
             nexus_union_shown_windows(sub, rc);
