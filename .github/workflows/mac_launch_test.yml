@@ -1,0 +1,69 @@
+name: Mac launch test
+
+on:
+  push:
+    branches:
+      - mac-crash-test
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  launch:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: nexus
+            run_id: 45741868774
+          - label: upstream
+            run_id: 45747388022
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: OrcaSlicer_Mac_universal_V2.6.0-dev
+          run-id: ${{ matrix.run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: art
+      - name: Launch
+        shell: bash
+        run: |
+          set -x
+          find art -maxdepth 3 | head -50
+          mkdir -p apps out
+          dmg=$(find art -name '*.dmg' | head -1)
+          if [ -n "$dmg" ]; then
+            hdiutil attach "$dmg" -nobrowse -mountpoint /Volumes/orca
+            cp -R /Volumes/orca/*.app apps/
+          else
+            zip=$(find art -name '*.zip' | head -1)
+            [ -n "$zip" ] && ditto -x -k "$zip" apps
+            find art -maxdepth 3 -name '*.app' -exec cp -R {} apps/ \;
+          fi
+          app=$(find apps -maxdepth 2 -name '*.app' | head -1)
+          echo "app=$app"
+          xattr -cr "$app" || true
+          exe="$app/Contents/MacOS/$(defaults read "$PWD/$app/Contents/Info" CFBundleExecutable)"
+          "$exe" > out/stdout.txt 2>&1 &
+          pid=$!
+          for i in $(seq 1 24); do
+            sleep 5
+            if ! kill -0 $pid 2>/dev/null; then echo "EXITED after $((i*5))s"; break; fi
+            [ $i = 6 ] && screencapture -x out/screen_30s.png || true
+          done
+          if kill -0 $pid 2>/dev/null; then echo "STILL RUNNING after 120s"; screencapture -x out/screen_120s.png || true; kill $pid; fi
+          wait $pid; echo "exit code $?"
+          tail -100 out/stdout.txt
+          sleep 10
+          cp ~/Library/Logs/DiagnosticReports/*Orca* out/ 2>/dev/null || true
+          ls -la ~/Library/Logs/DiagnosticReports/ | tail
+          cp -R "$HOME/Library/Application Support/OrcaSlicer/log" out/orca_log 2>/dev/null || true
+          for f in out/*.ips; do [ -f "$f" ] && head -c 20000 "$f"; done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: launch-${{ matrix.label }}
+          path: out
