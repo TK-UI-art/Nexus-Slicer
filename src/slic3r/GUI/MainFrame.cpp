@@ -1852,7 +1852,8 @@ void MainFrame::do_fit_tab_labels()
 
     auto* ctrl  = m_tabpanel->GetBtnsListCtrl();
     auto* sizer = ctrl->GetBtnsSizer();
-    int   count = sizer->GetItemCount();
+    // Pages, not sizer items: Home's button is out of the sizer (it has no tab), page 0 is never compacted.
+    int   count = int(m_tabpanel->GetPageCount());
 
     // Nexus: on Prepare and Preview the bar is docked in the Plater (Notebook::DockTabBar), whose layout
     // MainFrame::Layout() does not redo. The bar keeps its width when only its tabs change size, so it gets no

@@ -5,6 +5,7 @@
 
 #include <cstddef>
 #include <initializer_list>
+#include <set>
 #include <string>
 #include <vector>
 #include <wx/bookctrl.h>
@@ -68,6 +69,8 @@ private:
     wxBoxSizer*                     m_sizer;
     // BBS: use Button
     std::vector<Button*>            m_pageButtons;
+    std::set<Button*>               m_detached;   // Nexus: buttons of pages without a tab (ShowPageButton)
+    size_t                          sizer_index(size_t n) const; // position of page n's button in the sizer
     int                             m_selection {-1};
     int                             m_btn_margin;
     int                             m_line_margin;

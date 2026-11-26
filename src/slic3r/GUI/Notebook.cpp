@@ -235,7 +235,7 @@ bool ButtonsListCtrl::InsertPage(size_t n, const wxString &text, bool bSelect /*
     m_pageButtons.insert(m_pageButtons.begin() + n, btn);
     m_pageLabels.insert(m_pageLabels.begin() + n, text); // ORCA
     m_pageIcons.insert(m_pageIcons.begin() + n, bmp_name);
-    m_buttons_sizer->Insert(n, new wxSizerItem(btn));
+    m_buttons_sizer->Insert(sizer_index(n), new wxSizerItem(btn));
     m_buttons_sizer->SetCols(m_buttons_sizer->GetCols() + 1);
     m_sizer->Layout();
     return true;
@@ -252,10 +252,11 @@ void ButtonsListCtrl::RemovePage(size_t n)
         --m_selection;
 
     Button* btn = m_pageButtons[n];
+    if (m_detached.erase(btn) == 0)
+        m_buttons_sizer->Detach(btn);
     m_pageButtons.erase(m_pageButtons.begin() + n);
     m_pageLabels.erase(m_pageLabels.begin() + n); // ORCA
     m_pageIcons.erase(m_pageIcons.begin() + n);
-    m_buttons_sizer->Remove(n);
 #if __WXOSX__
     RemoveChild(btn);
 #else
@@ -290,9 +291,24 @@ void ButtonsListCtrl::ShowPageButton(size_t n, bool show)
 {
     if (n >= m_pageButtons.size())
         return;
-    m_pageButtons[n]->Show(show);
+    // Taken out of the sizer, not only hidden: a hidden item of the flex grid still shifted the row.
+    Button* btn = m_pageButtons[n];
+    if (show && m_detached.erase(btn) > 0)
+        m_buttons_sizer->Insert(sizer_index(n), btn);
+    else if (!show && m_detached.insert(btn).second)
+        m_buttons_sizer->Detach(btn);
+    btn->Show(show);
     m_sizer->Layout();
     Refresh();
+}
+
+size_t ButtonsListCtrl::sizer_index(size_t n) const
+{
+    size_t idx = 0;
+    for (size_t i = 0; i < n && i < m_pageButtons.size(); ++i)
+        if (m_detached.count(m_pageButtons[i]) == 0)
+            ++idx;
+    return idx;
 }
 
 void ButtonsListCtrl::SetCompact(size_t n, bool compact)
