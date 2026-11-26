@@ -2799,7 +2799,7 @@ void MainFrame::slice_from_sidebar()
 
 bool MainFrame::print_button_enabled() const { return m_print_btn && m_print_btn->IsEnabled(); }
 
-wxString MainFrame::print_action_label() const { return print_select_type_label(m_print_select); }
+wxString MainFrame::print_action_label() const { return print_select_type_label(print_action()); }
 
 void MainFrame::print_from_sidebar()
 {
