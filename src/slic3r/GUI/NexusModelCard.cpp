@@ -175,17 +175,12 @@ void NexusModelCard::build_content(wxWindow* parent)
         return tile;
     };
 
-    // Projects
-    auto* projects = new wxGridSizer(3, gap, gap);
+    // Projects. One Open tile for projects and models: Plater::add_file() asks for a 3mf whether to open the
+    // project or import its geometry, and imports the other formats into the current project.
+    auto* projects = new wxGridSizer(2, gap, gap);
     add_tile(projects, _L("New Project"), "nexus_tile_new", 34, [](NexusTile*) { plater()->new_project(); });
-    add_tile(projects, _L("Open Project"), "nexus_tile_open", 34, [](NexusTile*) { plater()->load_project(); });
-    add_tile(projects, _L("Import Model"), "nexus_tile_import", 34, [](NexusTile*) {
-#ifdef __APPLE__
-        plater()->add_model();
-#else
-        plater()->add_file();
-#endif
-    });
+    add_tile(projects, _L("Open"), "nexus_tile_open", 34, [](NexusTile*) { plater()->add_file(); })
+        ->SetToolTip(_L("Open a project or import models"));
     content->Add(projects, 0, wxEXPAND | wxLEFT | wxRIGHT | wxTOP, gap);
 
     // The latest recent projects, pictured by their thumbnails; refreshed when the list changes. The Home page

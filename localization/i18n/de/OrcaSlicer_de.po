@@ -38873,3 +38873,7 @@ msgstr "Testmodelle"
 # AI Translated
 msgid "Choose what to slice and how to print or export"
 msgstr "Wählen, was gesliced und wie gedruckt oder exportiert wird"
+
+# AI Translated
+msgid "Open a project or import models"
+msgstr "Ein Projekt öffnen oder Modelle importieren"
