@@ -14,9 +14,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-15-intel, macos-15]
+        os: [macos-15, macos-15-intel]
         config: [fresh, configured]
-        dark: [light, dark]
+        dark: [light]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     steps:
@@ -26,7 +26,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: OrcaSlicer_Mac_universal_V2.6.0-dev
-          run-id: 45741868774
+          run-id: 45887250563
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: art
       - name: Prepare
@@ -66,7 +66,7 @@ jobs:
             if ! kill -0 $pid 2>/dev/null; then echo "EXITED after $((i*5))s"; break; fi
             [ $i = 6 ] && screencapture -x out/screen_30s.png || true
           done
-          if kill -0 $pid 2>/dev/null; then echo "STILL RUNNING after 120s"; screencapture -x out/screen_120s.png || true; kill $pid; fi
+          if kill -0 $pid 2>/dev/null; then echo "STILL RUNNING after 120s"; screencapture -x out/screen_120s.png || true; sample $pid 5 -file out/sample.txt || true; head -150 out/sample.txt || true; kill $pid; fi
           wait $pid; echo "exit code $?"
           tail -100 out/stdout.txt
           sleep 10
