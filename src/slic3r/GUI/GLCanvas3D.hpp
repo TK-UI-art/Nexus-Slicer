@@ -1264,8 +1264,9 @@ public:
     float get_toolbar_panel_limit() const;
     // Top of the toolbar row or of the highest panel open above it (Nexus), in pixels from the canvas top.
     float get_toolbar_panels_top() const;
-    // Nexus: optional tools of the toolbar row (the less used main toolbar items and gizmos) show only once the user
-    // adds them with the plus button at the row's end; `id` is the main toolbar item name or the gizmo's tool id.
+    // Nexus: the tools of the toolbar row (main toolbar items, gizmos and the assembly view) show once the user ticks
+    // them in the list of the plus button at the row's end, a few by default; `id` is the main toolbar item name or
+    // the gizmo's tool id.
     // Kept in the app config, so the choice holds for every canvas and session.
     static bool is_toolbar_tool_shown(const std::string& id);
     static void set_toolbar_tool_shown(const std::string& id, bool shown);

@@ -90,6 +90,14 @@ GLGizmosManager::GLGizmosManager(GLCanvas3D& parent)
 const char* GLGizmosManager::optional_tool_id(EType type)
 {
     switch (type) {
+    case Move:                return "gizmo_move";
+    case Rotate:              return "gizmo_rotate";
+    case Scale:               return "gizmo_scale";
+    case Flatten:             return "gizmo_flatten";
+    case Cut:                 return "gizmo_cut";
+    case FdmSupports:         return "gizmo_supports";
+    case Seam:                return "gizmo_seam";
+    case MmSegmentation:      return "gizmo_mmu";
     case MeshBoolean:         return "gizmo_mesh_boolean";
     case FuzzySkin:           return "gizmo_fuzzy_skin";
     case PaintedModifier:     return "gizmo_painted_modifier";
@@ -130,10 +138,11 @@ std::vector<size_t> GLGizmosManager::get_selectable_idxs(bool include_hidden) co
         for (size_t i = 0; i < m_gizmos.size(); ++i) {
             if (!m_gizmos[i]->is_selectable())
                 continue;
-            // Nexus: an optional gizmo has an icon once the user added it, and while it is open (from its shortcut
-            // or a menu), so that its panel has a place to open from.
+            // Nexus: in the toolbar row at the bottom of the 3D view a gizmo has an icon once the user added it, and
+            // while it is open (from its shortcut or a menu), so that its panel has a place to open from.
             const char* id = optional_tool_id(EType(i));
-            if (include_hidden || id == nullptr || i == size_t(m_current) || GLCanvas3D::is_toolbar_tool_shown(id))
+            if (include_hidden || !m_parent.is_toolbar_at_bottom() || id == nullptr || i == size_t(m_current) ||
+                GLCanvas3D::is_toolbar_tool_shown(id))
                 out.push_back(i);
         }
     }

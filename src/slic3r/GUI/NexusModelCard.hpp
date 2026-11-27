@@ -18,9 +18,10 @@ namespace Slic3r { namespace GUI {
 class NexusTile;
 
 // Nexus: the "Model" card of the Prepare sidebar, after the printer and filament cards (Web-Slicer model card). It gathers what the
-// Home page offered — new and open projects, the recent projects as pictured tiles, the Orca Cloud account
-// and the wiki — with the handy test models as pictured tiles. The Home page itself stays as a page without a
-// tab, opened by the card's account button (it lists all recent projects and can remove them).
+// Home page offered — new and open projects, the recent projects as pictured tiles and the wiki — with the
+// handy test models as pictured tiles. The Home page itself stays as a page without a tab, opened by the account
+// button in the top right corner of the workspace (it has the Orca Cloud account, lists all recent projects and
+// can remove them).
 class NexusModelCard
 {
 public:
@@ -44,7 +45,6 @@ private:
     StaticBox*         m_title{nullptr};
     Label*             m_title_text{nullptr};
     ScalableButton*    m_icon{nullptr};
-    ScalableButton*    m_account_btn{nullptr};
     ScalableButton*    m_help_btn{nullptr};
     wxPanel*           m_content{nullptr};
     std::vector<NexusTile*> m_tiles;

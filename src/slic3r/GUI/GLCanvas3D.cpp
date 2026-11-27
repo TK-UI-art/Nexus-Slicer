@@ -3055,8 +3055,11 @@ static constexpr float CANVAS_TOOLBAR_SPACING = 6.f;
 static constexpr float TOOLBAR_ROW_MARGIN = 16.f;
 static constexpr float TOOLBAR_PANEL_GAP  = 8.f;
 
-// Nexus: the optional tools the user added to the toolbar row, as a comma separated list in the app config.
-static const char* TOOLBAR_TOOLS_KEY = "nexus_toolbar_tools";
+// Nexus: the tools of the toolbar row, as a comma separated list in the app config. Until the user changes the
+// row it holds the default tools, plus those added to the row when only the less used tools could be chosen
+// (TOOLBAR_ADDED_TOOLS_KEY).
+static const char* TOOLBAR_TOOLS_KEY       = "nexus_toolbar_row";
+static const char* TOOLBAR_ADDED_TOOLS_KEY = "nexus_toolbar_tools";
 
 static std::set<std::string>& toolbar_tools_shown()
 {
@@ -3064,7 +3067,11 @@ static std::set<std::string>& toolbar_tools_shown()
     static bool                  loaded = false;
     if (!loaded && wxGetApp().app_config != nullptr) {
         loaded = true;
-        std::stringstream list(wxGetApp().app_config->get(TOOLBAR_TOOLS_KEY));
+        const AppConfig& config = *wxGetApp().app_config;
+        std::string      ids    = config.get(TOOLBAR_TOOLS_KEY);
+        if (!config.has(TOOLBAR_TOOLS_KEY))
+            ids = "add,addplate,orient,arrange,gizmo_move,gizmo_rotate,gizmo_scale," + config.get(TOOLBAR_ADDED_TOOLS_KEY);
+        std::stringstream list(ids);
         for (std::string id; std::getline(list, id, ',');)
             if (!id.empty())
                 shown.insert(id);
@@ -8354,6 +8361,7 @@ bool GLCanvas3D::_init_main_toolbar()
     item.sprite_id = 0;
     item.left.action_callback = [this]() { if (m_canvas != nullptr) wxPostEvent(m_canvas, SimpleEvent(EVT_GLTOOLBAR_ADD)); };
     item.enabling_callback = []()->bool {return wxGetApp().plater()->can_add_model(); };
+    make_optional(item);
     if (!m_main_toolbar.add_item(item))
         return false;
 
@@ -8363,6 +8371,8 @@ bool GLCanvas3D::_init_main_toolbar()
     item.sprite_id++;
     item.left.action_callback = [this]() { if (m_canvas != nullptr) wxPostEvent(m_canvas, SimpleEvent(EVT_GLTOOLBAR_ADD_PLATE)); };
     item.enabling_callback = []()->bool {return wxGetApp().plater()->can_add_plate(); };
+    item.visibility_callback = GLToolbarItem::Default_Visibility_Callback;
+    make_optional(item);
     if (!m_main_toolbar.add_item(item))
         return false;
 
@@ -8384,6 +8394,8 @@ bool GLCanvas3D::_init_main_toolbar()
             if (agent) agent->track_update_property("auto_orient", std::to_string(++auto_orient_count));
         }
     };
+    item.visibility_callback = GLToolbarItem::Default_Visibility_Callback;
+    make_optional(item);
     if (!m_main_toolbar.add_item(item))
         return false;
 
@@ -8401,6 +8413,8 @@ bool GLCanvas3D::_init_main_toolbar()
             //_render_arrange_menu(0.5f * (left + right));
         }
     };
+    item.visibility_callback = GLToolbarItem::Default_Visibility_Callback;
+    make_optional(item);
     if (!m_main_toolbar.add_item(item))
         return false;
 
@@ -8596,7 +8610,8 @@ bool GLCanvas3D::_init_assemble_view_toolbar()
     item.left.action_callback = [this]() { if (m_canvas != nullptr) wxPostEvent(m_canvas, SimpleEvent(EVT_GLVIEWTOOLBAR_ASSEMBLE)); };
     item.left.render_callback = GLToolbarItem::Default_Render_Callback;
     item.visible = true;
-    item.visibility_callback = []()->bool { return true; };
+    // Nexus: in the toolbar row, once the user added it with the row's plus button.
+    item.visibility_callback = [this]()->bool { return !is_toolbar_at_bottom() || is_toolbar_tool_shown("assembly_view"); };
     item.enabling_callback = []()->bool {
         return wxGetApp().plater()->has_assmeble_view();
     };
@@ -11002,14 +11017,16 @@ void GLCanvas3D::_check_and_update_toolbar_icon_scale()
     float new_scale = std::min(new_h_scale, new_v_scale);
     new_scale /= get_scale();
     // Nexus: the row at the bottom holds few tools since the others are added with its plus button; it fills the
-    // width at 75 % of the full icon size at most (GUI_App::set_auto_toolbar_icon_scale() takes the same unit).
+    // width at most as high as the sidebar's slice button, its 4 px border above and below the icons included
+    // (GUI_App::set_auto_toolbar_icon_scale() takes the same unit).
     if (is_toolbar_at_bottom()) {
 #ifdef __APPLE__
-        const float full_size = 1.f;
+        const float px_per_dip = get_scale();
 #else
-        const float full_size = wxGetApp().em_unit() * 0.1f;
+        const float px_per_dip = wxGetApp().em_unit() * 0.1f * get_scale();
 #endif
-        new_scale = std::min(new_scale, 0.75f * full_size);
+        const float row_icons = NEXUS_BAR_HEIGHT * px_per_dip - 2.f * 4.f;
+        new_scale = std::min(new_scale, row_icons / (GLToolbar::Default_Icons_Size * get_scale()));
     }
     // Only a canvas with toolbars to fit sets the shared size: a collapse button alone (the Design
     // tab's canvas) always fits at the largest.
@@ -12362,7 +12379,8 @@ void GLCanvas3D::_render_section_view_panel(const ImVec2& bottom_left)
 
 void GLCanvas3D::_render_separator_toolbar_right() const
 {
-    if (!m_separator_toolbar.is_enabled())
+    // Nexus: nothing to separate when the assembly view button is off the toolbar row.
+    if (!m_separator_toolbar.is_enabled() || m_assemble_view_toolbar.get_visible_items_cnt() == 0)
         return;
 
     const Size cnv_size = get_canvas_size();
@@ -12547,7 +12565,11 @@ void GLCanvas3D::_render_toolbar_tools_button()
                 changed = true;
             }
         };
-        // The less used items of the main toolbar, then the gizmos.
+        // The items of the main toolbar, the gizmos, then the assembly view.
+        entry("add", _u8L("Add"));
+        entry("addplate", _u8L("Add plate"));
+        entry("orient", _u8L("Orient"));
+        entry("arrange", _u8L("Arrange"));
         entry("more", _u8L("Add instance"));
         entry("fewer", _u8L("Remove instance"));
         entry("splitobjects", _u8L("Split to objects"));
@@ -12567,11 +12589,14 @@ void GLCanvas3D::_render_toolbar_tools_button()
                 label += full.substr(name.size());
             entry(GLGizmosManager::optional_tool_id(type), label);
         }
+        if (m_assemble_view_toolbar.is_enabled())
+            entry("assembly_view", _u8L("Assembly View"));
         ImGui::PopStyleColor(4);
         ImGui::PopStyleVar(2);
 
         if (changed) {
             m_main_toolbar.update_items_state();
+            m_assemble_view_toolbar.update_items_state();
             set_as_dirty();
             request_extra_frame();
         }

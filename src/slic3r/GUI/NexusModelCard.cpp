@@ -123,12 +123,6 @@ NexusModelCard::NexusModelCard(wxWindow* parent, wxBoxSizer* sizer, int card_mar
     m_title_text = new Label(m_title, _L("Model"), LB_PROPAGATE_MOUSE_EVENT | wxST_ELLIPSIZE_END);
     m_title_text->SetFont(Label::Body_16);
 
-    // The Orca Cloud and Bambu Cloud accounts, OrcaCloud and the full recent list live on the Home page.
-    m_account_btn = new ScalableButton(m_title, wxID_ANY, "nexus_account", wxEmptyString, wxDefaultSize, wxDefaultPosition,
-                                       wxBU_EXACTFIT | wxNO_BORDER, false, 18);
-    m_account_btn->SetToolTip(_L("Account, cloud and recent projects"));
-    m_account_btn->Bind(wxEVT_BUTTON, [](wxCommandEvent&) { wxGetApp().mainframe->select_tab(TAB_ID_HOME); });
-
     m_help_btn = new ScalableButton(m_title, wxID_ANY, "help", wxEmptyString, wxDefaultSize, wxDefaultPosition,
                                     wxBU_EXACTFIT | wxNO_BORDER, false, 18);
     m_help_btn->SetToolTip(_L("Wiki"));
@@ -138,7 +132,6 @@ NexusModelCard::NexusModelCard(wxWindow* parent, wxBoxSizer* sizer, int card_mar
     title->Add(m_icon, 0, wxALIGN_CENTER | wxLEFT, m_parent->FromDIP(NEXUS_CARD_ICON_INSET));
     title->AddSpacer(m_parent->FromDIP(SidebarProps::ElementSpacing()));
     title->Add(m_title_text, 1, wxALIGN_CENTER | wxRIGHT, m_parent->FromDIP(SidebarProps::WideSpacing()));
-    title->Add(m_account_btn, 0, wxALIGN_CENTER | wxRIGHT, m_parent->FromDIP(SidebarProps::WideSpacing()));
     title->Add(m_help_btn, 0, wxALIGN_CENTER);
     title->AddSpacer(m_parent->FromDIP(SidebarProps::TitlebarMargin()));
     title->SetMinSize(-1, m_parent->FromDIP(NEXUS_CARD_TITLE_H));
@@ -184,7 +177,7 @@ void NexusModelCard::build_content(wxWindow* parent)
     content->Add(projects, 0, wxEXPAND | wxLEFT | wxRIGHT | wxTOP, gap);
 
     // The latest recent projects, pictured by their thumbnails; refreshed when the list changes. The Home page
-    // (the account button) lists all of them and can remove them.
+    // (the account button in the workspace's top right corner) lists all of them and can remove them.
     m_recent_heading = new Label(parent, Label::Body_12, _L("Recent"));
     m_recent_heading->SetForegroundColour(StateColor::darkModeColorFor(wxColour("#6B6B6B")));
     m_recent_heading->Hide(); // until update_recent() finds recent projects
@@ -267,7 +260,7 @@ std::vector<wxWindow*> NexusModelCard::card_windows() const { return {m_title, m
 void NexusModelCard::msw_rescale()
 {
     m_title->GetSizer()->SetMinSize(-1, m_parent->FromDIP(NEXUS_CARD_TITLE_H));
-    for (ScalableButton* btn : {m_icon, m_account_btn, m_help_btn})
+    for (ScalableButton* btn : {m_icon, m_help_btn})
         btn->msw_rescale();
     for (NexusTile* tile : m_tiles)
         tile->msw_rescale();

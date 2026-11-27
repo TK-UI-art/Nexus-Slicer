@@ -2420,7 +2420,24 @@ wxBoxSizer* MainFrame::create_side_tools()
     print_panel->Hide();
     sizer->Add(slice_panel);
     sizer->Add(print_panel);
-    sizer->Add(FromDIP(19), 0, 0, 0, 0);
+
+    // Nexus: round buttons in the top right corner of the workspace, beside the tab pill: the account, cloud and
+    // recent projects (the Home page), and the general settings (Preferences).
+    auto add_corner_button = [this, sizer](const wxString& icon, const wxString& tooltip, std::function<void()> action) {
+        auto* btn = new Button(this, "", icon, 0, 20);
+        btn->SetBackgroundColour(StateColor::darkModeColorFor(wxColour(NEXUS_SIDEBAR_BG)));
+        btn->SetBackgroundColor(StateColor(std::make_pair(wxColour(NEXUS_ACCENT_TINT25), (int) StateColor::Hovered),
+                                           std::make_pair(wxColour(NEXUS_CARD), (int) StateColor::Normal)));
+        btn->SetBorderColor(StateColor(wxColour(NEXUS_CARD_LINE)));
+        btn->SetMinSize(wxSize(FromDIP(36), FromDIP(36)));
+        btn->SetCornerRadius(FromDIP(18));
+        btn->SetToolTip(tooltip);
+        btn->Bind(wxEVT_BUTTON, [action](wxCommandEvent&) { action(); });
+        sizer->Add(btn, 0, wxLEFT | wxALIGN_CENTER_VERTICAL, FromDIP(8));
+    };
+    add_corner_button("nexus_account", _L("Account, cloud and recent projects"), [this] { select_tab(TAB_ID_HOME); });
+    add_corner_button("nexus_settings", _L("Preferences"), [] { wxGetApp().open_preferences(); });
+    sizer->Add(FromDIP(11), 0, 0, 0, 0);
 
     sizer->Layout();
 

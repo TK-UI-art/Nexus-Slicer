@@ -3685,6 +3685,22 @@ Sidebar::Sidebar(Plater *parent)
         // cards above leave less.
         params_panel->SetMinSize(wxSize(-1, FromDIP(320)));
         scrolled_sizer->Add(params_panel, 3, wxEXPAND | wxLEFT | wxRIGHT, card_margin);
+
+        // Nexus: the Process card folds from its title, as the printer and filament cards do. The title's
+        // buttons and switches keep their own clicks.
+        auto toggle_process_section = [this, params_panel](wxMouseEvent&) {
+            params_panel->Show(!params_panel->IsShown());
+            m_scrolled_sizer->Layout();
+            p->scrolled->Refresh();
+        };
+        wxWindow* process_title = params_panel->get_top_panel();
+        process_title->Bind(wxEVT_LEFT_DOWN, toggle_process_section);
+        process_title->Bind(wxEVT_LEFT_DCLICK, toggle_process_section);
+        for (wxWindow* child : process_title->GetChildren())
+            if (dynamic_cast<Label*>(child) != nullptr) {
+                child->Bind(wxEVT_LEFT_DOWN, toggle_process_section);
+                child->Bind(wxEVT_LEFT_DCLICK, toggle_process_section);
+            }
     }
 #endif
     scrolled_sizer->AddSpacer(card_margin);
@@ -3732,8 +3748,8 @@ Sidebar::Sidebar(Plater *parent)
     p->btn_slice_sidebar = new Button(this, _L("Slice plate"));
     p->btn_slice_sidebar->SetStyle(ButtonStyle::Confirm, ButtonType::Expanded);
     p->btn_slice_sidebar->SetFont(Label::Body_16);
-    p->btn_slice_sidebar->SetMinSize(wxSize(-1, FromDIP(44)));
-    p->btn_slice_sidebar->SetCornerRadius(FromDIP(22));
+    p->btn_slice_sidebar->SetMinSize(wxSize(-1, FromDIP(NEXUS_BAR_HEIGHT)));
+    p->btn_slice_sidebar->SetCornerRadius(FromDIP(NEXUS_BAR_HEIGHT / 2));
     // Disabled: a visible grey instead of the regular button grey, which equals the dark sidebar background
     const StateColor slice_bg(std::make_pair(wxColour(NEXUS_CARD_LINE), (int) StateColor::Disabled),
                               std::make_pair(wxColour(NEXUS_ACCENT_PRESSED), (int) StateColor::Pressed),
@@ -3768,8 +3784,8 @@ Sidebar::Sidebar(Plater *parent)
     p->btn_slice_option_sidebar = new Button(this, "", "nexus_slice_dropdown", 0, 14);
     p->btn_slice_option_sidebar->SetBackgroundColor(slice_bg);
     p->btn_slice_option_sidebar->SetBorderColor(slice_bg);
-    p->btn_slice_option_sidebar->SetMinSize(wxSize(FromDIP(44), FromDIP(44)));
-    p->btn_slice_option_sidebar->SetCornerRadius(FromDIP(22));
+    p->btn_slice_option_sidebar->SetMinSize(wxSize(FromDIP(NEXUS_BAR_HEIGHT), FromDIP(NEXUS_BAR_HEIGHT)));
+    p->btn_slice_option_sidebar->SetCornerRadius(FromDIP(NEXUS_BAR_HEIGHT / 2));
     p->btn_slice_option_sidebar->SetToolTip(_L("Choose what to slice and how to print or export"));
     p->btn_slice_option_sidebar->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) {
         MainFrame* mainframe = wxGetApp().mainframe;
