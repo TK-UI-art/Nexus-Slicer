@@ -1004,6 +1004,11 @@ struct Sidebar::priv
     std::function<void()> toggle_printer;
     std::function<void()> toggle_filament;
     std::function<void()> toggle_process;
+    bool                  step_done[Sidebar::StepCount]{}; // the model step asks the model card
+    std::vector<bool>     warn_steps;                      // per card of nexus_cards: flashing red
+    std::vector<double>   warn;                            // per card: the red ring's strength now
+    wxTimer               warn_timer;
+    wxStopWatch           warn_clock;
     void nexus_apply_card_colours()
     {
         for (const auto& card : nexus_cards)
@@ -3647,6 +3652,7 @@ Sidebar::Sidebar(Plater *parent)
 
     // Nexus: the model card follows the printer and filament cards.
     p->model_card = std::make_unique<NexusModelCard>(p->scrolled, scrolled_sizer, card_margin, card_spacing);
+    p->model_card->on_done = [this] { nexus_step_picked(StepModel); };
 
     {
     //add project title
@@ -3791,12 +3797,25 @@ Sidebar::Sidebar(Plater *parent)
         }
     p->scrolled->Bind(wxEVT_PAINT, [this](wxPaintEvent&) {
         wxPaintDC dc(p->scrolled);
-        nexus_paint_cards(p->scrolled, dc, p->nexus_cards);
+        nexus_paint_cards(p->scrolled, dc, p->nexus_cards, NEXUS_CARD_RADIUS, NEXUS_CARD_PAD, p->warn);
         // A card repaints when its sections change; windows they built meanwhile (a new filament row, an
         // object list row editor) take the card fill.
         CallAfter([this] { p->nexus_apply_card_colours(); });
     });
     p->nexus_apply_card_colours();
+    // The red ring of the steps still open: |sin| peaks at a quarter and three quarters of the 1.1 s.
+    p->warn_timer.SetOwner(p->scrolled);
+    p->scrolled->Bind(wxEVT_TIMER, [this](wxTimerEvent&) {
+        const double t = p->warn_clock.Time() / 1100.;
+        p->warn.assign(p->warn_steps.size(), 0.);
+        if (t >= 1.)
+            p->warn_timer.Stop();
+        else
+            for (size_t i = 0; i < p->warn_steps.size(); ++i)
+                if (p->warn_steps[i])
+                    p->warn[i] = std::abs(std::sin(2. * PI * t));
+        p->scrolled->Refresh();
+    });
     }
 
     p->object_layers = new ObjectLayers(p->scrolled);
@@ -3829,8 +3848,10 @@ Sidebar::Sidebar(Plater *parent)
             return;
         if (p->sidebar_button_prints)
             mainframe->print_from_sidebar();
-        else
+        else {
+            nexus_warn_open_steps(); // Web-Slicer: the steps still to choose flash red
             mainframe->slice_from_sidebar();
+        }
     });
     p->btn_slice_sidebar->Bind(wxEVT_UPDATE_UI, [this](wxUpdateUIEvent& e) {
         MainFrame* mainframe = wxGetApp().mainframe;
@@ -3883,30 +3904,80 @@ Sidebar::Sidebar(Plater *parent)
     SetSizer(sizer);
 }
 
-// Nexus: a preset chosen in the printer, filament or process card completes that card's step: the card folds
-// and its title's red signal turns into a green check. The signal folds and unfolds the card as the title does.
+// Nexus: the Web-Slicer steps. The printer, filament, model and process cards each complete their step once the
+// user chooses a preset in them (or the plate holds a model): the card folds, a green check shows at the right of
+// its title, and the next step still open unfolds. Slicing with steps still open flashes those cards red.
+bool Sidebar::nexus_step_done(int step) const
+{
+    return step == StepModel ? p->model_card->done() : p->step_done[step];
+}
+
+bool Sidebar::nexus_step_open(int step) const
+{
+    switch (step) {
+    case StepPrinter: return p->m_panel_printer_content->IsShown();
+    case StepFilament: return p->m_filament_area_wrapper->IsShown();
+    case StepModel: return p->model_card->is_open();
+    case StepProcess: return wxGetApp().mainframe->m_param_panel != nullptr && wxGetApp().mainframe->m_param_panel->IsShown();
+    default: return false;
+    }
+}
+
+void Sidebar::nexus_set_step_open(int step, bool open)
+{
+    if (nexus_step_open(step) == open)
+        return;
+    switch (step) {
+    case StepPrinter: if (p->toggle_printer) p->toggle_printer(); break;
+    case StepFilament: if (p->toggle_filament) p->toggle_filament(); break;
+    case StepModel: p->model_card->set_open(open); break;
+    case StepProcess: if (p->toggle_process) p->toggle_process(); break;
+    default: break;
+    }
+}
+
+void Sidebar::nexus_step_picked(int step)
+{
+    if (step != StepModel) {
+        p->step_done[step] = true;
+        ScalableButton* check = step == StepPrinter ? p->check_printer : step == StepFilament ? p->check_filament : p->check_process;
+        if (check != nullptr)
+            nexus_set_step_done(check, true);
+    }
+    nexus_set_step_open(step, false);
+    for (int k = 1; k < StepCount; ++k) {
+        const int next = (step + k) % StepCount;
+        if (!nexus_step_done(next)) {
+            nexus_set_step_open(next, true);
+            break;
+        }
+    }
+}
+
 void Sidebar::nexus_choice_made(Preset::Type type)
 {
-    ScalableButton*              check  = nullptr;
-    wxWindow*                    content = nullptr;
-    const std::function<void()>* toggle = nullptr;
     switch (type) {
-    case Preset::TYPE_PRINTER: check = p->check_printer; content = p->m_panel_printer_content; toggle = &p->toggle_printer; break;
-    case Preset::TYPE_FILAMENT: check = p->check_filament; content = p->m_filament_area_wrapper; toggle = &p->toggle_filament; break;
-    case Preset::TYPE_PRINT: {
-        check = p->check_process;
-        toggle = &p->toggle_process;
-        if (auto* params = wxGetApp().mainframe->m_param_panel)
-            content = params;
-        break;
+    case Preset::TYPE_PRINTER: nexus_step_picked(StepPrinter); break;
+    case Preset::TYPE_FILAMENT: nexus_step_picked(StepFilament); break;
+    case Preset::TYPE_PRINT: nexus_step_picked(StepProcess); break;
+    default: break;
     }
-    default: return;
-    }
-    if (check == nullptr || content == nullptr || !*toggle)
+}
+
+// The red ring pulses twice over 1.1 s on the cards of the steps still open (Web-Slicer cardWarn).
+void Sidebar::nexus_warn_open_steps()
+{
+    static constexpr size_t STEP_CARD[StepCount] = {0, 1, 2, 4}; // the steps' places in p->nexus_cards
+    p->warn_steps.assign(p->nexus_cards.size(), false);
+    bool any = false;
+    for (int step = 0; step < StepCount; ++step)
+        if (!nexus_step_done(step) && STEP_CARD[step] < p->warn_steps.size())
+            any = p->warn_steps[STEP_CARD[step]] = true;
+    if (!any)
         return;
-    nexus_set_step_done(check, true);
-    if (content->IsShown())
-        (*toggle)();
+    p->warn_clock.Start();
+    if (!p->warn_timer.IsRunning())
+        p->warn_timer.Start(30);
 }
 
 // The cards' area is as high as the cards, at most the sidebar's height less the slice button below it.

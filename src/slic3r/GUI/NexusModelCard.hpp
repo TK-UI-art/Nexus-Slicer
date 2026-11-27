@@ -6,6 +6,7 @@
 
 #include <wx/string.h>
 
+#include <functional>
 #include <vector>
 
 class wxPanel;
@@ -36,6 +37,12 @@ public:
     void msw_rescale();
     void sys_color_changed();
 
+    // The card's step (Web-Slicer steps): done while the plate holds a model; `on_done` runs when it gets one.
+    bool done() const { return m_has_model; }
+    bool is_open() const;
+    void set_open(bool open);
+    std::function<void()> on_done;
+
 private:
     void build_content(wxWindow* parent);
     void toggle();
@@ -49,7 +56,7 @@ private:
     Label*             m_title_text{nullptr};
     ScalableButton*    m_icon{nullptr};
     ScalableButton*    m_help_btn{nullptr};
-    ScalableButton*    m_step{nullptr};      // red until the plate holds a model, then a green check
+    ScalableButton*    m_step{nullptr};      // the green check while the plate holds a model
     bool               m_has_model{false};
     wxPanel*           m_content{nullptr};
     std::vector<NexusTile*> m_tiles;

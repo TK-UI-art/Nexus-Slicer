@@ -214,8 +214,14 @@ public:
     // Nexus: the filament slots are tiles in two columns after the Add filament tile.
     void remove_last_filament_tile();
     void balance_filament_tile_columns();
-    // Nexus: the user chose a preset of `type` in its card: the card folds and shows a check.
+    // Nexus: the Web-Slicer steps of the cards (see Plater.cpp).
+    enum NexusStep { StepPrinter, StepFilament, StepModel, StepProcess, StepCount };
     void nexus_choice_made(Preset::Type type);
+    void nexus_step_picked(int step);
+    bool nexus_step_done(int step) const;
+    bool nexus_step_open(int step) const;
+    void nexus_set_step_open(int step, bool open);
+    void nexus_warn_open_steps();
     void fit_cards_height();
     void msw_rescale();
     void sys_color_changed();

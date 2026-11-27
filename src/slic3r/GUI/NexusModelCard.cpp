@@ -58,7 +58,7 @@ NexusModelCard::NexusModelCard(wxWindow* parent, wxBoxSizer* sizer, int card_mar
     title->AddSpacer(m_parent->FromDIP(SidebarProps::ElementSpacing()));
     title->Add(nexus_card_title_text(m_title_text), 1, wxALIGN_CENTER | wxRIGHT, m_parent->FromDIP(SidebarProps::WideSpacing()));
     title->Add(m_help_btn, 0, wxALIGN_CENTER);
-    // Red until the plate holds a model, then a green check; the card folds when the first model arrives.
+    // A green check while the plate holds a model; the card folds when the first model arrives (on_done).
     m_step = nexus_step_indicator(m_title);
     m_step->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) { toggle(); });
     title->Add(m_step, 0, wxALIGN_CENTER | wxLEFT, m_parent->FromDIP(SidebarProps::WideSpacing()));
@@ -202,7 +202,15 @@ void NexusModelCard::update_step()
         return;
     m_has_model = has_model;
     nexus_set_step_done(m_step, has_model);
-    if (has_model && m_content->IsShown())
+    if (has_model && on_done)
+        on_done();
+}
+
+bool NexusModelCard::is_open() const { return m_content->IsShown(); }
+
+void NexusModelCard::set_open(bool open)
+{
+    if (open != m_content->IsShown())
         toggle();
 }
 

@@ -76,12 +76,14 @@ inline void nexus_paint_shadow(const wxWindow* win, wxGCDC& gdc, const wxRect& r
 
 // Paints Web-Slicer cards (rounded, outlined, soft drop shadow) on `parent` behind each group of
 // child windows. A card covers the union of its shown windows, inflated by `pad_dip`. A negative `radius_dip`
-// rounds each card into a pill (half its height). Call from the parent's wxEVT_PAINT handler.
+// rounds each card into a pill (half its height). `warn` gives cards a red ring of that strength, 0..1, in
+// card order (the Web-Slicer signal on a step still to choose). Call from the parent's wxEVT_PAINT handler.
 inline void nexus_paint_cards(wxWindow* parent, wxPaintDC& dc, const std::vector<std::vector<wxWindow*>>& cards,
-                              int radius_dip = NEXUS_CARD_RADIUS, int pad_dip = NEXUS_CARD_PAD)
+                              int radius_dip = NEXUS_CARD_RADIUS, int pad_dip = NEXUS_CARD_PAD, const std::vector<double>& warn = {})
 {
     wxGCDC    gdc(dc);
-    for (const auto& card : cards) {
+    for (size_t idx = 0; idx < cards.size(); ++idx) {
+        const auto& card = cards[idx];
         wxRect rc;
         for (const wxWindow* w : card)
             if (w && w->IsShown())
@@ -95,26 +97,37 @@ inline void nexus_paint_cards(wxWindow* parent, wxPaintDC& dc, const std::vector
         gdc.SetPen(wxPen(StateColor::darkModeColorFor(wxColour(NEXUS_CARD_LINE)), 1));
         gdc.SetBrush(wxBrush(nexus_card_colour()));
         gdc.DrawRoundedRectangle(rc, radius);
+
+        // CSS 0 0 0 2px #e0453a, 0 0 0 6px rgba(224,69,58,.22)
+        const double w = idx < warn.size() ? warn[idx] : 0.;
+        if (w > 0.) {
+            gdc.SetBrush(*wxTRANSPARENT_BRUSH);
+            wxRect glow = rc;
+            glow.Inflate(parent->FromDIP(3));
+            gdc.SetPen(wxPen(wxColour(224, 69, 58, int(0.22 * 255 * w)), parent->FromDIP(4)));
+            gdc.DrawRoundedRectangle(glow, radius + parent->FromDIP(3));
+            gdc.SetPen(wxPen(wxColour(224, 69, 58, int(255 * w)), parent->FromDIP(2)));
+            gdc.DrawRoundedRectangle(rc, radius);
+        }
     }
 }
 
-// The step signal at the right of a card title (Web-Slicer steps): a red signal while the card's choice is open,
-// a green check once it is made.
-inline void nexus_set_step_done(ScalableButton* signal, bool done)
+// The green check at the right of a card title once the card's choice is made (Web-Slicer steps).
+inline void nexus_set_step_done(ScalableButton* check, bool done)
 {
-    signal->SetBitmap_(done ? "nexus_check" : "nexus_todo");
-    // TRN Tooltips of the signal at the right of a sidebar card's title.
-    signal->SetToolTip(done ? _L("Done") : _L("Still to choose"));
-    signal->GetParent()->Layout();
+    check->Show(done);
+    check->GetParent()->Layout();
 }
 
 inline ScalableButton* nexus_step_indicator(wxWindow* title)
 {
-    auto* signal = new ScalableButton(title, wxID_ANY, "nexus_todo", wxEmptyString, wxDefaultSize, wxDefaultPosition,
-                                      wxBU_EXACTFIT | wxNO_BORDER, false, 20);
-    signal->SetBackgroundColour(title->GetBackgroundColour());
-    nexus_set_step_done(signal, false);
-    return signal;
+    auto* check = new ScalableButton(title, wxID_ANY, "nexus_check", wxEmptyString, wxDefaultSize, wxDefaultPosition,
+                                     wxBU_EXACTFIT | wxNO_BORDER, false, 20);
+    check->SetBackgroundColour(title->GetBackgroundColour());
+    // TRN Tooltip of the check at the right of a sidebar card's title once its choice is made.
+    check->SetToolTip(_L("Done"));
+    check->Hide();
+    return check;
 }
 
 // A card title's text in a sizer that sets it optically centred on the title row. Centred by its text box,
