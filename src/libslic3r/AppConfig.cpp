@@ -120,6 +120,16 @@ bool AppConfig::get_hide_login_side_panel()
     return get_bool("hide_login_side_panel");
 }
 
+// Nexus: a configuration saved before Home lost its tab starts on Prepare once; the Default page preference
+// can still choose Home afterwards. Runs on the loaded file, before set_defaults().
+void AppConfig::migrate_nexus_start_page()
+{
+    if (!get("nexus_start_on_prepare").empty())
+        return;
+    set("default_page", "1");
+    set("nexus_start_on_prepare", "1");
+}
+
 void AppConfig::reset()
 {
     m_storage.clear();
@@ -211,12 +221,10 @@ void AppConfig::set_defaults()
         if (get("use_inches").empty())
             set("use_inches", "0");
 
-        // Nexus: start on Prepare. Home lost its tab (its tasks are in the Prepare sidebar), so a configuration
-        // from before that starts on Prepare once; the Default page preference can still choose Home.
-        if (get("default_page").empty() || get("nexus_home_tabless").empty())
+        // Nexus: start on Prepare (Home has no tab; its tasks are in the Prepare sidebar). Configurations from
+        // before are moved to Prepare once by migrate_nexus_start_page().
+        if (get("default_page").empty())
             set("default_page", "1");
-        if (get("nexus_home_tabless").empty())
-            set("nexus_home_tabless", "1");
     }
     else {
 #ifdef _WIN32
@@ -1080,6 +1088,7 @@ std::string AppConfig::load(bool read_only)
         }
     }
 
+    migrate_nexus_start_page();
     // Override missing or keys with their defaults.
     this->set_defaults();
     m_dirty = false;
@@ -1362,6 +1371,7 @@ std::string AppConfig::load(bool read_only)
         }
     }
 
+    migrate_nexus_start_page();
     // Override missing or keys with their defaults.
     this->set_defaults();
     m_dirty = false;

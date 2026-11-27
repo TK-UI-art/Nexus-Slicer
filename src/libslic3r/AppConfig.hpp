@@ -130,6 +130,7 @@ public:
 	void 			   	reset();
 	// Override missing or keys with their defaults.
 	void 			   	set_defaults();
+	void				migrate_nexus_start_page();
 
 	// Load the slic3r.ini from a user profile directory (or a datadir, if configured).
 	// Return an error string, or an empty string on success.
