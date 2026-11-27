@@ -2855,6 +2855,50 @@ namespace IMGUIZMO_NAMESPACE
 
       const matrix_t res = cubeView * cubeProjection;
 
+      // Nexus: the Web-Slicer drop shadow (CSS 0 2px 6px rgba(0,0,0,.2)) under the cube's outline, the convex hull of
+      // its projected corners, as stacked layers spreading 0..6 px whose summed opacity falls off like the blur (see
+      // nexus_paint_shadow() in the GUI).
+      {
+         ImVec2 corners[8];
+         for (int i = 0; i < 8; i++)
+            corners[i] = worldToPos(makeVect((i & 1) ? 0.5f : -0.5f, (i & 2) ? 0.5f : -0.5f, (i & 4) ? 0.5f : -0.5f), res, position, size);
+         std::sort(corners, corners + 8, [](const ImVec2& a, const ImVec2& b) { return a.x < b.x || (a.x == b.x && a.y < b.y); });
+         ImVec2 hull[16];
+         int    count = 0;
+         const auto cross = [](const ImVec2& o, const ImVec2& a, const ImVec2& b) { return (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x); };
+         for (int i = 0; i < 8; i++) {
+            while (count >= 2 && cross(hull[count - 2], hull[count - 1], corners[i]) <= 0.f)
+               count--;
+            hull[count++] = corners[i];
+         }
+         for (int i = 6, lower = count + 1; i >= 0; i--) {
+            while (count >= lower && cross(hull[count - 2], hull[count - 1], corners[i]) <= 0.f)
+               count--;
+            hull[count++] = corners[i];
+         }
+         count--; // the first point closes the hull
+         ImVec2 center(0.f, 0.f);
+         for (int i = 0; i < count; i++)
+            center = center + hull[i];
+         center = center * (1.f / float(count));
+
+         const ImU32 face  = GetColorU32(FACE);
+         const bool  dark  = ((face & 0xFF) + ((face >> 8) & 0xFF) + ((face >> 16) & 0xFF)) < 3 * 128;
+         const float scale = size.x / 128.f; // the navigator is 128 px at 100 %
+         static const int alpha[] = { 9, 6, 5, 3, 3, 2, 1 };
+         for (int k = 6; k >= 0; k--) {
+            ImVec2 layer[16];
+            for (int i = 0; i < count; i++) {
+               ImVec2      d   = hull[i] - center;
+               const float len = sqrtf(d.x * d.x + d.y * d.y);
+               if (len > 0.f)
+                  d = d * (k * scale / len);
+               layer[i] = hull[i] + d + ImVec2(0.f, 2.f * scale);
+            }
+            gContext.mDrawList->AddConvexPolyFilled(layer, count, IM_COL32(0, 0, 0, dark ? alpha[k] * 7 / 4 : alpha[k]));
+         }
+      }
+
       // panels
       static const ImVec2 panelPosition[9] = { ImVec2(0.75f,0.75f), ImVec2(0.25f, 0.75f), ImVec2(0.f, 0.75f),
          ImVec2(0.75f, 0.25f), ImVec2(0.25f, 0.25f), ImVec2(0.f, 0.25f),
