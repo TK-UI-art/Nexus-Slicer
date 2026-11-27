@@ -62,6 +62,8 @@
 #define NEXUS_TAB_RADIUS        14
 // Height of the sidebar's slice button and of the 3D view's toolbar row, in DIP.
 #define NEXUS_BAR_HEIGHT        44
+// The filament spools of the filament card's tiles, in DIP.
+#define NEXUS_SPOOL_PX          40
 
 // Sidebar cards (Web-Slicer step cards). The sidebar background shows between the cards; the cards
 // are NEXUS_CARD (mapped to NEXUS_CARD_DARK in dark mode) with a thin outline.

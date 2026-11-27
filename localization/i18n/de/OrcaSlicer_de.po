@@ -38895,6 +38895,10 @@ msgid "Sync to project"
 msgstr "Ins Projekt übernehmen"
 
 # AI Translated
+msgid "Add filament"
+msgstr "Filament hinzufügen"
+
+# AI Translated
 msgid "Choose what to slice and how to print or export"
 msgstr "Wählen, was gesliced und wie gedruckt oder exportiert wird"
 

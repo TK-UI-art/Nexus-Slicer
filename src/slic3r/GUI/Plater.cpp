@@ -1,6 +1,7 @@
 #include "Plater.hpp"
 #include "slic3r/GUI/NexusTheme.hpp"
 #include "slic3r/GUI/NexusCard.hpp"
+#include "slic3r/GUI/NexusTile.hpp"
 #include "slic3r/GUI/NexusModelCard.hpp"
 #include "LazyPage.hpp"
 #include "../Utils/NetworkAgent.hpp"
@@ -937,6 +938,7 @@ struct Sidebar::priv
     std::vector<PlaterPresetComboBox*> combos_filament;
     int editing_filament = -1;
     wxBoxSizer *sizer_filaments = nullptr;
+    NexusTile*  m_add_filament_tile = nullptr; // Nexus: first tile of the filament card
 
     //BBS Sidebar widgets
     wxPanel* m_panel_print_title;
@@ -3466,6 +3468,19 @@ Sidebar::Sidebar(Plater *parent)
     p->sizer_filaments->Add(new wxBoxSizer(wxVERTICAL), 1, wxEXPAND);
     p->sizer_filaments->Add(new wxBoxSizer(wxVERTICAL), 1, wxEXPAND);
 
+    // Nexus: the first tile adds a filament (the title bar's add button, which it replaces); it is disabled where
+    // the printer fixes the filament count (show_SEMM_buttons()).
+    p->m_add_filament_tile = new NexusTile(p->m_panel_filament_content, _L("Add filament"), "nexus_tile_new", 34, [this](NexusTile*) {
+        add_filament();
+        update_filaments_counter();
+    });
+    p->m_add_filament_tile->SetToolTip(_L("Add one filament"));
+    {
+        auto* add_tile_sizer = new wxBoxSizer(wxHORIZONTAL);
+        add_tile_sizer->Add(p->m_add_filament_tile, 1, wxEXPAND | wxALL, FromDIP(3));
+        p->sizer_filaments->GetItem((size_t) 0)->GetSizer()->Add(add_tile_sizer, 1, wxEXPAND);
+    }
+
     p->combos_filament.push_back(nullptr);
 
     /* first filament item */
@@ -3908,41 +3923,70 @@ void Sidebar::create_printer_preset()
     }
 }
 
+// Nexus: the temperatures a filament tile shows: the slot's preset nozzle temperature and its bed temperature on
+// the current plate type.
+static wxString filament_tile_temperatures(size_t filament_idx)
+{
+    const PresetBundle& bundle = *wxGetApp().preset_bundle;
+    if (filament_idx >= bundle.filament_presets.size())
+        return {};
+    const Preset* preset = bundle.filaments.find_preset(bundle.filament_presets[filament_idx]);
+    if (preset == nullptr || !preset->config.has("nozzle_temperature"))
+        return {};
+    const BedType     bed_type = bundle.project_config.has("curr_bed_type") ? bundle.project_config.opt_enum<BedType>("curr_bed_type") : btPC;
+    const std::string bed_key  = get_bed_temp_key(bed_type);
+    const int         nozzle   = preset->config.opt_int("nozzle_temperature", 0);
+    if (bed_key.empty() || !preset->config.has(bed_key))
+        return wxString::FromUTF8(std::to_string(nozzle) + " \u00B0C");
+    return wxString::FromUTF8(std::to_string(nozzle) + " / " + std::to_string(preset->config.opt_int(bed_key, 0)) + " \u00B0C");
+}
+
+// Nexus: a filament slot as a Web-Slicer tile: the filament as a spool in its colour (the colour picker), the
+// preset choice and the temperatures below it, the slot number and the edit button in the top corners.
+class FilamentTile : public wxPanel
+{
+public:
+    FilamentTile(wxWindow* parent) : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL | wxFULL_REPAINT_ON_RESIZE)
+    {
+        SetBackgroundStyle(wxBG_STYLE_PAINT);
+        SetBackgroundColour(nexus_tile_colour());
+        Bind(wxEVT_PAINT, [this](wxPaintEvent&) {
+            wxAutoBufferedPaintDC dc(this);
+            dc.SetBackground(wxBrush(nexus_card_colour()));
+            dc.Clear();
+            wxGCDC gdc(dc);
+            gdc.SetPen(*wxTRANSPARENT_PEN);
+            gdc.SetBrush(wxBrush(nexus_tile_colour()));
+            gdc.DrawRoundedRectangle(GetClientRect(), FromDIP(10));
+        });
+    }
+};
+
 void Sidebar::init_filament_combo(PlaterPresetComboBox **combo, const int filament_idx)
 {
-    *combo = new PlaterPresetComboBox(p->m_panel_filament_content, Slic3r::Preset::TYPE_FILAMENT);
+    auto* tile = new FilamentTile(p->m_panel_filament_content);
+    *combo = new PlaterPresetComboBox(tile, Slic3r::Preset::TYPE_FILAMENT);
     (*combo)->set_filament_idx(filament_idx);
+    (*combo)->set_spool_swatch(NEXUS_SPOOL_PX);
+    PlaterPresetComboBox* combobox = (*combo);
 
-    auto combo_and_btn_sizer = new wxBoxSizer(wxHORIZONTAL);
-
-    // BBS:  filament double columns
-
-    // int em = wxGetApp().em_unit();
-    if ((filament_idx % 2) == 0) // Dont add right column item. this one create equal spacing on left, right & middle
-        combo_and_btn_sizer->AddSpacer(FromDIP((filament_idx % 2) == 0 ? 12 : 3)); // Content Margin
-
-    (*combo)->clr_picker->SetLabel(wxString::Format("%d", filament_idx + 1));
-    combo_and_btn_sizer->Add((*combo)->clr_picker, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, FromDIP(SidebarProps::ElementSpacing()) - FromDIP(2)); // ElementSpacing - 2 (from combo box))
-    combo_and_btn_sizer->Add(*combo, 1, wxALL | wxEXPAND, FromDIP(2))->SetMinSize({-1, 30 * wxGetApp().em_unit() / 10}); // ORCA ensure height matches with PlaterPresetComboBox
-
-    /* BBS hide del_btn
-    ScalableButton* del_btn = new ScalableButton(p->m_panel_filament_content, wxID_ANY, "delete_filament");
-    del_btn->Bind(wxEVT_BUTTON, [this](wxCommandEvent& e){
-        int extruder_count = std::max(1, (int)p->combos_filament.size() - 1);
-
-        update_objects_list_filament_column(std::max(1, extruder_count - 1));
-        on_filament_count_change(extruder_count);
-        wxGetApp().preset_bundle->printers.get_edited_preset().set_num_extruders(extruder_count);
-        wxGetApp().preset_bundle->update_multi_material_filament_presets();
+    // The slot's tile goes with its combo box, which the filament count changes destroy.
+    combobox->Bind(wxEVT_DESTROY, [this, combobox, tile](wxWindowDestroyEvent& e) {
+        e.Skip();
+        if (e.GetEventObject() == combobox)
+            p->m_panel_filament_content->CallAfter([tile] { tile->Destroy(); });
     });
 
-    combo_and_btn_sizer->Add(32 * em / 10, 0, 0, 0, 0);
-    combo_and_btn_sizer->Add(del_btn, 0, wxALIGN_CENTER_VERTICAL, 5 * em / 10);
-    */
-    ScalableButton* edit_btn = new ScalableButton(p->m_panel_filament_content, wxID_ANY, "menu_filament");
-    edit_btn->SetToolTip(_L("Click to edit preset"));
+    const wxColour tile_bg = nexus_tile_colour();
 
-    PlaterPresetComboBox* combobox = (*combo);
+    // Top corners: the slot number, and the edit button.
+    auto* number = new Label(tile, Label::Body_12, wxString::Format("%d", filament_idx + 1));
+    number->SetForegroundColour(StateColor::darkModeColorFor(wxColour("#6B6B6B")));
+    number->SetBackgroundColour(tile_bg);
+
+    ScalableButton* edit_btn = new ScalableButton(tile, wxID_ANY, "menu_filament");
+    edit_btn->SetToolTip(_L("Click to edit preset"));
+    edit_btn->SetBackgroundColour(tile_bg);
     edit_btn->Bind(wxEVT_BUTTON, [this, edit_btn, combobox, filament_idx](wxCommandEvent) {
         bool single_or_bbl     = should_show_SEMM_buttons();
         bool is_multi_material = p->combos_filament.size() > 1;
@@ -3966,19 +4010,66 @@ void Sidebar::init_filament_combo(PlaterPresetComboBox **combo, const int filame
     });
     combobox->edit_btn = edit_btn;
 
-    combo_and_btn_sizer->Add(edit_btn, 0, wxALIGN_CENTER_VERTICAL | wxLEFT, FromDIP(SidebarProps::ElementSpacing()) - FromDIP(2)); // ElementSpacing - 2 (from combo box))
+    auto* corners = new wxBoxSizer(wxHORIZONTAL);
+    corners->Add(number, 0, wxALIGN_CENTER_VERTICAL);
+    corners->AddStretchSpacer(1);
+    corners->Add(edit_btn, 0, wxALIGN_CENTER_VERTICAL);
 
-    combo_and_btn_sizer->AddSpacer(FromDIP(SidebarProps::ContentMargin()));
+    // The spool: the colour picker, showing the filament's colour.
+    combobox->clr_picker->SetBackgroundColour(tile_bg);
+    combobox->clr_picker->SetMinSize(wxSize(FromDIP(NEXUS_SPOOL_PX + 4), FromDIP(NEXUS_SPOOL_PX + 4)));
 
-    // BBS:  filament double columns
-    auto side = filament_idx % 2;
+    auto* temperatures = new Label(tile, Label::Body_11, filament_tile_temperatures(filament_idx));
+    temperatures->SetForegroundColour(StateColor::darkModeColorFor(wxColour("#8A8A8A")));
+    temperatures->SetBackgroundColour(tile_bg);
+    tile->Bind(wxEVT_IDLE, [temperatures, filament_idx, tile](wxIdleEvent& e) {
+        e.Skip();
+        const wxString text = filament_tile_temperatures(filament_idx);
+        if (text != temperatures->GetLabel()) {
+            temperatures->SetLabel(text);
+            tile->Layout();
+        }
+    });
+
+    const int pad = FromDIP(6);
+    auto* tile_sizer = new wxBoxSizer(wxVERTICAL);
+    tile_sizer->Add(corners, 0, wxEXPAND | wxLEFT | wxRIGHT | wxTOP, pad);
+    tile_sizer->Add(combobox->clr_picker, 0, wxALIGN_CENTER_HORIZONTAL);
+    tile_sizer->Add(combobox, 0, wxEXPAND | wxLEFT | wxRIGHT | wxTOP, pad)->SetMinSize({-1, 30 * wxGetApp().em_unit() / 10});
+    tile_sizer->Add(temperatures, 0, wxALIGN_CENTER_HORIZONTAL | wxTOP | wxBOTTOM, pad / 2);
+    tile->SetSizer(tile_sizer);
+
+    // Two columns of tiles after the Add filament tile, which takes the first place (see add_filament_tile_slot()).
+    auto* combo_and_btn_sizer = new wxBoxSizer(wxHORIZONTAL);
+    combo_and_btn_sizer->Add(tile, 1, wxEXPAND | wxALL, FromDIP(3));
+    const int place = filament_idx + 1;
+    auto side = place % 2;
     auto /***/sizer_filaments = this->p->sizer_filaments->GetItem(side)->GetSizer();
-    if (side == 1 && filament_idx > 1) sizer_filaments->Remove(filament_idx / 2);
+    if (side == 1 && place > 1) sizer_filaments->Remove(place / 2);
     sizer_filaments->Add(combo_and_btn_sizer, 1, wxEXPAND);
-    if (side == 0 && filament_idx > 0) {
+    if (side == 0) {
         sizer_filaments = this->p->sizer_filaments->GetItem(1)->GetSizer();
         sizer_filaments->AddStretchSpacer(1);
     }
+}
+
+// Removes the row of the last filament slot from the two tile columns and keeps the columns even.
+void Sidebar::remove_last_filament_tile()
+{
+    const int place = int(p->combos_filament.size()); // the last slot's place, after the Add filament tile
+    this->p->sizer_filaments->GetItem(place % 2)->GetSizer()->Remove(place / 2);
+}
+
+void Sidebar::balance_filament_tile_columns()
+{
+    auto   sizer_filaments0 = this->p->sizer_filaments->GetItem((size_t) 0)->GetSizer();
+    auto   sizer_filaments1 = this->p->sizer_filaments->GetItem(1)->GetSizer();
+    size_t c0               = sizer_filaments0->GetChildren().GetCount();
+    size_t c1               = sizer_filaments1->GetChildren().GetCount();
+    if (c0 < c1)
+        sizer_filaments1->Remove(c1 - 1);
+    else if (c0 > c1)
+        sizer_filaments1->AddStretchSpacer(1);
 }
 
 void Sidebar::remove_unused_filament_combos(const size_t current_extruder_count)
@@ -3987,24 +4078,11 @@ void Sidebar::remove_unused_filament_combos(const size_t current_extruder_count)
         return;
     while (p->combos_filament.size() > current_extruder_count) {
         const int last = p->combos_filament.size() - 1;
-        auto sizer_filaments = this->p->sizer_filaments->GetItem(last % 2)->GetSizer();
-        sizer_filaments->Remove(last / 2);
+        remove_last_filament_tile();
         (*p->combos_filament[last]).Destroy();
         p->combos_filament.pop_back();
     }
-    // BBS:  filament double columns
-    auto sizer_filaments0 = this->p->sizer_filaments->GetItem((size_t)0)->GetSizer();
-    auto sizer_filaments1 = this->p->sizer_filaments->GetItem(1)->GetSizer();
-    if (current_extruder_count < 2) {
-        sizer_filaments1->Clear();
-    } else {
-        size_t c0 = sizer_filaments0->GetChildren().GetCount();
-        size_t c1 = sizer_filaments1->GetChildren().GetCount();
-        if (c0 < c1)
-            sizer_filaments1->Remove(c1 - 1);
-        else if (c0 > c1)
-            sizer_filaments1->AddStretchSpacer(1);
-    }
+    balance_filament_tile_columns();
 }
 
 void Sidebar::update_all_preset_comboboxes(bool update_filament_combos)
@@ -5682,7 +5760,8 @@ void Sidebar::update_filaments_area_height()
     // ORCA use a height with user preference
     auto left_sizer          = p->sizer_filaments->GetItem((size_t) 0)->GetSizer();
     auto combo_sizer         = left_sizer->GetItem((size_t) 0)->GetSizer();
-    int  preferred_rows      = std::ceil(0.5 * std::stoi(wxGetApp().app_config->get("filaments_area_preferred_count")));
+    // Nexus: the Add filament tile takes the first place of the rows.
+    int  preferred_rows      = std::ceil(0.5 * (std::stoi(wxGetApp().app_config->get("filaments_area_preferred_count")) + 1));
     auto height_with_borders = combo_sizer->GetSize().GetHeight(); // gets height from sizer instead static numbers
     p->m_panel_filament_content->SetMaxSize(wxSize{-1, preferred_rows * height_with_borders});
 
@@ -6020,26 +6099,12 @@ void Sidebar::on_filaments_delete(size_t filament_id)
         // delete UI item
         {
             const int last            = p->combos_filament.size() - 1;
-            auto      sizer_filaments = this->p->sizer_filaments->GetItem(last % 2)->GetSizer();
-            sizer_filaments->Remove(last / 2);
+            remove_last_filament_tile();
 
             PlaterPresetComboBox* to_delete_combox = p->combos_filament[filament_id];
             (*p->combos_filament[last]).Destroy();
             p->combos_filament.pop_back();
-
-            // BBS:  filament double columns
-            auto sizer_filaments0 = this->p->sizer_filaments->GetItem((size_t) 0)->GetSizer();
-            auto sizer_filaments1 = this->p->sizer_filaments->GetItem(1)->GetSizer();
-            if (p->combos_filament.size() < 2) {
-                sizer_filaments1->Clear();
-            } else {
-                size_t c0 = sizer_filaments0->GetChildren().GetCount();
-                size_t c1 = sizer_filaments1->GetChildren().GetCount();
-                if (c0 < c1)
-                    sizer_filaments1->Remove(c1 - 1);
-                else if (c0 > c1)
-                    sizer_filaments1->AddStretchSpacer(1);
-            }
+            balance_filament_tile_columns();
         }
 
         show_SEMM_buttons(); // ORCA
@@ -6879,7 +6944,9 @@ void Sidebar::show_SEMM_buttons()
     bool is_multi  = single_or_bbl && is_multi_material;  // MULTI MATERIAL WITH SINGLE EXTRUDER
     bool is_fixed  = !is_single && !is_multi;             // MULTI EXTRUDER / TOOLCHANGER / IDEX WITH FIXED MATERIAL
 
-    p->m_bpButton_add_filament->Show(single_or_bbl);
+    p->m_bpButton_add_filament->Hide(); // Nexus: the Add filament tile adds filaments
+    if (p->m_add_filament_tile != nullptr)
+        p->m_add_filament_tile->Enable(single_or_bbl);
     p->m_bpButton_del_filament->Show(is_multi);
     p->m_flushing_volume_btn->Show(  is_multi);
 

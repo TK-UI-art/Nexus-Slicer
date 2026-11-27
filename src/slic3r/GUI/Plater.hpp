@@ -211,6 +211,9 @@ public:
     // Nexus: the filaments in the AMS of the connected printer changed (see load_ams_list()).
     void on_ams_contents_changed();
     static std::string ams_contents(const std::map<int, DynamicPrintConfig>& list);
+    // Nexus: the filament slots are tiles in two columns after the Add filament tile.
+    void remove_last_filament_tile();
+    void balance_filament_tile_columns();
     void fit_cards_height();
     void msw_rescale();
     void sys_color_changed();

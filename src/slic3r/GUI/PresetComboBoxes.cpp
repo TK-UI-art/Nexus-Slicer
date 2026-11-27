@@ -1189,7 +1189,13 @@ void PlaterPresetComboBox::update()
     {
         // The slot can lie past the colour arrays: it still lists its presets, with a blank swatch.
         std::vector<wxBitmap *> bitmaps = get_extruder_color_icons(true);
-        if (m_filament_idx < bitmaps.size())
+        if (m_spool_swatch_px > 0) {
+            // The slot's first colour, without alpha, takes the place of the spool icon's accent fill.
+            const auto* colours = m_preset_bundle->project_config.option<ConfigOptionStrings>("filament_colour");
+            std::string colour  = colours != nullptr && m_filament_idx < int(colours->values.size()) ? colours->values[m_filament_idx] : "";
+            colour              = colour.size() >= 7 && colour[0] == '#' ? colour.substr(0, 7) : "#F0F0F0";
+            clr_picker->SetBitmap(create_scaled_bitmap("nexus_spool", this, m_spool_swatch_px, false, colour));
+        } else if (m_filament_idx < bitmaps.size())
             clr_picker->SetBitmap(*bitmaps[m_filament_idx]);
         else
             clr_picker->SetBitmap(*get_extruder_color_icon("#F0F0F0FF", std::to_string(m_filament_idx + 1), lround(2 * m_em_unit), lround(2 * m_em_unit)));
@@ -1578,7 +1584,7 @@ void PlaterPresetComboBox::msw_rescale()
     PresetComboBox::msw_rescale();
     SetMinSize({-1, 30 * m_em_unit / 10});
 
-    if (clr_picker)
+    if (clr_picker && m_spool_swatch_px == 0)
         clr_picker->SetSize(20 * m_em_unit / 10, 20 * m_em_unit / 10);
     // BBS
     if (edit_btn != nullptr)

@@ -201,6 +201,10 @@ public:
     // BBS
     wxButton* clr_picker { nullptr };
 
+    // Nexus: the colour swatch shows the filament as a spool of `px` DIP (a sidebar filament tile), or as the
+    // numbered square for 0.
+    void set_spool_swatch(int px) { m_spool_swatch_px = px; }
+
     wxColor get_color() { return m_color; }
 
     // Opens this slot's preset in its tab; `show_tab` false only loads it, without showing the tab.
@@ -222,6 +226,7 @@ public:
     void sys_color_changed() override;
 
 private:
+    int m_spool_swatch_px{0};
     // BBS
     wxColor m_color;
     bool    m_sync_badge{false};
