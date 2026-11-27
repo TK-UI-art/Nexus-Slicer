@@ -111,7 +111,8 @@ private:
 
 static Plater* plater() { return wxGetApp().plater(); }
 
-NexusModelCard::NexusModelCard(wxWindow* parent, wxBoxSizer* sizer, int card_margin) : m_parent(parent), m_sizer(sizer)
+NexusModelCard::NexusModelCard(wxWindow* parent, wxBoxSizer* sizer, int card_margin, int card_spacing)
+    : m_parent(parent), m_sizer(sizer)
 {
     m_title = new StaticBox(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL | wxBORDER_NONE);
     m_title->SetBackgroundColor(wxColour(NEXUS_CARD));
@@ -151,10 +152,9 @@ NexusModelCard::NexusModelCard(wxWindow* parent, wxBoxSizer* sizer, int card_mar
     if (wxGetApp().app_config->get_bool("nexus_model_card_folded"))
         m_content->Hide();
 
-    sizer->AddSpacer(card_margin);
     sizer->Add(m_title, 0, wxEXPAND | wxLEFT | wxRIGHT, card_margin);
     sizer->Add(m_content, 0, wxEXPAND | wxLEFT | wxRIGHT, card_margin);
-    sizer->AddSpacer(m_parent->FromDIP(NEXUS_CARD_GAP + 2 * NEXUS_CARD_PAD) - card_margin);
+    sizer->AddSpacer(card_spacing);
 }
 
 void NexusModelCard::build_content(wxWindow* parent)

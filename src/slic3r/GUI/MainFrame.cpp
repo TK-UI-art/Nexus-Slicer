@@ -418,7 +418,7 @@ DPIFrame(NULL, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, BORDERLESS_FRAME_
     , m_diff_dialog(std::make_unique<Lazy<DiffPresetDialog>>("compare_presets", 100, [this] { return make_diff_dialog(); }))
 {
 #ifdef __WXOSX__
-    set_miniaturizable(GetHandle());
+    set_miniaturizable(GetHandle(), wxGetApp().dark_mode());
 #endif
 
 #ifdef __WXGTK__
@@ -486,7 +486,7 @@ DPIFrame(NULL, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, BORDERLESS_FRAME_
 	m_reset_title_text_colour_timer = new wxTimer();
 	m_reset_title_text_colour_timer->SetOwner(this);
 	Bind(wxEVT_TIMER, [this](auto& e) {
-		set_title_colour_after_set_title(GetHandle());
+		set_title_colour_after_set_title(GetHandle(), wxGetApp().dark_mode());
 		m_reset_title_text_colour_timer->Stop();
 	});
 	this->Bind(wxEVT_FULLSCREEN, [this](wxFullScreenEvent& e) {
@@ -1451,7 +1451,7 @@ void MainFrame::show_publish_button(bool show)
 void MainFrame::update_title_colour_after_set_title()
 {
 #ifdef __APPLE__
-    set_title_colour_after_set_title(GetHandle());
+    set_title_colour_after_set_title(GetHandle(), wxGetApp().dark_mode());
 #endif
 }
 
@@ -2934,6 +2934,10 @@ void MainFrame::on_sys_color_changed()
     wxGetApp().force_colors_update();
     wxGetApp().update_ui_from_settings();
 #endif //__APPLE__
+#ifdef __WXOSX__
+    set_miniaturizable(GetHandle(), wxGetApp().dark_mode());
+    set_title_colour_after_set_title(GetHandle(), wxGetApp().dark_mode());
+#endif
 
 #ifdef __WXMSW__
     wxGetApp().UpdateDarkUI(m_tabpanel);

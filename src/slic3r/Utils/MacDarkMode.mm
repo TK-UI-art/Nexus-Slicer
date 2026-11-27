@@ -44,13 +44,15 @@ double mac_max_scaling_factor()
     return scaling;
 }
     
-void set_miniaturizable(void * window)
+void set_miniaturizable(void * window, bool dark)
 {
-    CGFloat rFloat = 34/255.0;
-    CGFloat gFloat = 34/255.0;
-    CGFloat bFloat = 36/255.0;
+    // Nexus: the transparent title bar shows the window background: the app background of the theme
+    // (NEXUS_SIDEBAR_BG / NEXUS_SIDEBAR_BG_DARK), so that the bar and the tabs below it read as one surface.
+    const CGFloat r = (dark ? 0x18 : 0xE0) / 255.0;
+    const CGFloat g = (dark ? 0x19 : 0xE0) / 255.0;
+    const CGFloat b = (dark ? 0x1B : 0xE0) / 255.0;
     [(NSView*) window window].titlebarAppearsTransparent = true;
-    [(NSView*) window window].backgroundColor = [NSColor colorWithCalibratedRed:rFloat green:gFloat blue:bFloat alpha:1.0];
+    [(NSView*) window window].backgroundColor = [NSColor colorWithSRGBRed:r green:g blue:b alpha:1.0];
     [(NSView*) window window].styleMask |= NSMiniaturizableWindowMask;
 
     NSEnumerator *viewEnum = [[[[[[[(NSView*) window window] contentView] superview] titlebarViewController] view] subviews] objectEnumerator];
@@ -69,19 +71,20 @@ void set_tag_when_enter_full_screen(bool isfullscreen)
   is_in_full_screen_mode = isfullscreen;
 }
 
-void set_title_colour_after_set_title(void * window)
+void set_title_colour_after_set_title(void * window, bool dark)
 {
+  NSColor *colour = dark ? NSColor.whiteColor : NSColor.blackColor;
   NSEnumerator *viewEnum = [[[[[[[(NSView*) window window] contentView] superview] titlebarViewController] view] subviews] objectEnumerator];
   NSView *viewObject;
   while(viewObject = (NSView *)[viewEnum nextObject]) {
     if([viewObject class] == [NSTextField self]) {
-      [(NSTextField*)viewObject setTextColor : NSColor.whiteColor];
+      [(NSTextField*)viewObject setTextColor : colour];
       mainframe_text_field = (NSTextField*)viewObject;
     }
   }
 
   if (mainframe_text_field) {
-    [(NSTextField*)mainframe_text_field setTextColor : NSColor.whiteColor];
+    [(NSTextField*)mainframe_text_field setTextColor : colour];
   }
 }
 

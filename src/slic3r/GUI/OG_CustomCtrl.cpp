@@ -1,5 +1,7 @@
 #include "OG_CustomCtrl.hpp"
 #include "slic3r/GUI/NexusTheme.hpp"
+#include "NexusFrame.hpp"
+#include "Widgets/StaticLine.hpp"
 #include "OptionsGroup.hpp"
 #include "OptionStateRegistry.hpp"
 #include "MarkdownTip.hpp"
@@ -369,6 +371,9 @@ void OG_CustomCtrl::OnPaint(wxPaintEvent&)
         line.render(dc, h_pos, v_pos);
         v_pos += line.height;
     }
+    // Nexus: the group's frame runs over this grid, which stretches past the fields under its right edge.
+    if (opt_group->nexus_frame)
+        nexus_paint_frame_over(this, dc, dynamic_cast<::StaticLine*>(opt_group->stb));
 }
 
 void OG_CustomCtrl::OnMotion(wxMouseEvent& event)

@@ -18,6 +18,7 @@
 #include <vector>
 #include <string>
 #include <algorithm>
+#include <wx/brush.h>
 #include <wx/button.h>
 #include <wx/colour.h>
 #include <wx/dcclient.h>
@@ -73,6 +74,9 @@ ButtonsListCtrl::ButtonsListCtrl(wxWindow *parent, wxBoxSizer* side_tools) :
 
     Bind(wxEVT_PAINT, [this](wxPaintEvent&) {
         wxPaintDC dc(this);
+        // macOS leaves an unpainted control transparent, showing the window background behind the bar.
+        dc.SetBackground(wxBrush(GetBackgroundColour()));
+        dc.Clear();
         Slic3r::GUI::nexus_paint_cards(this, dc, {std::vector<wxWindow*>(m_pageButtons.begin(), m_pageButtons.end())}, TAB_PILL_RADIUS,
                                        TAB_PILL_PAD);
     });

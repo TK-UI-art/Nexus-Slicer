@@ -888,7 +888,8 @@ struct Sidebar::priv
 {
     Plater *plater;
 
-    wxPanel *scrolled = nullptr;
+    wxScrolledWindow *scrolled = nullptr;
+    wxSize            scrolled_min_size; // of the cards, for the scroll range
     PlaterPresetComboBox *combo_sla_print = nullptr;
     PlaterPresetComboBox *combo_sla_material = nullptr;
 
@@ -2811,12 +2812,19 @@ Sidebar::Sidebar(Plater *parent)
     Choice::register_dynamic_list("brim_filament_id", &dynamic_physical_filament_list);
     Choice::register_dynamic_list("wipe_tower_filament", &dynamic_physical_filament_list);
 
-    p->scrolled = new wxPanel(this);
-    //    p->scrolled->SetScrollbars(0, 100, 1, 2); // ys_DELETE_after_testing. pixelsPerUnitY = 100
-    // but this cause the bad layout of the sidebar, when all infoboxes appear.
-    // As a result we can see the empty block at the bottom of the sidebar
-    // But if we set this value to 5, layout will be better
-    //p->scrolled->SetScrollRate(0, 5);
+    // Nexus: the cards scroll when they do not fit, as in the Web-Slicer. While they fit, the sidebar fills the
+    // height and the Process card takes the rest (wxScrolled lays out over the larger of client and minimum size).
+    p->scrolled = new wxScrolledWindow(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxVSCROLL);
+    p->scrolled->SetScrollRate(0, FromDIP(10));
+    // The scroll range follows the cards' minimum height, which changes as they fold, add filaments or rows.
+    p->scrolled->Bind(wxEVT_IDLE, [this](wxIdleEvent& e) {
+        e.Skip();
+        if (wxSizer* sizer = p->scrolled->GetSizer(); sizer != nullptr && sizer->GetMinSize() != p->scrolled_min_size) {
+            p->scrolled_min_size = sizer->GetMinSize();
+            p->scrolled->FitInside();
+            p->scrolled->Layout();
+        }
+    });
     // Nexus: the sidebar background shows between the step cards
     p->scrolled->SetBackgroundColour(StateColor::darkModeColorFor(wxColour(NEXUS_SIDEBAR_BG)));
 
@@ -2847,9 +2855,6 @@ Sidebar::Sidebar(Plater *parent)
 #ifdef __WINDOWS__
     p->scrolled->SetDoubleBuffered(true);
 #endif //__WINDOWS__
-
-    // Nexus: the model card comes first, as in the Web-Slicer.
-    p->model_card = std::make_unique<NexusModelCard>(p->scrolled, scrolled_sizer, card_margin);
 
     // add printer
     {
@@ -3595,6 +3600,9 @@ Sidebar::Sidebar(Plater *parent)
     // ---- End filament area ----
     }
 
+    // Nexus: the model card follows the printer and filament cards.
+    p->model_card = std::make_unique<NexusModelCard>(p->scrolled, scrolled_sizer, card_margin, card_spacing);
+
     {
     //add project title
     auto params_panel = ((MainFrame*)parent->GetParent())->m_param_panel;
@@ -3673,6 +3681,9 @@ Sidebar::Sidebar(Plater *parent)
 #else
     if (params_panel) {
         params_panel->Reparent(p->scrolled);
+        // Its settings scroll inside it: it keeps room for them, and the sidebar scrolls instead when the
+        // cards above leave less.
+        params_panel->SetMinSize(wxSize(-1, FromDIP(320)));
         scrolled_sizer->Add(params_panel, 3, wxEXPAND | wxLEFT | wxRIGHT, card_margin);
     }
 #endif
@@ -3681,9 +3692,9 @@ Sidebar::Sidebar(Plater *parent)
     // Nexus: Web-Slicer step cards. Each card is painted on p->scrolled behind the union of its
     // windows, so the sections keep their parent and their layout code; only margins were added.
     p->nexus_cards = {
-        p->model_card->card_windows(),
         {p->m_panel_printer_title, p->m_panel_printer_separator, p->m_panel_printer_content},
         {p->m_panel_filament_title, p->m_panel_filament_separator, p->m_filament_area_wrapper},
+        p->model_card->card_windows(),
         {p->m_search_bar, p->m_object_list},
     };
     if (params_panel) {

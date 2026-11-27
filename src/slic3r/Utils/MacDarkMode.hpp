@@ -9,12 +9,13 @@ namespace GUI {
 #if __APPLE__
 extern bool mac_dark_mode();
 extern double mac_max_scaling_factor();
-extern void set_miniaturizable(void * window);
+// The window background, which the transparent title bar shows, and the title text in the theme colours.
+extern void set_miniaturizable(void * window, bool dark);
 void WKWebView_evaluateJavaScript(void * web, wxString const & script, void (*callback)(wxString const &));
 void WKWebView_setTransparentBackground(void * web);
 void WKWebView_force_display(void * web);
 void set_tag_when_enter_full_screen(bool isfullscreen);
-void set_title_colour_after_set_title(void * window);
+void set_title_colour_after_set_title(void * window, bool dark);
 void initGestures(void * view,  wxEvtHandler * handler);
 void openFolderForFile(wxString const & file);
 void StaticGroup_layoutBadge(void * group, void * badge);
