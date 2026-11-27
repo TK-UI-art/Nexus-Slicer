@@ -2812,8 +2812,7 @@ Sidebar::Sidebar(Plater *parent)
     Choice::register_dynamic_list("brim_filament_id", &dynamic_physical_filament_list);
     Choice::register_dynamic_list("wipe_tower_filament", &dynamic_physical_filament_list);
 
-    // Nexus: the cards scroll when they do not fit, as in the Web-Slicer. While they fit, the sidebar fills the
-    // height and the Process card takes the rest (wxScrolled lays out over the larger of client and minimum size).
+    // Nexus: the cards scroll when they do not fit, as in the Web-Slicer; each is as high as its content.
     p->scrolled = new wxScrolledWindow(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxVSCROLL);
     p->scrolled->SetScrollRate(0, FromDIP(10));
     // The scroll range follows the cards' minimum height, which changes as they fold, add filaments or rows.
@@ -3685,10 +3684,22 @@ Sidebar::Sidebar(Plater *parent)
 #else
     if (params_panel) {
         params_panel->Reparent(p->scrolled);
-        // Its settings scroll inside it: it keeps room for them, and the sidebar scrolls instead when the
-        // cards above leave less.
-        params_panel->SetMinSize(wxSize(-1, FromDIP(320)));
-        scrolled_sizer->Add(params_panel, 3, wxEXPAND | wxLEFT | wxRIGHT, card_margin);
+        scrolled_sizer->Add(params_panel, 0, wxEXPAND | wxLEFT | wxRIGHT, card_margin);
+        // Nexus: the Process card is as high as its settings, which then show whole; the sidebar scrolls them
+        // with the other cards. Its settings page follows the page's content, which changes with the tab, the
+        // mode and the shown options.
+        params_panel->Bind(wxEVT_IDLE, [params_panel](wxIdleEvent& e) {
+            e.Skip();
+            wxScrolledWindow* view = params_panel->get_paged_view();
+            if (!params_panel->IsShown() || view == nullptr || view->GetSizer() == nullptr || params_panel->GetSize().y <= 0)
+                return;
+            const int height = params_panel->GetSize().y - view->GetClientSize().y + view->GetSizer()->GetMinSize().y;
+            if (height != params_panel->GetMinSize().y)
+                params_panel->SetMinSize(wxSize(-1, height));
+        });
+        // The page no longer scrolls: the wheel scrolls the sidebar.
+        if (wxScrolledWindow* view = params_panel->get_paged_view())
+            view->Bind(wxEVT_MOUSEWHEEL, [this](wxMouseEvent& e) { p->scrolled->GetEventHandler()->ProcessEvent(e); });
 
         // Nexus: the Process card folds from its title, as the printer and filament cards do. The title's
         // buttons and switches keep their own clicks.
