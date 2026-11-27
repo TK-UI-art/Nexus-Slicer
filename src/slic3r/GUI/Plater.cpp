@@ -890,6 +890,7 @@ struct Sidebar::priv
 
     wxScrolledWindow *scrolled = nullptr;
     wxSize            scrolled_min_size; // of the cards, for the scroll range
+    wxSizer*          slice_row = nullptr; // the slice button and its options button, below the cards
     PlaterPresetComboBox *combo_sla_print = nullptr;
     PlaterPresetComboBox *combo_sla_material = nullptr;
 
@@ -2820,9 +2821,14 @@ Sidebar::Sidebar(Plater *parent)
         e.Skip();
         if (wxSizer* sizer = p->scrolled->GetSizer(); sizer != nullptr && sizer->GetMinSize() != p->scrolled_min_size) {
             p->scrolled_min_size = sizer->GetMinSize();
+            fit_cards_height();
             p->scrolled->FitInside();
             p->scrolled->Layout();
         }
+    });
+    Bind(wxEVT_SIZE, [this](wxSizeEvent& e) {
+        e.Skip();
+        fit_cards_height();
     });
     // Nexus: the sidebar background shows between the step cards
     p->scrolled->SetBackgroundColour(StateColor::darkModeColorFor(wxColour(NEXUS_SIDEBAR_BG)));
@@ -3754,7 +3760,8 @@ Sidebar::Sidebar(Plater *parent)
     p->sizer_params->Add(p->object_layers->get_sizer(), 0, wxEXPAND | wxTOP, 0);
 
     auto *sizer = new wxBoxSizer(wxVERTICAL);
-    sizer->Add(p->scrolled, 1, wxEXPAND);
+    // Nexus: the slice button follows right below the cards; once they fill the sidebar, they scroll above it.
+    sizer->Add(p->scrolled, 0, wxEXPAND);
 
     // Nexus: Slice button at the foot of the sidebar (Web-Slicer "Slice Plate"). It runs the top-bar slice
     // button's action and mirrors its enabled state; once the plate is sliced (nothing left to slice) it is the
@@ -3824,11 +3831,25 @@ Sidebar::Sidebar(Plater *parent)
         p->btn_slice_option_sidebar->PopupMenu(&menu, 0, p->btn_slice_option_sidebar->GetSize().y);
     });
 
-    auto* slice_row = new wxBoxSizer(wxHORIZONTAL);
-    slice_row->Add(p->btn_slice_sidebar, 1, wxEXPAND);
-    slice_row->Add(p->btn_slice_option_sidebar, 0, wxEXPAND | wxLEFT, FromDIP(6));
-    sizer->Add(slice_row, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, FromDIP(NEXUS_CARD_GAP));
+    p->slice_row = new wxBoxSizer(wxHORIZONTAL);
+    p->slice_row->Add(p->btn_slice_sidebar, 1, wxEXPAND);
+    p->slice_row->Add(p->btn_slice_option_sidebar, 0, wxEXPAND | wxLEFT, FromDIP(6));
+    sizer->Add(p->slice_row, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, FromDIP(NEXUS_CARD_GAP));
+    sizer->AddStretchSpacer(1);
     SetSizer(sizer);
+}
+
+// The cards' area is as high as the cards, at most the sidebar's height less the slice button below it.
+void Sidebar::fit_cards_height()
+{
+    if (p->scrolled == nullptr || p->scrolled->GetSizer() == nullptr || p->slice_row == nullptr)
+        return;
+    const int room   = GetClientSize().y - p->slice_row->GetMinSize().y - FromDIP(NEXUS_CARD_GAP);
+    const int height = std::max(0, std::min(p->scrolled->GetSizer()->GetMinSize().y, room));
+    if (p->scrolled->GetMinSize().y != height) {
+        p->scrolled->SetMinSize(wxSize(-1, height));
+        Layout();
+    }
 }
 
 Sidebar::~Sidebar() {}
