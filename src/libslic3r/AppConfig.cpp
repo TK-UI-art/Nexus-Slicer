@@ -130,6 +130,14 @@ void AppConfig::migrate_nexus_start_page()
     set("nexus_start_on_prepare", "1");
 }
 
+void AppConfig::migrate_nexus_gcode_window()
+{
+    if (!get("nexus_gcode_window_off").empty())
+        return;
+    set_bool("show_gcode_window", false);
+    set("nexus_gcode_window_off", "1");
+}
+
 void AppConfig::reset()
 {
     m_storage.clear();
@@ -414,8 +422,9 @@ void AppConfig::set_defaults()
     if (get("drc_bits").empty())
         set("drc_bits", DRC_BITS_DEFAULT_STR);
 
+    // Nexus: the G-code listing beside the preview is off by default (Preferences or the View menu show it).
     if (get("show_gcode_window").empty())
-        set_bool("show_gcode_window", true);
+        set_bool("show_gcode_window", false);
 
     if (get("show_3d_navigator").empty())
         set_bool("show_3d_navigator", true);
@@ -1089,6 +1098,7 @@ std::string AppConfig::load(bool read_only)
     }
 
     migrate_nexus_start_page();
+    migrate_nexus_gcode_window();
     // Override missing or keys with their defaults.
     this->set_defaults();
     m_dirty = false;
@@ -1372,6 +1382,7 @@ std::string AppConfig::load(bool read_only)
     }
 
     migrate_nexus_start_page();
+    migrate_nexus_gcode_window();
     // Override missing or keys with their defaults.
     this->set_defaults();
     m_dirty = false;

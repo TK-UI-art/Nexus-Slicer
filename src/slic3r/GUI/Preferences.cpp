@@ -1179,6 +1179,15 @@ wxBoxSizer *PreferencesDialog::create_item_checkbox(wxString title, wxString too
             }
         }
         // ORCA: apply the filament translucency change immediately to the currently loaded preview
+        else if (param == "show_gcode_window") {
+            if (wxGetApp().show_gcode_window() != app_config->get_bool(param))
+                wxGetApp().toggle_show_gcode_window();
+            if (Plater* plater = wxGetApp().plater())
+                if (GLCanvas3D* canvas = plater->get_preview_canvas3D()) {
+                    canvas->set_as_dirty();
+                    canvas->request_extra_frame();
+                }
+        }
         else if (param == "preview_translucent_filaments") {
             if (Plater* plater = wxGetApp().plater()) {
                 if (GLCanvas3D* canvas = plater->get_preview_canvas3D()) {
@@ -2266,6 +2275,10 @@ void PreferencesDialog::create_items()
         "preview_translucent_filaments"
     );
     g_sizer->Add(item_translucent_filaments);
+
+    // Nexus: the G-code listing beside the preview is off unless chosen here (or with its shortcut and View menu entry).
+    auto item_gcode_window = create_item_checkbox(_L("Show G-code window"), _L("Show G-code window in Preview scene."), "show_gcode_window");
+    g_sizer->Add(item_gcode_window);
 
     //// GRAPHICS > Realistic view
     g_sizer->Add(create_item_title(_L("Realistic View")), 1, wxEXPAND);
