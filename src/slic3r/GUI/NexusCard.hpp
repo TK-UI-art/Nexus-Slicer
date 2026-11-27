@@ -12,8 +12,17 @@
 #include <wx/pen.h>
 #include <wx/window.h>
 
+#include <wx/app.h>
+#include <wx/sizer.h>
+#include <wx/stopwatch.h>
+#include <wx/timer.h>
+#include <wx/weakref.h>
+
 #include <algorithm>
+#include <cmath>
+#include <functional>
 #include <iterator>
+#include <map>
 #include <vector>
 
 namespace Slic3r { namespace GUI {
@@ -86,5 +95,101 @@ inline void nexus_paint_cards(wxWindow* parent, wxPaintDC& dc, const std::vector
         gdc.DrawRoundedRectangle(rc, radius);
     }
 }
+
+// Folds or unfolds the content window of a sidebar card with a short height animation (Web-Slicer card). The
+// content keeps its layout while its window grows or shrinks, so it slides in and out instead of squeezing.
+// `relayout` lays out the card's parent; it runs on every step. The content must sit in a vertical box sizer
+// without a stretch proportion, where its minimum height sets its height.
+class NexusFoldAnimation : public wxTimer
+{
+public:
+    static void run(wxWindow* content, bool show, std::function<void()> relayout)
+    {
+        auto& running = active();
+        if (auto it = running.find(content); it != running.end())
+            it->second->finish();
+        if (show == content->IsShown())
+            return;
+        new NexusFoldAnimation(content, show, std::move(relayout));
+    }
+
+private:
+    static constexpr int DURATION_MS = 200;
+
+    NexusFoldAnimation(wxWindow* content, bool show, std::function<void()> relayout)
+        : m_content(content), m_show(show), m_relayout(std::move(relayout)), m_min(content->GetMinSize())
+    {
+        active()[content] = this;
+        m_full = content->GetSizer() != nullptr ? content->GetSizer()->GetMinSize().y : content->GetBestSize().y;
+        // Laid out at the full height once, then frozen while the window resizes.
+        content->SetSize(content->GetSize().x, m_full);
+        content->Layout();
+        content->Bind(wxEVT_SIZE, &NexusFoldAnimation::on_size, this);
+        if (m_show) {
+            content->SetMinSize(wxSize(m_min.x, 0));
+            content->Show();
+        }
+        m_clock.Start();
+        step();
+        Start(15);
+    }
+
+    static std::map<wxWindow*, NexusFoldAnimation*>& active()
+    {
+        static std::map<wxWindow*, NexusFoldAnimation*> animations;
+        return animations;
+    }
+
+    void on_size(wxSizeEvent&) { m_content->Refresh(); } // no layout: the content slides
+
+    void Notify() override { step(); }
+
+    void step()
+    {
+        if (m_finished)
+            return;
+        if (!m_content) {
+            finish();
+            return;
+        }
+        const double t = std::min(1.0, m_clock.Time() / double(DURATION_MS));
+        if (t >= 1.0) {
+            finish();
+            return;
+        }
+        const double eased = 1.0 - std::pow(1.0 - t, 3.0);
+        const int    h     = int(std::lround(m_full * (m_show ? eased : 1.0 - eased)));
+        m_content->SetMinSize(wxSize(m_min.x, h));
+        m_relayout();
+    }
+
+    void finish()
+    {
+        if (m_finished)
+            return;
+        m_finished = true;
+        Stop();
+        active().erase(m_content_key);
+        if (m_content) {
+            m_content->Unbind(wxEVT_SIZE, &NexusFoldAnimation::on_size, this);
+            m_content->SetMinSize(m_min);
+            if (!m_show)
+                m_content->Hide();
+            m_content->Layout();
+            m_relayout();
+        }
+        m_content = nullptr;
+        wxTheApp->CallAfter([this] { delete this; });
+    }
+
+    wxWeakRef<wxWindow>   m_content;
+    wxWindow*             m_content_key{m_content.get()};
+    bool                  m_show;
+    std::function<void()> m_relayout;
+    wxSize                m_min;
+    int                   m_full{0};
+    bool                  m_finished{false};
+    wxStopWatch           m_clock;
+};
 
 }} // namespace Slic3r::GUI

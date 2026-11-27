@@ -2925,9 +2925,11 @@ Sidebar::Sidebar(Plater *parent)
             bool     isShown = p->m_panel_printer_content->IsShown();
             wxString title   = _L("Printer") + wxString(!isShown ? "" : ("  |  " + p->combo_printer->GetValue()));
             p->m_text_printer_settings->SetLabel(title);
-            p->m_panel_printer_content->Show(!isShown);
             p->m_panel_printer_separator->Show(isShown);
-            m_scrolled_sizer->Layout();
+            NexusFoldAnimation::run(p->m_panel_printer_content, !isShown, [this] {
+                m_scrolled_sizer->Layout();
+                p->scrolled->Refresh();
+            });
         });
         p->m_panel_printer_title->Bind(wxEVT_LEFT_DOWN  , toggle_printer_section);
         p->m_panel_printer_title->Bind(wxEVT_LEFT_DCLICK, toggle_printer_section);
@@ -3318,9 +3320,11 @@ Sidebar::Sidebar(Plater *parent)
         if (e.GetPosition().x > exclude_pt)
             return;
         bool isShown = p->m_filament_area_wrapper->IsShown();
-        p->m_filament_area_wrapper->Show(!isShown);
         p->m_panel_filament_separator->Show(isShown);
-        m_scrolled_sizer->Layout();
+        NexusFoldAnimation::run(p->m_filament_area_wrapper, !isShown, [this] {
+            m_scrolled_sizer->Layout();
+            p->scrolled->Refresh();
+        });
 
         CallAfter([this]{update_filaments_counter(true);}); // call after all UI processing done
     });

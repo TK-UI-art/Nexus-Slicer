@@ -20,6 +20,7 @@
 #include <wx/filename.h>
 #include <wx/mstream.h>
 #include <wx/panel.h>
+#include <wx/scrolwin.h>
 #include <wx/utils.h>
 
 #include <algorithm>
@@ -55,6 +56,9 @@ public:
         SetCursor(wxCursor(wxCURSOR_HAND));
     }
 
+    // The height of a tile with an icon of `icon_px`, both in DIP.
+    static int min_height(int icon_px) { return icon_px + 30; }
+
     // A tile showing a picture (a project thumbnail) instead of an icon resource.
     NexusTile(wxWindow* parent, const wxString& label, const wxImage& picture, int icon_px, std::function<void(NexusTile*)> on_click)
         : NexusTile(parent, label, std::string(), icon_px, std::move(on_click), picture)
@@ -69,7 +73,7 @@ public:
                                                        wxIMAGE_QUALITY_HIGH));
         } else
             m_icon_bmp = ScalableBitmap(this, m_icon_name, m_icon_px).bmp();
-        SetMinSize(wxSize(FromDIP(64), FromDIP(m_icon_px + 30)));
+        SetMinSize(wxSize(FromDIP(64), FromDIP(min_height(m_icon_px))));
         Refresh();
     }
 
@@ -110,6 +114,9 @@ private:
 };
 
 static Plater* plater() { return wxGetApp().plater(); }
+
+static constexpr int TILE_GAP     = 6;  // DIP, between the tiles
+static constexpr int GALLERY_ICON = 56; // DIP, pictures of the gallery tiles
 
 NexusModelCard::NexusModelCard(wxWindow* parent, wxBoxSizer* sizer, int card_margin, int card_spacing)
     : m_parent(parent), m_sizer(sizer)
@@ -153,16 +160,11 @@ NexusModelCard::NexusModelCard(wxWindow* parent, wxBoxSizer* sizer, int card_mar
 void NexusModelCard::build_content(wxWindow* parent)
 {
     auto* content = new wxBoxSizer(wxVERTICAL);
-    const int gap = parent->FromDIP(6);
+    const int gap = parent->FromDIP(TILE_GAP);
 
-    auto add_heading = [&](const wxString& text) {
-        auto* label = new Label(parent, Label::Body_12, text);
-        label->SetForegroundColour(StateColor::darkModeColorFor(wxColour("#6B6B6B")));
-        content->Add(label, 0, wxLEFT | wxTOP | wxBOTTOM, gap);
-    };
-    auto add_tile = [&](wxSizer* row, const wxString& label, const std::string& icon, int icon_px,
+    auto add_tile = [&](wxWindow* tile_parent, wxSizer* row, const wxString& label, const std::string& icon, int icon_px,
                         std::function<void(NexusTile*)> on_click) {
-        auto* tile = new NexusTile(parent, label, icon, icon_px, std::move(on_click));
+        auto* tile = new NexusTile(tile_parent, label, icon, icon_px, std::move(on_click));
         m_tiles.push_back(tile);
         row->Add(tile, 1, wxEXPAND);
         return tile;
@@ -171,57 +173,82 @@ void NexusModelCard::build_content(wxWindow* parent)
     // Projects. One Open tile for projects and models: Plater::add_file() asks for a 3mf whether to open the
     // project or import its geometry, and imports the other formats into the current project.
     auto* projects = new wxGridSizer(2, gap, gap);
-    add_tile(projects, _L("New Project"), "nexus_tile_new", 34, [](NexusTile*) { plater()->new_project(); });
-    add_tile(projects, _L("Open"), "nexus_tile_open", 34, [](NexusTile*) { plater()->add_file(); })
+    add_tile(parent, projects, _L("New Project"), "nexus_tile_new", 34, [](NexusTile*) { plater()->new_project(); });
+    add_tile(parent, projects, _L("Open"), "nexus_tile_open", 34, [](NexusTile*) { plater()->add_file(); })
         ->SetToolTip(_L("Open a project or import models"));
     content->Add(projects, 0, wxEXPAND | wxLEFT | wxRIGHT | wxTOP, gap);
 
-    // The latest recent projects, pictured by their thumbnails; refreshed when the list changes. The Home page
-    // (the account button in the workspace's top right corner) lists all of them and can remove them.
-    m_recent_heading = new Label(parent, Label::Body_12, _L("Recent"));
-    m_recent_heading->SetForegroundColour(StateColor::darkModeColorFor(wxColour("#6B6B6B")));
-    m_recent_heading->Hide(); // until update_recent() finds recent projects
-    content->Add(m_recent_heading, 0, wxLEFT | wxTOP | wxBOTTOM, gap);
-    m_recent_grid = new wxGridSizer(3, gap, gap);
-    content->Add(m_recent_grid, 0, wxEXPAND | wxLEFT | wxRIGHT, gap);
+    // A gallery of the recent projects, pictured by their thumbnails and newest first (update_recent()), then the
+    // handy test models (Add Handy models in the plate's context menu). It shows two rows and scrolls; Show more
+    // opens it to all tiles at once. The Home page (the account button in the workspace's top right corner) lists
+    // all recent projects and can remove them; the built-in shapes stay in the plate's context menu (Add Primitive).
+    m_gallery = new wxScrolledWindow(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxVSCROLL);
+    m_gallery->SetBackgroundColour(nexus_card_colour());
+    m_gallery->SetScrollRate(0, parent->FromDIP(10));
+    m_gallery_grid = new wxGridSizer(3, gap, gap);
+    m_gallery->SetSizer(m_gallery_grid);
+    const auto& handy = MenuFactory::handy_models();
+    for (size_t i = 0; i < handy.size(); ++i)
+        add_tile(m_gallery, m_gallery_grid, _(handy[i].label), std::string("nexus_handy_") + handy[i].key, GALLERY_ICON,
+                 [i](NexusTile*) { MenuFactory::load_handy_model(i); });
+    content->Add(m_gallery, 0, wxEXPAND | wxLEFT | wxRIGHT | wxTOP, gap);
+
+    m_more = new Label(parent, Label::Body_11, _L("Show more"));
+    m_more->SetForegroundColour(StateColor::darkModeColorFor(wxColour(NEXUS_ACCENT_TEXT)));
+    m_more->SetCursor(wxCursor(wxCURSOR_HAND));
+    m_more->Bind(wxEVT_LEFT_UP, [this](wxMouseEvent&) {
+        m_gallery_open = !m_gallery_open;
+        update_gallery_height();
+    });
+    content->Add(m_more, 0, wxALIGN_CENTER_HORIZONTAL | wxTOP | wxBOTTOM, gap);
+
+    parent->SetSizer(content);
     update_recent();
+    update_gallery_height(); // update_recent() lays out only a changed list
     parent->Bind(wxEVT_IDLE, [this](wxIdleEvent& e) {
         e.Skip();
         update_recent();
     });
+}
 
-    // Handy test models (Add Handy models in the plate's context menu), pictured. The built-in shapes stay in
-    // the plate's context menu (Add Primitive).
-    add_heading(_L("Test models"));
-    auto*       models = new wxGridSizer(3, gap, gap);
-    const auto& handy  = MenuFactory::handy_models();
-    for (size_t i = 0; i < handy.size(); ++i)
-        add_tile(models, _(handy[i].label), std::string("nexus_handy_") + handy[i].key, 56,
-                 [i](NexusTile*) { MenuFactory::load_handy_model(i); });
-    content->Add(models, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, gap);
-
-    parent->SetSizer(content);
+void NexusModelCard::update_gallery_height()
+{
+    static constexpr int CLOSED_ROWS = 2;
+    const int gap    = m_parent->FromDIP(TILE_GAP);
+    const int row_h  = m_parent->FromDIP(NexusTile::min_height(GALLERY_ICON));
+    const int tiles  = int(m_gallery_grid->GetItemCount());
+    const int all    = (tiles + 2) / 3;
+    const int rows   = m_gallery_open ? all : std::min(all, CLOSED_ROWS);
+    m_more->Show(all > CLOSED_ROWS);
+    m_more->SetLabel(m_gallery_open ? _L("Show less") : _L("Show more"));
+    m_gallery->SetMinSize(wxSize(-1, rows * row_h + std::max(0, rows - 1) * gap));
+    m_gallery->FitInside();
+    m_content->Layout();
+    m_sizer->Layout();
+    m_parent->Layout();
+    m_parent->Refresh();
 }
 
 void NexusModelCard::update_recent()
 {
-    static constexpr size_t MAX_RECENT = 6;
     MainFrame* frame = wxGetApp().mainframe;
     if (frame == nullptr)
         return;
     const auto&           history = frame->recent_projects();
     std::vector<wxString> files;
-    for (size_t i = 0; i < history.GetCount() && files.size() < MAX_RECENT; ++i)
+    for (size_t i = 0; i < history.GetCount(); ++i)
         files.push_back(history.GetHistoryFile(i));
     if (files == m_recent_files && m_recent_thumbs == (history.GetCount() > 0 && !history.GetThumbnail(0).empty()))
         return;
     m_recent_files  = files;
     m_recent_thumbs = history.GetCount() > 0 && !history.GetThumbnail(0).empty(); // thumbnails load after startup
 
-    for (NexusTile* tile : m_recent_tiles)
+    for (NexusTile* tile : m_recent_tiles) {
         m_tiles.erase(std::remove(m_tiles.begin(), m_tiles.end(), tile), m_tiles.end());
+        m_gallery_grid->Detach(tile);
+        tile->Destroy();
+    }
     m_recent_tiles.clear();
-    m_recent_grid->Clear(true);
 
     for (size_t i = 0; i < files.size(); ++i) {
         const std::string& png = history.GetThumbnail(i);
@@ -232,27 +259,24 @@ void NexusModelCard::update_recent()
         }
         const wxString path = files[i];
         auto on_click = [frame, i, path](NexusTile*) { frame->open_recent_project(i, path); };
-        auto* tile = picture.IsOk() ? new NexusTile(m_content, wxFileName(path).GetName(), picture, 56, on_click)
-                                    : new NexusTile(m_content, wxFileName(path).GetName(), "nexus_tile_open", 56, on_click);
+        auto* tile = picture.IsOk() ? new NexusTile(m_gallery, wxFileName(path).GetName(), picture, GALLERY_ICON, on_click)
+                                    : new NexusTile(m_gallery, wxFileName(path).GetName(), "nexus_tile_open", GALLERY_ICON, on_click);
         tile->SetToolTip(path);
-        m_recent_grid->Add(tile, 1, wxEXPAND);
+        m_gallery_grid->Insert(i, tile, 1, wxEXPAND);
         m_recent_tiles.push_back(tile);
         m_tiles.push_back(tile);
     }
-    m_recent_heading->Show(!files.empty());
-    m_content->Layout();
-    m_sizer->Layout();
-    m_parent->Layout();
-    m_parent->Refresh();
+    update_gallery_height();
 }
 
 void NexusModelCard::toggle()
 {
     const bool show = !m_content->IsShown();
-    m_content->Show(show);
     wxGetApp().app_config->set_bool("nexus_model_card_folded", !show);
-    m_sizer->Layout();
-    m_parent->Refresh();
+    NexusFoldAnimation::run(m_content, show, [this] {
+        m_sizer->Layout();
+        m_parent->Refresh();
+    });
 }
 
 std::vector<wxWindow*> NexusModelCard::card_windows() const { return {m_title, m_content}; }

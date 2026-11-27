@@ -192,7 +192,9 @@ extern wxPopupWindow* wxCurrentPopupWindow;
 
 using namespace std::string_view_literals;
 
-static constexpr const float TRACKBALLSIZE = 0.8f;
+// Nexus: orbiting turns 0.56 degrees per pixel dragged (OrcaSlicer: 0.8), for finer control; the Orbit speed
+// multiplier in Preferences scales it.
+static constexpr const float TRACKBALLSIZE = 0.56f;
 
 // Nexus: viewport colours of the Web-Slicer 2.0 design (#E0E0E0 light, #18191B dark)
 static Slic3r::ColorRGBA DEFAULT_BG_LIGHT_COLOR      = { 0.878f, 0.878f, 0.878f, 1.0f };
@@ -5449,7 +5451,8 @@ void GLCanvas3D::on_gesture(wxGestureEvent &evt)
         static float zoom_start = 1;
         if (evt.IsGestureStart())
             zoom_start = camera.get_zoom();
-        camera.set_zoom(zoom_start * static_cast<wxZoomGestureEvent&>(evt).GetZoomFactor());
+        // Nexus: damped as the wheel zoom (Camera::ZoomUnit), for finer control.
+        camera.set_zoom(zoom_start * std::pow(static_cast<wxZoomGestureEvent&>(evt).GetZoomFactor(), 0.7));
     } else if (evt.GetEventType() == wxEVT_GESTURE_ROTATE) {
         // Orca: Rotation starts a different navigation operation, so a previous pan anchor
         // must not be reused; rotation and pan fallbacks share the same navigation pivot.
@@ -5460,6 +5463,7 @@ void GLCanvas3D::on_gesture(wxGestureEvent &evt)
             last_rotate = 0;
         auto rotate = static_cast<wxRotateGestureEvent&>(evt).GetRotationAngle() - last_rotate;
         last_rotate += rotate;
+        rotate *= 0.7; // Nexus: damped as the mouse orbit (TRACKBALLSIZE)
         const std::optional<Vec3d> rotate_target = get_camera_orbit_target(ECameraNavigationType::Gesture);
         if (rotate_target.has_value())
             camera.rotate_on_sphere_with_target(-rotate, 0, rotate_limit, *rotate_target);

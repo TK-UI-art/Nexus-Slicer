@@ -1,6 +1,7 @@
 #pragma once
 
 #include <wx/sizer.h>
+#include <wx/scrolwin.h>
 #include <wx/window.h>
 
 #include <wx/string.h>
@@ -39,6 +40,7 @@ private:
     void build_content(wxWindow* parent);
     void toggle();
     void update_recent();
+    void update_gallery_height();
 
     wxWindow*          m_parent;
     wxBoxSizer*        m_sizer;
@@ -48,8 +50,10 @@ private:
     ScalableButton*    m_help_btn{nullptr};
     wxPanel*           m_content{nullptr};
     std::vector<NexusTile*> m_tiles;
-    Label*                  m_recent_heading{nullptr};
-    wxGridSizer*            m_recent_grid{nullptr};
+    wxScrolledWindow*       m_gallery{nullptr};      // recent projects, then the test models
+    wxGridSizer*            m_gallery_grid{nullptr};
+    Label*                  m_more{nullptr};         // Show more / Show less
+    bool                    m_gallery_open{false};   // all gallery rows shown
     std::vector<NexusTile*> m_recent_tiles;
     std::vector<wxString>   m_recent_files;
     bool                    m_recent_thumbs{false};

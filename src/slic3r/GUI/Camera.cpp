@@ -35,7 +35,8 @@ double Camera::FrustrumMinZRange = 50.0;
 double Camera::FrustrumMinNearZ = 100.0;
 double Camera::FrustrumZMargin = 10.0;
 double Camera::MaxFovDeg = 60.0;
-double Camera::ZoomUnit = 0.1;
+// Nexus: a wheel step zooms by 7 % (OrcaSlicer: 10 %), for finer control.
+double Camera::ZoomUnit = 0.07;
 
 std::string Camera::get_type_as_string() const
 {
