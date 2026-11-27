@@ -57,6 +57,31 @@ This fork (Nexus) restyles OrcaSlicer after the Web-Slicer 2.0 design. A design 
 feature, never remove one: every button, menu entry, panel, shortcut and piece of information must stay
 reachable. When something no longer fits where it was, move it; do not hide or drop it.
 
+### Design reference
+
+The Web-Slicer 2.0 is the design reference: [docs/design/web-slicer-2.0.html](docs/design/web-slicer-2.0.html)
+(a single self-contained page; its live version is the owner's artifact https://claude.ai/artifact/RTXfNCuh1VcX5ScPUSnzhb).
+Before restyling something, look up how the Web-Slicer does it — colours, radii, shadows, spacing, icons, the
+card and tile layouts, the step flow (check, next card, red flash) and the animations (durations and easings in
+its CSS) — instead of guessing. Where the desktop slicer has to differ (it has more features, or a valid preset is
+already chosen at start), say so to the owner. The design tokens already taken over are in
+`src/slic3r/GUI/NexusTheme.hpp`.
+
+### Working with the owner
+
+- Answer in German.
+- Light mode is the default theme.
+- The owner's screenshots come from their Mac (Apple Silicon).
+- The rename to Nexus (app name, bundle, icons) is on hold until the owner resumes it.
+- Batch changes into one build; the owner tests on macOS, so every platform must build.
+- Build: `gh workflow run build_all.yml -R TK-UI-art/Nexus-Slicer --ref mac-build`, and let the full build run,
+  macOS included. Runs of the branch queue one after another; a queued run builds the commit it was started on,
+  so replace a still-pending run when newer commits should go into it. GitHub's macOS runners are scarce during
+  the day; off-peak (around 02:00 UTC) they are usually available.
+- Test on Linux before reporting: download the artifact `OrcaSlicer_Linux_ubuntu_2404_V2.6.0-dev` into a new empty
+  directory, extract the AppImage with `--appimage-extract`, run it under `Xvfb :99` with `openbox`, and send the
+  owner screenshots. What only macOS shows, or what needs a printer (AMS sync), the owner tests.
+
 ## Critical Constraints
 
 - **Backward compatibility required** for .3mf project files and printer profiles
