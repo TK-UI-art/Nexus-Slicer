@@ -1710,6 +1710,9 @@ void TabPresetComboBox::OnSelect(wxCommandEvent &evt)
         // BBS: ams
         update_ams_color();
         on_selection_changed(selected_item);
+        // Nexus: a process chosen in the sidebar's Process card completes that card's step.
+        if (m_type == Preset::TYPE_PRINT && wxGetApp().plater() != nullptr)
+            wxGetApp().sidebar().CallAfter([] { wxGetApp().sidebar().nexus_choice_made(Preset::TYPE_PRINT); });
     }
 
     evt.StopPropagation();

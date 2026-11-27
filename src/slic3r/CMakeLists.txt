@@ -254,6 +254,8 @@ set(SLIC3R_GUI_SOURCES
     GUI/NexusCard.hpp
     GUI/NexusModelCard.cpp
     GUI/NexusModelCard.hpp
+    GUI/NexusSliceInfoCard.cpp
+    GUI/NexusSliceInfoCard.hpp
     GUI/NexusTile.hpp
     GUI/NexusFrame.hpp
     GUI/NexusTheme.hpp

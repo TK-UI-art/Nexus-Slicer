@@ -3,6 +3,8 @@
 #include "NexusTheme.hpp"
 #include "Widgets/StateColor.hpp"
 #include "Widgets/StaticBox.hpp"
+#include "I18N.hpp"
+#include "wxExtensions.hpp"
 
 #include <wx/brush.h>
 #include <wx/colour.h>
@@ -94,6 +96,25 @@ inline void nexus_paint_cards(wxWindow* parent, wxPaintDC& dc, const std::vector
         gdc.SetBrush(wxBrush(nexus_card_colour()));
         gdc.DrawRoundedRectangle(rc, radius);
     }
+}
+
+// The step signal at the right of a card title (Web-Slicer steps): a red signal while the card's choice is open,
+// a green check once it is made.
+inline void nexus_set_step_done(ScalableButton* signal, bool done)
+{
+    signal->SetBitmap_(done ? "nexus_check" : "nexus_todo");
+    // TRN Tooltips of the signal at the right of a sidebar card's title.
+    signal->SetToolTip(done ? _L("Done") : _L("Still to choose"));
+    signal->GetParent()->Layout();
+}
+
+inline ScalableButton* nexus_step_indicator(wxWindow* title)
+{
+    auto* signal = new ScalableButton(title, wxID_ANY, "nexus_todo", wxEmptyString, wxDefaultSize, wxDefaultPosition,
+                                      wxBU_EXACTFIT | wxNO_BORDER, false, 20);
+    signal->SetBackgroundColour(title->GetBackgroundColour());
+    nexus_set_step_done(signal, false);
+    return signal;
 }
 
 // A card title's text in a sizer that sets it optically centred on the title row. Centred by its text box,

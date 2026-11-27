@@ -38903,6 +38903,14 @@ msgid "Show G-code window"
 msgstr "G-Code-Fenster anzeigen"
 
 # AI Translated
+msgid "Slice info"
+msgstr "Slice-Info"
+
+# AI Translated
+msgid "Still to choose"
+msgstr "Noch auszuwählen"
+
+# AI Translated
 msgid "Choose what to slice and how to print or export"
 msgstr "Wählen, was gesliced und wie gedruckt oder exportiert wird"
 

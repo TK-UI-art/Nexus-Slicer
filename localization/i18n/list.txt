@@ -177,6 +177,7 @@ src/slic3r/GUI/IMEXFilamentPickerPopover.cpp
 src/slic3r/GUI/PartPlate.cpp
 src/slic3r/GUI/Plater.cpp
 src/slic3r/GUI/NexusModelCard.cpp
+src/slic3r/GUI/NexusSliceInfoCard.cpp
 src/slic3r/GUI/Preferences.cpp
 src/slic3r/GUI/PresetComboBoxes.cpp
 src/slic3r/GUI/PresetHints.cpp

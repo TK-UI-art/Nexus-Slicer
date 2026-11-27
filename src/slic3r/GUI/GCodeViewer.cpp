@@ -5692,6 +5692,8 @@ void GCodeViewer::render_legend(float &legend_height, int canvas_width, int canv
             append_item(EItemType::None, libvgcode::convert(tool_colors[0]), columns_offsets);
         }
 
+        // Nexus: in the editor the sidebar's Slice info card shows the changes and the cost.
+        if (!wxGetApp().is_editor()) {
         //BBS display filament change times
         ImGui::Dummy({window_padding, window_padding});
         ImGui::SameLine();
@@ -5713,6 +5715,7 @@ void GCodeViewer::render_legend(float &legend_height, int canvas_width, int canv
         ImGui::SameLine();
         ::sprintf(buf, "%.2f", ps.total_cost);
         imgui.text(buf);
+        }
 
         break;
     }
@@ -6120,6 +6123,8 @@ void GCodeViewer::render_legend(float &legend_height, int canvas_width, int canv
         default: { assert(false); break; }
         }
     }
+    // Nexus: in the editor the sidebar's Slice info card shows the time estimate and filament totals.
+    if (!wxGetApp().is_editor()) {
     ImGui::Dummy(ImVec2(0.0f, ImGui::GetFontSize() * 0.1));
     ImGui::Dummy({ window_padding, window_padding });
     ImGui::SameLine();
@@ -6192,6 +6197,7 @@ void GCodeViewer::render_legend(float &legend_height, int canvas_width, int canv
     imgui.text(total_str + ":");
     ImGui::SameLine(max_len);
     imgui.text(short_time(get_time_dhms(time_mode.time)));
+    } // Nexus: time estimate
 
     auto show_mode_button = [this, &imgui, can_show_mode_button](const std::string& label, libvgcode::ETimeMode mode) {
         if (can_show_mode_button(mode)) {

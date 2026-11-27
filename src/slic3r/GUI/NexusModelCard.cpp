@@ -12,6 +12,7 @@
 #include "Widgets/StateColor.hpp"
 #include "Widgets/StaticBox.hpp"
 #include "libslic3r/AppConfig.hpp"
+#include "libslic3r/Model.hpp"
 #include "wxExtensions.hpp"
 
 #include <wx/control.h>
@@ -57,6 +58,10 @@ NexusModelCard::NexusModelCard(wxWindow* parent, wxBoxSizer* sizer, int card_mar
     title->AddSpacer(m_parent->FromDIP(SidebarProps::ElementSpacing()));
     title->Add(nexus_card_title_text(m_title_text), 1, wxALIGN_CENTER | wxRIGHT, m_parent->FromDIP(SidebarProps::WideSpacing()));
     title->Add(m_help_btn, 0, wxALIGN_CENTER);
+    // Red until the plate holds a model, then a green check; the card folds when the first model arrives.
+    m_step = nexus_step_indicator(m_title);
+    m_step->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) { toggle(); });
+    title->Add(m_step, 0, wxALIGN_CENTER | wxLEFT, m_parent->FromDIP(SidebarProps::WideSpacing()));
     title->AddSpacer(m_parent->FromDIP(SidebarProps::TitlebarMargin()));
     title->SetMinSize(-1, m_parent->FromDIP(NEXUS_CARD_TITLE_H));
     m_title->SetSizer(title);
@@ -125,6 +130,7 @@ void NexusModelCard::build_content(wxWindow* parent)
     parent->Bind(wxEVT_IDLE, [this](wxIdleEvent& e) {
         e.Skip();
         update_recent();
+        update_step();
     });
 }
 
@@ -186,6 +192,20 @@ void NexusModelCard::update_recent()
     update_gallery_height();
 }
 
+void NexusModelCard::update_step()
+{
+    Plater* p = plater();
+    if (p == nullptr)
+        return;
+    const bool has_model = !p->model().objects.empty();
+    if (has_model == m_has_model)
+        return;
+    m_has_model = has_model;
+    nexus_set_step_done(m_step, has_model);
+    if (has_model && m_content->IsShown())
+        toggle();
+}
+
 void NexusModelCard::toggle()
 {
     const bool show = !m_content->IsShown();
@@ -201,7 +221,7 @@ std::vector<wxWindow*> NexusModelCard::card_windows() const { return {m_title, m
 void NexusModelCard::msw_rescale()
 {
     m_title->GetSizer()->SetMinSize(-1, m_parent->FromDIP(NEXUS_CARD_TITLE_H));
-    for (ScalableButton* btn : {m_icon, m_help_btn})
+    for (ScalableButton* btn : {m_icon, m_help_btn, m_step})
         btn->msw_rescale();
     for (NexusTile* tile : m_tiles)
         tile->msw_rescale();

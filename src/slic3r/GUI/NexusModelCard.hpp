@@ -41,6 +41,7 @@ private:
     void toggle();
     void update_recent();
     void update_gallery_height();
+    void update_step();
 
     wxWindow*          m_parent;
     wxBoxSizer*        m_sizer;
@@ -48,6 +49,8 @@ private:
     Label*             m_title_text{nullptr};
     ScalableButton*    m_icon{nullptr};
     ScalableButton*    m_help_btn{nullptr};
+    ScalableButton*    m_step{nullptr};      // red until the plate holds a model, then a green check
+    bool               m_has_model{false};
     wxPanel*           m_content{nullptr};
     std::vector<NexusTile*> m_tiles;
     wxScrolledWindow*       m_gallery{nullptr};      // recent projects, then the test models

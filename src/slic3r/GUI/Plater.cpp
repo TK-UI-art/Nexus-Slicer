@@ -3,6 +3,7 @@
 #include "slic3r/GUI/NexusCard.hpp"
 #include "slic3r/GUI/NexusTile.hpp"
 #include "slic3r/GUI/NexusModelCard.hpp"
+#include "slic3r/GUI/NexusSliceInfoCard.hpp"
 #include "LazyPage.hpp"
 #include "../Utils/NetworkAgent.hpp"
 #include "IPrinterAgent.hpp"
@@ -993,7 +994,16 @@ struct Sidebar::priv
     wxPanel*   m_panel_printer_separator = nullptr;
     // Nexus: windows that make up each sidebar step card; the card is painted behind their union.
     std::vector<std::vector<wxWindow*>> nexus_cards;
-    std::unique_ptr<NexusModelCard> model_card; // Nexus: projects, shapes and test models (the Home page's tasks)
+    std::unique_ptr<NexusModelCard> model_card; // Nexus: projects and test models (the Home page's tasks)
+    std::unique_ptr<NexusSliceInfoCard> slice_info_card; // Nexus: statistics of the sliced plate
+    // Nexus: the step signals of the cards' titles, red until the user chose the card's preset, then a green
+    // check, and the card folds (Web-Slicer steps); see Sidebar::nexus_choice_made().
+    ScalableButton*       check_printer{nullptr};
+    ScalableButton*       check_filament{nullptr};
+    ScalableButton*       check_process{nullptr};
+    std::function<void()> toggle_printer;
+    std::function<void()> toggle_filament;
+    std::function<void()> toggle_process;
     void nexus_apply_card_colours()
     {
         for (const auto& card : nexus_cards)
@@ -2914,6 +2924,8 @@ Sidebar::Sidebar(Plater *parent)
         h_sizer_title->Add(p->m_printer_connect , 0, wxALIGN_CENTER | wxRIGHT, FromDIP(SidebarProps::WideSpacing())); // used larger margin to prevent accidental clicks
         h_sizer_title->Add(p->m_printer_bbl_sync, 0, wxALIGN_CENTER | wxRIGHT, FromDIP(SidebarProps::WideSpacing())); // used larger margin to prevent accidental clicks
         h_sizer_title->Add(p->m_printer_setting, 0, wxALIGN_CENTER);
+        p->check_printer = nexus_step_indicator(p->m_panel_printer_title);
+        h_sizer_title->Add(p->check_printer, 0, wxALIGN_CENTER | wxLEFT, FromDIP(SidebarProps::WideSpacing()));
         h_sizer_title->AddSpacer(FromDIP(SidebarProps::TitlebarMargin()));
         h_sizer_title->SetMinSize(-1, FromDIP(NEXUS_CARD_TITLE_H));
 
@@ -2941,6 +2953,8 @@ Sidebar::Sidebar(Plater *parent)
         });
         p->m_panel_printer_title->Bind(wxEVT_LEFT_DOWN  , toggle_printer_section);
         p->m_panel_printer_title->Bind(wxEVT_LEFT_DCLICK, toggle_printer_section);
+        p->toggle_printer = [toggle_printer_section] { wxMouseEvent e; toggle_printer_section(e); };
+        p->check_printer->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) { p->toggle_printer(); });
         // ORCA add bottom border for seperation wile sections folded
         p->m_panel_printer_separator = new wxPanel(p->scrolled, wxID_ANY, wxDefaultPosition, wxSize(-1, FromDIP(2))); // ORCA staticline class not works without string
         p->m_panel_printer_separator->SetBackgroundColour("#FFFFFF");
@@ -3339,6 +3353,7 @@ Sidebar::Sidebar(Plater *parent)
     });
     p->m_panel_filament_title->Bind(wxEVT_LEFT_DOWN  , toggle_filament_section);
     p->m_panel_filament_title->Bind(wxEVT_LEFT_DCLICK, toggle_filament_section);
+    p->toggle_filament = [toggle_filament_section] { wxMouseEvent e; toggle_filament_section(e); };
 
     wxBoxSizer* bSizer39;
     bSizer39 = new wxBoxSizer( wxHORIZONTAL );
@@ -3448,6 +3463,9 @@ Sidebar::Sidebar(Plater *parent)
     p->m_bpButton_set_filament = set_btn;
 
     bSizer39->Add(set_btn, 0, wxALIGN_CENTER | wxLEFT, FromDIP(SidebarProps::WideSpacing()));
+    p->check_filament = nexus_step_indicator(p->m_panel_filament_title);
+    p->check_filament->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) { p->toggle_filament(); });
+    bSizer39->Add(p->check_filament, 0, wxALIGN_CENTER | wxLEFT, FromDIP(SidebarProps::WideSpacing()));
     bSizer39->AddSpacer(FromDIP(SidebarProps::TitlebarMargin()));
 
     // ---- Wrapper panel for collapse/expand of all filament content ----
@@ -3735,6 +3753,11 @@ Sidebar::Sidebar(Plater *parent)
         wxWindow* process_title = params_panel->get_top_panel();
         process_title->Bind(wxEVT_LEFT_DOWN, toggle_process_section);
         process_title->Bind(wxEVT_LEFT_DCLICK, toggle_process_section);
+        p->toggle_process = [toggle_process_section] { wxMouseEvent e; toggle_process_section(e); };
+        p->check_process  = nexus_step_indicator(process_title);
+        p->check_process->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) { p->toggle_process(); });
+        if (wxSizer* title_sizer = process_title->GetSizer())
+            title_sizer->Add(p->check_process, 0, wxALIGN_CENTER | wxLEFT | wxRIGHT, FromDIP(SidebarProps::WideSpacing()));
         for (wxWindow* child : process_title->GetChildren())
             if (dynamic_cast<Label*>(child) != nullptr) {
                 child->Bind(wxEVT_LEFT_DOWN, toggle_process_section);
@@ -3742,6 +3765,8 @@ Sidebar::Sidebar(Plater *parent)
             }
     }
 #endif
+    // Nexus: the slice statistics card follows the Process card once the plate is sliced.
+    p->slice_info_card = std::make_unique<NexusSliceInfoCard>(p->scrolled, scrolled_sizer, card_margin, card_spacing);
     scrolled_sizer->AddSpacer(card_margin);
 
     // Nexus: Web-Slicer step cards. Each card is painted on p->scrolled behind the union of its
@@ -3750,6 +3775,7 @@ Sidebar::Sidebar(Plater *parent)
         {p->m_panel_printer_title, p->m_panel_printer_separator, p->m_panel_printer_content},
         {p->m_panel_filament_title, p->m_panel_filament_separator, p->m_filament_area_wrapper},
         p->model_card->card_windows(),
+        p->slice_info_card->card_windows(),
         {p->m_search_bar, p->m_object_list},
     };
     if (params_panel) {
@@ -3855,6 +3881,32 @@ Sidebar::Sidebar(Plater *parent)
     sizer->Add(p->slice_row, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, FromDIP(NEXUS_CARD_GAP));
     sizer->AddStretchSpacer(1);
     SetSizer(sizer);
+}
+
+// Nexus: a preset chosen in the printer, filament or process card completes that card's step: the card folds
+// and its title's red signal turns into a green check. The signal folds and unfolds the card as the title does.
+void Sidebar::nexus_choice_made(Preset::Type type)
+{
+    ScalableButton*              check  = nullptr;
+    wxWindow*                    content = nullptr;
+    const std::function<void()>* toggle = nullptr;
+    switch (type) {
+    case Preset::TYPE_PRINTER: check = p->check_printer; content = p->m_panel_printer_content; toggle = &p->toggle_printer; break;
+    case Preset::TYPE_FILAMENT: check = p->check_filament; content = p->m_filament_area_wrapper; toggle = &p->toggle_filament; break;
+    case Preset::TYPE_PRINT: {
+        check = p->check_process;
+        toggle = &p->toggle_process;
+        if (auto* params = wxGetApp().mainframe->m_param_panel)
+            content = params;
+        break;
+    }
+    default: return;
+    }
+    if (check == nullptr || content == nullptr || !*toggle)
+        return;
+    nexus_set_step_done(check, true);
+    if (content->IsShown())
+        (*toggle)();
 }
 
 // The cards' area is as high as the cards, at most the sidebar's height less the slice button below it.
@@ -5798,6 +5850,7 @@ void Sidebar::msw_rescale()
 {
     SetMinSize(wxSize(AuiMgr::sidebar_min_width(), -1));
     p->model_card->msw_rescale();
+    p->slice_info_card->msw_rescale();
     p->m_panel_printer_title->GetSizer()->SetMinSize(-1, FromDIP(NEXUS_CARD_TITLE_H));
     p->m_panel_filament_title->GetSizer()->SetMinSize(-1, FromDIP(NEXUS_CARD_TITLE_H));
     p->m_printer_icon->msw_rescale();
@@ -5907,6 +5960,7 @@ void Sidebar::sys_color_changed()
     p->scrolled->SetBackgroundColour(StateColor::darkModeColorFor(wxColour(NEXUS_SIDEBAR_BG)));
     p->scrolled->Refresh();
     p->model_card->sys_color_changed();
+    p->slice_info_card->sys_color_changed();
 
 #if 0
     for (wxWindow* win : std::vector<wxWindow*>{ this, p->sliced_info->GetStaticBox(), p->object_info->GetStaticBox(), p->btn_reslice, p->btn_export_gcode })
@@ -13633,6 +13687,9 @@ void Plater::priv::on_select_preset(wxCommandEvent &evt)
         preset_name = wxGetApp().preset_bundle->get_preset_name_by_alias(preset_type,
             Preset::remove_suffix_modified(wx_name.ToUTF8().data()));
     }
+
+    // Nexus: the choice completes the card's step (Sidebar::nexus_choice_made()), once the selection has run.
+    sidebar->CallAfter([this, preset_type] { sidebar->nexus_choice_made(preset_type); });
 
     if (preset_type == Preset::TYPE_FILAMENT) {
         wxGetApp().preset_bundle->set_filament_preset(idx, preset_name);
