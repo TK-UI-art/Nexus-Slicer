@@ -38907,6 +38907,16 @@ msgid "Slice info"
 msgstr "Slice-Info"
 
 # AI Translated
+msgid "Slice successful"
+msgstr "Slice erfolgreich"
+
+# AI Translated
+msgid "%1% model"
+msgid_plural "%1% models"
+msgstr[0] "%1% Modell"
+msgstr[1] "%1% Modelle"
+
+# AI Translated
 msgid "Choose what to slice and how to print or export"
 msgstr "Wählen, was gesliced und wie gedruckt oder exportiert wird"
 

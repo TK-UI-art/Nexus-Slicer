@@ -204,7 +204,8 @@ private:
             finish();
             return;
         }
-        const double eased = 1.0 - std::pow(1.0 - t, 3.0);
+        // CSS cubic-bezier(.4,0,.2,1) of the Web-Slicer card, as an ease-in-out cubic.
+        const double eased = t < 0.5 ? 4.0 * t * t * t : 1.0 - std::pow(-2.0 * t + 2.0, 3.0) / 2.0;
         const int    h     = int(std::lround(m_full * (m_show ? eased : 1.0 - eased)));
         m_content->SetMinSize(wxSize(m_min.x, h));
         m_relayout();

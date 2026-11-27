@@ -222,6 +222,9 @@ public:
     bool nexus_step_open(int step) const;
     void nexus_set_step_open(int step, bool open);
     void nexus_warn_open_steps();
+    bool nexus_steps_ready() const;
+    void nexus_update_steps();
+    void nexus_update_step_titles();
     void fit_cards_height();
     void msw_rescale();
     void sys_color_changed();

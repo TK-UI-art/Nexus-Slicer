@@ -1006,6 +1006,7 @@ struct Sidebar::priv
     std::function<void()> toggle_process;
     bool                  step_done[Sidebar::StepCount]{}; // the model step asks the model card
     std::vector<bool>     warn_steps;                      // per card of nexus_cards: flashing red
+    bool                  plate_sliced{false};             // the current plate has a valid slice result
     std::vector<double>   warn;                            // per card: the red ring's strength now
     wxTimer               warn_timer;
     wxStopWatch           warn_clock;
@@ -2837,6 +2838,7 @@ Sidebar::Sidebar(Plater *parent)
     // The scroll range follows the cards' minimum height, which changes as they fold, add filaments or rows.
     p->scrolled->Bind(wxEVT_IDLE, [this](wxIdleEvent& e) {
         e.Skip();
+        nexus_update_steps();
         if (wxSizer* sizer = p->scrolled->GetSizer(); sizer != nullptr && sizer->GetMinSize() != p->scrolled_min_size) {
             p->scrolled_min_size = sizer->GetMinSize();
             fit_cards_height();
@@ -2947,9 +2949,8 @@ Sidebar::Sidebar(Plater *parent)
             if (!p || !p->combo_printer || !p->m_text_printer_settings || !p->m_panel_printer_content || !m_scrolled_sizer)
                 return;
             // ORCA Show printer name on title when its folded to inform user without expanding it again
+            // Nexus: nexus_update_step_titles() writes the title, from the fold state and the step.
             bool     isShown = p->m_panel_printer_content->IsShown();
-            wxString title   = _L("Printer") + wxString(!isShown ? "" : ("  |  " + p->combo_printer->GetValue()));
-            p->m_text_printer_settings->SetLabel(title);
             // Nexus: no line under a folded card's title, which then sits in the middle of the card.
             NexusFoldAnimation::run(p->m_panel_printer_content, !isShown, [this] {
                 m_scrolled_sizer->Layout();
@@ -3859,8 +3860,11 @@ Sidebar::Sidebar(Plater *parent)
         const bool print = !slice && mainframe && mainframe->print_button_enabled();
         p->sidebar_button_prints = print;
         e.Enable(slice || print);
-        const wxString label = print ? mainframe->print_action_label() :
-                               mainframe && mainframe->slice_all_selected() ? _L("Slice all") : _L("Slice plate");
+        wxString label = print ? mainframe->print_action_label() :
+                         mainframe && mainframe->slice_all_selected() ? _L("Slice all") : _L("Slice plate");
+        // Web-Slicer: an arrow once every step is done and the plate is ready to slice
+        if (slice && nexus_steps_ready())
+            label += wxString::FromUTF8(" \u2192");
         if (label != p->sidebar_button_label) {
             p->sidebar_button_label = label;
             p->btn_slice_sidebar->SetLabel(label);
@@ -3962,6 +3966,60 @@ void Sidebar::nexus_choice_made(Preset::Type type)
     case Preset::TYPE_PRINT: nexus_step_picked(StepProcess); break;
     default: break;
     }
+}
+
+bool Sidebar::nexus_steps_ready() const
+{
+    for (int step = 0; step < StepCount; ++step)
+        if (!nexus_step_done(step))
+            return false;
+    return true;
+}
+
+// Follows the slice result and the choices: once the plate is sliced every card shows its check and folds
+// (Web-Slicer setDone); a new change takes the checks back to the choices made. The titles name the choices.
+void Sidebar::nexus_update_steps()
+{
+    if (p->model_card == nullptr || p->check_printer == nullptr || p->check_filament == nullptr || p->check_process == nullptr)
+        return;
+    PartPlate* plate  = p->plater->get_partplate_list().get_curr_plate();
+    const bool sliced = plate != nullptr && plate->is_slice_result_valid() && plate->get_slice_result() != nullptr &&
+                        !p->plater->model().objects.empty();
+    if (sliced != p->plate_sliced) {
+        p->plate_sliced = sliced;
+        nexus_set_step_done(p->check_printer, sliced || p->step_done[StepPrinter]);
+        nexus_set_step_done(p->check_filament, sliced || p->step_done[StepFilament]);
+        nexus_set_step_done(p->check_process, sliced || p->step_done[StepProcess]);
+        if (sliced)
+            for (int step = 0; step < StepCount; ++step)
+                nexus_set_step_open(step, false);
+    }
+    nexus_update_step_titles();
+}
+
+// Web-Slicer: a card whose choice is made names it in its title (the printer, the filament, the models, the
+// process); OrcaSlicer's folded printer card adds the printer to its title.
+void Sidebar::nexus_update_step_titles()
+{
+    auto set = [](wxWindow* label, const wxString& text) {
+        if (label != nullptr && label->GetLabel() != text) {
+            label->SetLabel(text);
+            label->GetParent()->Layout();
+        }
+    };
+    if (p->combo_printer != nullptr) {
+        const wxString printer = p->combo_printer->GetValue();
+        set(p->m_text_printer_settings, nexus_step_done(StepPrinter)               ? printer :
+                                        !p->m_panel_printer_content->IsShown()    ? _L("Printer") + "  |  " + printer :
+                                                                                    _L("Printer"));
+    }
+    if (!p->combos_filament.empty())
+        set(p->m_staticText_filament_settings,
+            nexus_step_done(StepFilament) && p->combos_filament.size() == 1 ? p->combos_filament[0]->GetValue() : _L("Project Filaments"));
+    if (ParamsPanel* params = wxGetApp().mainframe->m_param_panel)
+        set(params->get_title_label(), nexus_step_done(StepProcess) ?
+                                           wxString::FromUTF8(wxGetApp().preset_bundle->prints.get_selected_preset().label(false)) :
+                                           _L("Process"));
 }
 
 // The red ring pulses twice over 1.1 s on the cards of the steps still open (Web-Slicer cardWarn).

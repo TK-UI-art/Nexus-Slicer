@@ -19,6 +19,7 @@
 #include <wx/colour.h>
 #include <wx/event.h>
 #include <wx/panel.h>
+#include <wx/statbmp.h>
 
 #include <cmath>
 #include <string>
@@ -131,6 +132,21 @@ void NexusSliceInfoCard::rebuild()
     const wxColour mute = StateColor::darkModeColorFor(wxColour("#6B6B6B"));
 
     auto* content = new wxBoxSizer(wxVERTICAL);
+
+    // Web-Slicer: the result first, a green check with "Slice successful" above a line.
+    {
+        auto* ok_row = new wxBoxSizer(wxHORIZONTAL);
+        auto* check  = new wxStaticBitmap(m_content, wxID_ANY, ScalableBitmap(m_content, "nexus_check", 20).bmp());
+        auto* ok     = new Label(m_content, Label::Body_14, _L("Slice successful"));
+        ok->SetForegroundColour(ink);
+        ok_row->Add(check, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, 2 * gap);
+        ok_row->Add(ok, 1, wxALIGN_CENTER_VERTICAL);
+        content->Add(ok_row, 0, wxEXPAND | wxLEFT | wxRIGHT | wxTOP, pad);
+        auto* line = new wxPanel(m_content, wxID_ANY, wxDefaultPosition, wxSize(-1, 1));
+        line->SetBackgroundColour(StateColor::darkModeColorFor(wxColour(NEXUS_CARD_LINE)));
+        content->Add(line, 0, wxEXPAND | wxLEFT | wxRIGHT | wxTOP, pad);
+    }
+
     auto heading = [&](const wxString& text) {
         auto* label = new Label(m_content, Label::Head_13, text);
         label->SetForegroundColour(ink);

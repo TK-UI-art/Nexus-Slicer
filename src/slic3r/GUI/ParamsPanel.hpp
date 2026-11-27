@@ -183,6 +183,8 @@ class ParamsPanel : public wxPanel
         void switch_to_object_if_has_object_configs();
 
         StaticBox* get_top_panel() { return m_top_panel; }
+        // Nexus: the Process card title, which names the chosen process (Sidebar::nexus_update_step_titles()).
+        wxWindow* get_title_label() { return m_title_label; }
 
         wxPanel* filament_panel() { return m_tab_filament; }
 

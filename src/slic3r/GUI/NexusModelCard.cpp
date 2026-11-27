@@ -11,6 +11,7 @@
 #include "Widgets/Label.hpp"
 #include "Widgets/StateColor.hpp"
 #include "Widgets/StaticBox.hpp"
+#include "format.hpp"
 #include "libslic3r/AppConfig.hpp"
 #include "libslic3r/Model.hpp"
 #include "wxExtensions.hpp"
@@ -197,7 +198,16 @@ void NexusModelCard::update_step()
     Plater* p = plater();
     if (p == nullptr)
         return;
-    const bool has_model = !p->model().objects.empty();
+    const auto& objects   = p->model().objects;
+    const bool  has_model = !objects.empty();
+    // Web-Slicer: the title names the model, or counts the models, once there is one.
+    const wxString title = !has_model ? _L("Model") :
+                           objects.size() == 1 ? wxString::FromUTF8(objects.front()->name) :
+                                                 format_wxstr(_L_PLURAL("%1% model", "%1% models", int(objects.size())), objects.size());
+    if (title != m_title_text->GetLabel()) {
+        m_title_text->SetLabel(title);
+        m_title->Layout();
+    }
     if (has_model == m_has_model)
         return;
     m_has_model = has_model;
