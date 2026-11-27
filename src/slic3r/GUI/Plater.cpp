@@ -2909,7 +2909,7 @@ Sidebar::Sidebar(Plater *parent)
         wxBoxSizer* h_sizer_title = new wxBoxSizer(wxHORIZONTAL);
         h_sizer_title->Add(p->m_printer_icon, 0, wxALIGN_CENTRE | wxLEFT, FromDIP(NEXUS_CARD_ICON_INSET));
         h_sizer_title->AddSpacer(FromDIP(SidebarProps::ElementSpacing()));
-        h_sizer_title->Add(p->m_text_printer_settings, 1, wxALIGN_CENTER | wxRIGHT, FromDIP(SidebarProps::WideSpacing()));
+        h_sizer_title->Add(nexus_card_title_text(p->m_text_printer_settings), 1, wxALIGN_CENTER | wxRIGHT, FromDIP(SidebarProps::WideSpacing()));
         //h_sizer_title->AddStretchSpacer();
         h_sizer_title->Add(p->m_printer_connect , 0, wxALIGN_CENTER | wxRIGHT, FromDIP(SidebarProps::WideSpacing())); // used larger margin to prevent accidental clicks
         h_sizer_title->Add(p->m_printer_bbl_sync, 0, wxALIGN_CENTER | wxRIGHT, FromDIP(SidebarProps::WideSpacing())); // used larger margin to prevent accidental clicks
@@ -2933,7 +2933,7 @@ Sidebar::Sidebar(Plater *parent)
             bool     isShown = p->m_panel_printer_content->IsShown();
             wxString title   = _L("Printer") + wxString(!isShown ? "" : ("  |  " + p->combo_printer->GetValue()));
             p->m_text_printer_settings->SetLabel(title);
-            p->m_panel_printer_separator->Show(isShown);
+            // Nexus: no line under a folded card's title, which then sits in the middle of the card.
             NexusFoldAnimation::run(p->m_panel_printer_content, !isShown, [this] {
                 m_scrolled_sizer->Layout();
                 p->scrolled->Refresh();
@@ -2944,6 +2944,7 @@ Sidebar::Sidebar(Plater *parent)
         // ORCA add bottom border for seperation wile sections folded
         p->m_panel_printer_separator = new wxPanel(p->scrolled, wxID_ANY, wxDefaultPosition, wxSize(-1, FromDIP(2))); // ORCA staticline class not works without string
         p->m_panel_printer_separator->SetBackgroundColour("#FFFFFF");
+        p->m_panel_printer_separator->Hide(); // Nexus: the card outline separates it
         scrolled_sizer->Add(p->m_panel_printer_separator, 0, wxEXPAND | wxLEFT | wxRIGHT, card_margin);
 
         /*************************** 2. add printer content ************************/
@@ -3328,7 +3329,7 @@ Sidebar::Sidebar(Plater *parent)
         if (e.GetPosition().x > exclude_pt)
             return;
         bool isShown = p->m_filament_area_wrapper->IsShown();
-        p->m_panel_filament_separator->Show(isShown);
+        // Nexus: no line under a folded card's title, which then sits in the middle of the card.
         NexusFoldAnimation::run(p->m_filament_area_wrapper, !isShown, [this] {
             m_scrolled_sizer->Layout();
             p->scrolled->Refresh();
@@ -3346,7 +3347,7 @@ Sidebar::Sidebar(Plater *parent)
     p->m_staticText_filament_settings = new Label(p->m_panel_filament_title, _L("Project Filaments"), LB_PROPAGATE_MOUSE_EVENT);
     p->m_staticText_filament_settings->SetFont(Label::Body_16); // Nexus: Web-Slicer card title
     bSizer39->Add(p->m_filament_icon, 0, wxALIGN_CENTER | wxLEFT, FromDIP(NEXUS_CARD_ICON_INSET));
-    bSizer39->Add(p->m_staticText_filament_settings, 0, wxALIGN_CENTER | wxLEFT | wxRIGHT, FromDIP(SidebarProps::ElementSpacing()));
+    bSizer39->Add(nexus_card_title_text(p->m_staticText_filament_settings), 0, wxALIGN_CENTER | wxLEFT | wxRIGHT, FromDIP(SidebarProps::ElementSpacing()));
     bSizer39->SetMinSize(-1, FromDIP(NEXUS_CARD_TITLE_H));
 
     p->m_staticText_filament_count = new Label(p->m_panel_filament_title, "(0)", LB_PROPAGATE_MOUSE_EVENT);
@@ -3359,6 +3360,7 @@ Sidebar::Sidebar(Plater *parent)
     // ORCA add bottom border for seperation wile sections folded
     p->m_panel_filament_separator = new wxPanel(p->scrolled, wxID_ANY, wxDefaultPosition, wxSize(-1, FromDIP(2))); // ORCA staticline class not works without string
     p->m_panel_filament_separator->SetBackgroundColour("#FFFFFF");
+    p->m_panel_filament_separator->Hide(); // Nexus: the card outline separates it
     scrolled_sizer->Add(p->m_panel_filament_separator, 0, wxEXPAND | wxLEFT | wxRIGHT, card_margin);
 
     bSizer39->AddStretchSpacer(1);

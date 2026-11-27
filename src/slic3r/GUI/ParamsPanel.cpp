@@ -41,6 +41,7 @@
 #include <wx/wupdlock.h>
 #include <wx/dcclient.h>
 #include "NexusFrame.hpp"
+#include "NexusCard.hpp"
 #include <vector>
 
 
@@ -448,7 +449,7 @@ void ParamsPanel::create_layout()
     if (m_top_panel) {
         m_mode_sizer = new wxBoxSizer( wxHORIZONTAL );
         m_mode_sizer->Add(m_process_icon, 0, wxALIGN_CENTER | wxLEFT , FromDIP(NEXUS_CARD_ICON_INSET));
-        m_mode_sizer->Add(m_title_label , 0, wxALIGN_CENTER | wxLEFT , FromDIP(SidebarProps::ElementSpacing()));
+        m_mode_sizer->Add(nexus_card_title_text(m_title_label), 0, wxALIGN_CENTER | wxLEFT , FromDIP(SidebarProps::ElementSpacing()));
         m_mode_sizer->Add(m_mode_region , 0, wxALIGN_CENTER | wxLEFT , FromDIP(SidebarProps::WideSpacing()));
         m_mode_sizer->Add(m_tips_arrow  , 0, wxALIGN_CENTER | wxLEFT , FromDIP(SidebarProps::ElementSpacing()));
         m_mode_sizer->AddSpacer(FromDIP(SidebarProps::IconSpacing())); // ensure there is spacing after control when sidebar has less width

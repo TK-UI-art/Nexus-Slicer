@@ -96,6 +96,19 @@ inline void nexus_paint_cards(wxWindow* parent, wxPaintDC& dc, const std::vector
     }
 }
 
+// A card title's text in a sizer that sets it optically centred on the title row. Centred by its text box,
+// macOS draws the glyphs a pixel high, which shows in a folded card, where the title row is the whole card.
+inline wxSizer* nexus_card_title_text(wxWindow* label)
+{
+    auto* sizer = new wxBoxSizer(wxVERTICAL);
+#ifdef __WXOSX__
+    sizer->Add(label, 0, wxEXPAND | wxTOP, label->FromDIP(1));
+#else
+    sizer->Add(label, 0, wxEXPAND);
+#endif
+    return sizer;
+}
+
 // Folds or unfolds the content window of a sidebar card with a short height animation (Web-Slicer card). The
 // content keeps its layout while its window grows or shrinks, so it slides in and out instead of squeezing.
 // `relayout` lays out the card's parent; it runs on every step. The content must sit in a vertical box sizer

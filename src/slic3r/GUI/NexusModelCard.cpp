@@ -55,7 +55,7 @@ NexusModelCard::NexusModelCard(wxWindow* parent, wxBoxSizer* sizer, int card_mar
     auto*     title = new wxBoxSizer(wxHORIZONTAL);
     title->Add(m_icon, 0, wxALIGN_CENTER | wxLEFT, m_parent->FromDIP(NEXUS_CARD_ICON_INSET));
     title->AddSpacer(m_parent->FromDIP(SidebarProps::ElementSpacing()));
-    title->Add(m_title_text, 1, wxALIGN_CENTER | wxRIGHT, m_parent->FromDIP(SidebarProps::WideSpacing()));
+    title->Add(nexus_card_title_text(m_title_text), 1, wxALIGN_CENTER | wxRIGHT, m_parent->FromDIP(SidebarProps::WideSpacing()));
     title->Add(m_help_btn, 0, wxALIGN_CENTER);
     title->AddSpacer(m_parent->FromDIP(SidebarProps::TitlebarMargin()));
     title->SetMinSize(-1, m_parent->FromDIP(NEXUS_CARD_TITLE_H));
