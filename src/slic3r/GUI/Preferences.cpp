@@ -2128,6 +2128,12 @@ void PreferencesDialog::create_items()
     auto item_shared_profiles  = create_item_checkbox(_L("Show shared profiles notification"), _L("Show a notification with a link to browse shared profiles when the selected printer is changed."), "show_shared_profiles_notification");
     g_sizer->Add(item_shared_profiles);
 
+    // Nexus: otherwise a notification offers the sync when the AMS of the connected printer changes.
+    auto item_auto_sync_ams = create_item_checkbox(_L("Sync AMS changes automatically"),
+        _L("If enabled, the project's filaments are synced from the AMS as soon as the filaments in the AMS of the connected printer change. Otherwise a notification offers the sync."),
+        "nexus_auto_sync_ams");
+    g_sizer->Add(item_auto_sync_ams);
+
     //// BEHAVIOUR > Plugins
     g_sizer->Add(create_item_title(_L("Plugins")), 1, wxEXPAND);
 

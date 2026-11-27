@@ -891,6 +891,7 @@ struct Sidebar::priv
     wxScrolledWindow *scrolled = nullptr;
     wxSize            scrolled_min_size; // of the cards, for the scroll range
     wxSizer*          slice_row = nullptr; // the slice button and its options button, below the cards
+    bool              syncing_ams = false; // Sidebar::sync_ams_list() loads the AMS list
     PlaterPresetComboBox *combo_sla_print = nullptr;
     PlaterPresetComboBox *combo_sla_material = nullptr;
 
@@ -6477,6 +6478,41 @@ void Sidebar::get_small_btn_sync_pos_size(wxPoint &pt, wxSize &size) {
     pt   = ams_btn->GetScreenPosition();
 }
 
+// The filament in each AMS slot, for telling a physical change from a refresh of the same filaments.
+std::string Sidebar::ams_contents(const std::map<int, DynamicPrintConfig>& list)
+{
+    std::string contents;
+    for (const auto& [slot, tray] : list) {
+        contents += std::to_string(slot) + ':';
+        for (const char* key : {"filament_id", "filament_colour", "filament_type"})
+            if (tray.has(key))
+                contents += tray.opt_string(key, 0u) + '/';
+        contents += ';';
+    }
+    return contents;
+}
+
+// Nexus: syncs the project's filaments right away when the user chose so in Preferences and nothing else is in
+// the way (slicing, a modal dialog, a sync in progress); otherwise a notification offers the sync.
+void Sidebar::on_ams_contents_changed()
+{
+    if (p->syncing_ams)
+        return;
+    NotificationManager* notifications = p->plater->get_notification_manager();
+    notifications->close_notification_of_type(NotificationType::NexusAmsChanged);
+    MainFrame* frame = wxGetApp().mainframe;
+    if (wxGetApp().app_config->get_bool("nexus_auto_sync_ams") && frame != nullptr && frame->IsEnabled() &&
+        !p->plater->is_background_process_slicing()) {
+        CallAfter([this] { sync_ams_list(); });
+        return;
+    }
+    notifications->push_notification(NotificationType::NexusAmsChanged, NotificationManager::NotificationLevel::ImportantNotificationLevel,
+                                     _u8L("The filaments in the AMS have changed."), _u8L("Sync to project"), [this](wxEvtHandler*) {
+                                         CallAfter([this] { sync_ams_list(); });
+                                         return true;
+                                     });
+}
+
 void Sidebar::load_ams_list(MachineObject* obj)
 {
     std::map<int, DynamicPrintConfig> filament_ams_list;
@@ -6518,7 +6554,12 @@ void Sidebar::load_ams_list(MachineObject* obj)
     {
         return;
     }
+    // Nexus: a different filament in a slot of the same printer's AMS (not the first list of a printer).
+    const bool ams_contents_changed = !device_change && !previous_filament_ams_list.empty() &&
+                                      ams_contents(previous_filament_ams_list) != ams_contents(filament_ams_list);
     wxGetApp().preset_bundle->filament_ams_list = filament_ams_list;
+    if (ams_contents_changed)
+        on_ams_contents_changed();
 
     for (auto c : p->combos_filament){
         c->set_sync_badge(false);
@@ -6555,7 +6596,11 @@ void Sidebar::sync_ams_list(bool is_from_big_sync_btn)
     auto obj = wxGetApp().getDeviceManager()->get_selected_machine();
     if (!obj)
         return;
+    p->plater->get_notification_manager()->close_notification_of_type(NotificationType::NexusAmsChanged);
+    // The changes this load finds are synced right here.
+    p->syncing_ams = true;
     GUI::wxGetApp().sidebar().load_ams_list(obj);
+    p->syncing_ams = false;
 
     auto & list = wxGetApp().preset_bundle->filament_ams_list;
     if (list.empty()) {

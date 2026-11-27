@@ -208,6 +208,9 @@ public:
     void update_filaments_area_height();
     void update_filaments_counter(bool force_layout = false);
     // Nexus: sizes the cards' area to the cards, leaving the slice button room below them.
+    // Nexus: the filaments in the AMS of the connected printer changed (see load_ams_list()).
+    void on_ams_contents_changed();
+    static std::string ams_contents(const std::map<int, DynamicPrintConfig>& list);
     void fit_cards_height();
     void msw_rescale();
     void sys_color_changed();

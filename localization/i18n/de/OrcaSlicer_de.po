@@ -38879,6 +38879,22 @@ msgid "Show less"
 msgstr "Weniger anzeigen"
 
 # AI Translated
+msgid "Sync AMS changes automatically"
+msgstr "AMS-Änderungen automatisch übernehmen"
+
+# AI Translated
+msgid "If enabled, the project's filaments are synced from the AMS as soon as the filaments in the AMS of the connected printer change. Otherwise a notification offers the sync."
+msgstr "Wenn aktiviert, werden die Filamente des Projekts aus dem AMS übernommen, sobald sich die Filamente im AMS des verbundenen Druckers ändern. Andernfalls bietet ein Hinweis die Übernahme an."
+
+# AI Translated
+msgid "The filaments in the AMS have changed."
+msgstr "Die Filamente im AMS haben sich geändert."
+
+# AI Translated
+msgid "Sync to project"
+msgstr "Ins Projekt übernehmen"
+
+# AI Translated
 msgid "Choose what to slice and how to print or export"
 msgstr "Wählen, was gesliced und wie gedruckt oder exportiert wird"
 

@@ -201,6 +201,8 @@ enum class NotificationType
     // One aggregate notice that installed OrcaCloud plugins have updates. "More" opens the
     // Plugins dialog, where the updates can be installed.
     OrcaCloudPluginUpdateAvailable,
+    // Nexus: the filaments in the AMS of the connected printer changed; the hypertext syncs them into the project.
+    NexusAmsChanged,
     NotificationTypeCount
 
 };
