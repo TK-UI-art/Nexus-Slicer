@@ -1209,7 +1209,7 @@ void GLGizmosManager::update_after_undo_redo(const UndoRedo::Snapshot& snapshot)
     //     dynamic_cast<GLGizmoSlaSupports*>(m_gizmos[SlaSupports].get())->reslice_SLA_supports(true);
 }
 
-void GLGizmosManager::render_background(float left, float top, float right, float bottom, float border_w, float border_h) const
+void GLGizmosManager::render_background(float left, float top, float right, float bottom, float border_w, float border_h, float round_w) const
 {
     const unsigned int tex_id = m_background_texture.texture.get_id();
     const float tex_width = float(m_background_texture.texture.get_width());
@@ -1224,7 +1224,14 @@ void GLGizmosManager::render_background(float left, float top, float right, floa
         const float internal_top_uv    = 1.0f - float(m_background_texture.metadata.top) * inv_tex_height;
         const float internal_bottom_uv = float(m_background_texture.metadata.bottom) * inv_tex_height;
 
-        GLTexture::render_sub_texture(tex_id, left, right, bottom, top, { { internal_left_uv, internal_bottom_uv }, { internal_right_uv, internal_bottom_uv }, { internal_right_uv, internal_top_uv }, { internal_left_uv, internal_top_uv } });
+        // Nexus: the row's rounded end, from the texture's right corners, as GLToolbar draws the other end.
+        const float body_right = right - round_w;
+        GLTexture::render_sub_texture(tex_id, left, body_right, bottom, top, { { internal_left_uv, internal_bottom_uv }, { internal_right_uv, internal_bottom_uv }, { internal_right_uv, internal_top_uv }, { internal_left_uv, internal_top_uv } });
+        if (round_w > 0.f) {
+            const float mid = 0.5f * (top + bottom);
+            GLTexture::render_sub_texture(tex_id, body_right, right, mid, top, { { internal_right_uv, internal_top_uv }, { 1.f, internal_top_uv }, { 1.f, 1.f }, { internal_right_uv, 1.f } });
+            GLTexture::render_sub_texture(tex_id, body_right, right, bottom, mid, { { internal_right_uv, 0.f }, { 1.f, 0.f }, { 1.f, internal_bottom_uv }, { internal_right_uv, internal_bottom_uv } });
+        }
 
         /*
         const float internal_left   = left + border_w;
@@ -1338,7 +1345,8 @@ void GLGizmosManager::do_render_overlay(bool draw_icons) const
 
     float top_x;
     if (m_parent.get_canvas_type() == GLCanvas3D::CanvasAssembleView) {
-        top_x = m_parent.get_assembly_paint_toolbar_width() * inv_cnv_w;
+        // Nexus: from the middle of the part the floating windows leave free.
+        top_x = (m_parent.get_assembly_paint_toolbar_width() + m_parent.covered_left() - m_parent.covered_right()) * inv_cnv_w;
     }
     else {
         //BBS: GUI refactor: GLToolbar&&Gizmo adjust
@@ -1354,8 +1362,11 @@ void GLGizmosManager::do_render_overlay(bool draw_icons) const
     }
     float top_y = 1.0f - 2.0f * m_parent.get_toolbar_row_top() * inv_cnv_h;
 
+    // Nexus: the gizmos end the bottom toolbar row when the assembly view button is off it; that end is rounded.
+    const bool row_end = m_parent.get_canvas_type() != GLCanvas3D::CanvasAssembleView && m_parent.is_toolbar_at_bottom() &&
+                         !m_parent.is_assemble_view_on_toolbar_row();
     if (draw_icons)
-        render_background(top_x, top_y, top_x + width, top_y - height, border_w, border_h);
+        render_background(top_x, top_y, top_x + width, top_y - height, border_w, border_h, row_end ? 0.5f * height * cnv_h * inv_cnv_w : 0.f);
 
     top_x += border_w;
     top_y -= border_h;

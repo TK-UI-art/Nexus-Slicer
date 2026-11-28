@@ -2852,6 +2852,12 @@ Sidebar::Sidebar(Plater *parent)
     });
     // Nexus: the sidebar background shows between the step cards
     p->scrolled->SetBackgroundColour(StateColor::darkModeColorFor(wxColour(NEXUS_SIDEBAR_BG)));
+#ifdef __WXOSX__
+    // On macOS the docked sidebar floats over the 3D view (Plater::priv::layout_floating): the scene shows between
+    // the cards, which p->scrolled paints itself. A window that does not erase its background is transparent there.
+    for (wxWindow* window : { static_cast<wxWindow*>(this), static_cast<wxWindow*>(p->scrolled) })
+        window->Bind(wxEVT_ERASE_BACKGROUND, [](wxEraseEvent&) {});
+#endif
 
 
     SetFont(wxGetApp().normal_font());
@@ -3643,9 +3649,11 @@ Sidebar::Sidebar(Plater *parent)
     }
     // ---- End mixed-color filament section ----
 
+    // ORCA use vertical margin on parent otherwise it shows scrollbar even on 1 filament
+    // Nexus: inside the wrapper, so it folds with it and the folded card keeps the gap of the others.
+    wrapper_sizer->PrependSpacer(FromDIP(SidebarProps::ContentMarginV()));
     p->m_filament_area_wrapper->SetSizer(wrapper_sizer);
     p->m_filament_area_wrapper->Layout();
-    scrolled_sizer->AddSpacer(FromDIP(SidebarProps::ContentMarginV())); // ORCA use vertical margin on parent otherwise it shows scrollbar even on 1 filament
     scrolled_sizer->Add(p->m_filament_area_wrapper, 0, wxEXPAND | wxLEFT | wxRIGHT, card_margin);
     scrolled_sizer->AddSpacer(card_spacing);
     // ---- End filament area ----
@@ -3664,6 +3672,7 @@ Sidebar::Sidebar(Plater *parent)
         scrolled_sizer->Add(params_panel->get_top_panel(), 0, wxEXPAND | wxLEFT | wxRIGHT, card_margin);
         auto spliter_2 = new ::StaticLine(p->scrolled);
         spliter_2->SetLineColour("#CECECE");
+        spliter_2->Hide(); // Nexus: outside the card once it folds, where it widened the gap below
         scrolled_sizer->Add(spliter_2, 0, wxEXPAND | wxLEFT | wxRIGHT, card_margin);
     }
 
@@ -3845,6 +3854,9 @@ Sidebar::Sidebar(Plater *parent)
                               std::make_pair(wxColour(NEXUS_ACCENT), (int) StateColor::Normal));
     p->btn_slice_sidebar->SetBackgroundColor(slice_bg);
     p->btn_slice_sidebar->SetBorderColor(slice_bg);
+#ifdef __WXOSX__
+    p->btn_slice_sidebar->Bind(wxEVT_ERASE_BACKGROUND, [](wxEraseEvent&) {}); // round ends over the 3D view
+#endif
     p->btn_slice_sidebar->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) {
         MainFrame* mainframe = wxGetApp().mainframe;
         if (!mainframe)
@@ -3879,6 +3891,9 @@ Sidebar::Sidebar(Plater *parent)
     p->btn_slice_option_sidebar->SetBorderColor(slice_bg);
     p->btn_slice_option_sidebar->SetMinSize(wxSize(FromDIP(NEXUS_BAR_HEIGHT), FromDIP(NEXUS_BAR_HEIGHT)));
     p->btn_slice_option_sidebar->SetCornerRadius(FromDIP(NEXUS_BAR_HEIGHT / 2));
+#ifdef __WXOSX__
+    p->btn_slice_option_sidebar->Bind(wxEVT_ERASE_BACKGROUND, [](wxEraseEvent&) {}); // round over the 3D view
+#endif
     p->btn_slice_option_sidebar->SetToolTip(_L("Choose what to slice and how to print or export"));
     p->btn_slice_option_sidebar->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) {
         MainFrame* mainframe = wxGetApp().mainframe;
@@ -5948,10 +5963,15 @@ void Sidebar::update_filaments_area_height()
     // Nexus: the Add filament tile takes the first place of the rows.
     int  preferred_rows      = std::ceil(0.5 * (std::stoi(wxGetApp().app_config->get("filaments_area_preferred_count")) + 1));
     auto height_with_borders = combo_sizer->GetSize().GetHeight(); // gets height from sizer instead static numbers
-    p->m_panel_filament_content->SetMaxSize(wxSize{-1, preferred_rows * height_with_borders});
-
     // fixes wxScrolledWindow not shrinks its height to content size
     auto min_size = p->m_panel_filament_content->GetSizer()->GetMinSize();
+    // Nexus: a row's height from the laid out rows, with their gaps and margins: the height of the first row's combo
+    // sizer missed those, and the last tiles were cut off at the bottom of the card.
+    const int content_rows = int(std::ceil(0.5 * (p->combos_filament.size() + 1)));
+    if (content_rows > 0)
+        height_with_borders = std::max(height_with_borders, (min_size.y + content_rows - 1) / content_rows);
+    p->m_panel_filament_content->SetMaxSize(wxSize{-1, preferred_rows * height_with_borders});
+
     if (min_size.y > p->m_panel_filament_content->GetMaxHeight())
         min_size.y = p->m_panel_filament_content->GetMaxHeight();
     p->m_panel_filament_content->SetMinSize({-1, min_size.y});
@@ -7724,6 +7744,40 @@ enum ExportingStatus{
 };
 
 // Plater / private
+#ifdef __WXOSX__
+// Nexus: a transparent window over the caption or the sash AUI draws for the docked sidebar, where panel_3d lies over
+// the Plater (Plater::priv::layout_floating). It hands its mouse events to the Plater, where AUI handles them: a drag
+// on the caption floats the sidebar, one on the sash resizes it. AUI captures the mouse on the Plater for the drag.
+class NexusAuiGrip : public wxWindow
+{
+public:
+    explicit NexusAuiGrip(wxWindow* parent) : wxWindow(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_NONE)
+    {
+        // Nothing painted: an unpainted window is transparent on macOS.
+        Bind(wxEVT_ERASE_BACKGROUND, [](wxEraseEvent&) {});
+        Bind(wxEVT_PAINT, [this](wxPaintEvent&) { wxPaintDC dc(this); });
+        Bind(wxEVT_LEFT_DOWN, &NexusAuiGrip::forward, this);
+        Bind(wxEVT_LEFT_UP, &NexusAuiGrip::forward, this);
+        Bind(wxEVT_LEFT_DCLICK, &NexusAuiGrip::forward, this);
+        Bind(wxEVT_MOTION, &NexusAuiGrip::forward, this);
+        Bind(wxEVT_LEAVE_WINDOW, &NexusAuiGrip::forward, this);
+    }
+
+private:
+    void forward(wxMouseEvent& evt)
+    {
+        wxWindow*    target = GetParent();
+        wxMouseEvent event(evt);
+        event.SetEventObject(target);
+        event.SetId(target->GetId());
+        event.SetPosition(target->ScreenToClient(ClientToScreen(evt.GetPosition())));
+        target->GetEventHandler()->ProcessEvent(event);
+        // AUI shows its resize cursor on the Plater.
+        SetCursor(target->GetCursor());
+    }
+};
+#endif
+
 struct Plater::priv
 {
     // PIMPL back pointer ("Q-Pointer")
@@ -7769,6 +7823,20 @@ struct Plater::priv
     // Nexus: the panel of the 3D views, and the sizer at whose top MainFrame docks the main tab bar.
     wxPanel* panel_3d{ nullptr };
     wxSizer* tab_bar_sizer{ nullptr };
+#ifdef __WXOSX__
+    // Nexus: on macOS the docked sidebar and the tab bar float over the 3D view, as in the Web-Slicer. AUI lays out
+    // `floating_centre`, an empty centre pane; panel_3d lies over it and under the docked sidebar, which stays above
+    // it, and the tab bar lies over the top of panel_3d. The gaps between the cards are transparent there, so the
+    // scene shows through them. Windows and Linux cannot show a window through an OpenGL canvas: they keep the
+    // sidebar beside the 3D view and the tab bar above it.
+    wxPanel*                 floating_centre{ nullptr };
+    // Over the sidebar's caption and sash, which AUI draws on the Plater under panel_3d (NexusAuiGrip).
+    std::array<wxWindow*, 2> aui_grips{};
+    bool                     floating_layout_pending{ false };
+    void                     schedule_floating_layout();
+    void                     layout_floating();
+#endif
+    void update_floating_layout();
     std::vector<wxPanel*> panels;
 
     struct SidebarLayout
@@ -8483,6 +8551,9 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
 
     panel_3d = new wxPanel(q);
     panel_3d->SetBackgroundColour(StateColor::darkModeColorFor(wxColour(NEXUS_SIDEBAR_BG)));
+#ifdef __WXOSX__
+    floating_centre = new wxPanel(q);
+#endif
     view3D = new View3D(panel_3d, bed, &model, config, &background_process);
     //BBS: use partplater's gcode
     preview = new Preview(panel_3d, bed, &model, config, &background_process, partplate_list.get_current_slice_result(), [this]() { schedule_background_process(); });
@@ -8534,9 +8605,25 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
     panel_sizer->Add(preview, 1, wxEXPAND | wxALL, 0);
     panel_sizer->Add(assemble_view, 1, wxEXPAND | wxALL, 0);
     tab_bar_sizer = new wxBoxSizer(wxVERTICAL);
+#ifdef __WXOSX__
+    // The 3D views fill panel_3d; the tab bar docked in `tab_bar_sizer` lies over their top (layout_floating). The
+    // sizer belongs to no window, so that panel_3d's layout leaves the bar where layout_floating put it. It is not
+    // deleted: a bar destroyed with the window detaches itself from it.
+    panel_3d->SetSizer(panel_sizer);
+    m_aui_mgr.AddPane(floating_centre, wxAuiPaneInfo().Name("main").CenterPane().PaneBorder(false));
+    // Below the sidebar, the centre pane below the 3D views.
+    panel_3d->Lower();
+    floating_centre->Lower();
+    for (wxWindow*& grip : aui_grips)
+        grip = new NexusAuiGrip(q);
+    floating_centre->Bind(wxEVT_SIZE, [this](wxSizeEvent& e) { e.Skip(); schedule_floating_layout(); });
+    floating_centre->Bind(wxEVT_MOVE, [this](wxMoveEvent& e) { e.Skip(); schedule_floating_layout(); });
+    sidebar->Bind(wxEVT_SHOW, [this](wxShowEvent& e) { e.Skip(); schedule_floating_layout(); });
+#else
     tab_bar_sizer->Add(panel_sizer, 1, wxEXPAND);
     panel_3d->SetSizer(tab_bar_sizer);
     m_aui_mgr.AddPane(panel_3d, wxAuiPaneInfo().Name("main").CenterPane().PaneBorder(false));
+#endif
 
     q->Bind(wxEVT_AUI_PANE_CLOSE, [this](wxAuiManagerEvent& evt) {
         const wxAuiPaneInfo* pane = evt.GetPane();
@@ -9189,6 +9276,75 @@ void Plater::priv::collapse_sidebar(bool collapse)
     collapse_toolbar.set_tooltip(id, new_tooltip);
 
     update_sidebar();
+}
+
+#ifdef __WXOSX__
+void Plater::priv::schedule_floating_layout()
+{
+    // After AUI has placed every pane: its centre pane is laid out before the sidebar.
+    if (floating_layout_pending)
+        return;
+    floating_layout_pending = true;
+    q->CallAfter([this] { layout_floating(); });
+}
+
+void Plater::priv::layout_floating()
+{
+    floating_layout_pending = false;
+    if (floating_centre == nullptr || panel_3d == nullptr)
+        return;
+
+    const wxRect centre = floating_centre->GetRect();
+    wxRect       area   = centre;
+    wxRect       caption, sash;
+    const wxAuiPaneInfo& pane = m_aui_mgr.GetPane(sidebar);
+    if (pane.IsOk() && pane.IsShown() && pane.IsDocked() && sidebar->IsShown() && !pane.rect.IsEmpty()) {
+        const wxRect side = pane.rect; // with AUI's caption and border
+        if (pane.dock_direction == wxAUI_DOCK_LEFT && side.GetRight() < centre.GetLeft()) {
+            area = wxRect(wxPoint(side.GetLeft(), centre.GetTop()), centre.GetBottomRight());
+            sash = wxRect(wxPoint(side.GetRight() + 1, side.GetTop()), wxPoint(centre.GetLeft() - 1, side.GetBottom()));
+        } else if (pane.dock_direction == wxAUI_DOCK_RIGHT && side.GetLeft() > centre.GetRight()) {
+            area = wxRect(centre.GetTopLeft(), wxPoint(side.GetRight(), centre.GetBottom()));
+            sash = wxRect(wxPoint(centre.GetRight() + 1, side.GetTop()), wxPoint(side.GetLeft() - 1, side.GetBottom()));
+        }
+        const int window_top = sidebar->GetPosition().y;
+        if (window_top > side.GetTop())
+            caption = wxRect(side.GetLeft(), side.GetTop(), side.GetWidth(), window_top - side.GetTop());
+    }
+    if (panel_3d->GetRect() != area)
+        panel_3d->SetSize(area);
+    const std::array<wxRect, 2> grip_rects{ caption, sash };
+    for (size_t i = 0; i < aui_grips.size(); ++i) {
+        aui_grips[i]->Show(!grip_rects[i].IsEmpty());
+        if (!grip_rects[i].IsEmpty()) {
+            aui_grips[i]->SetSize(grip_rects[i]);
+            aui_grips[i]->Raise();
+        }
+    }
+
+    const int left  = centre.GetLeft() - area.GetLeft();
+    const int right = area.GetRight() - centre.GetRight();
+    int       top   = 0;
+    // The tab bar docked in panel_3d, across the part the sidebar leaves free.
+    if (tab_bar_sizer->GetItemCount() > 0) {
+        top = tab_bar_sizer->GetMinSize().y;
+        tab_bar_sizer->SetDimension(left, 0, std::max(0, area.GetWidth() - left - right), top);
+        for (wxSizerItem* item : tab_bar_sizer->GetChildren())
+            if (wxWindow* bar = item->GetWindow())
+                bar->Raise();
+    }
+    for (GLCanvas3D* canvas : { view3D != nullptr ? view3D->get_canvas3d() : nullptr, preview != nullptr ? preview->get_canvas3d() : nullptr,
+                                assemble_view != nullptr ? assemble_view->get_canvas3d() : nullptr })
+        if (canvas != nullptr)
+            canvas->set_covered_insets(left, top, right);
+}
+#endif
+
+void Plater::priv::update_floating_layout()
+{
+#ifdef __WXOSX__
+    schedule_floating_layout();
+#endif
 }
 
 void Plater::priv::update_sidebar(bool force_update) {
@@ -16923,6 +17079,7 @@ void Plater::priv::handle_textured_mesh_import(Slic3r::Model& loaded_model, cons
 Sidebar&        Plater::sidebar()           { return *p->sidebar; }
 wxWindow*       Plater::tab_bar_host() const { return p->panel_3d; }
 wxSizer*        Plater::tab_bar_sizer() const { return p->tab_bar_sizer; }
+void            Plater::update_floating_layout() { p->update_floating_layout(); }
 const Model&    Plater::model() const       { return p->model; }
 Model&          Plater::model()             { return p->model; }
 const Print&    Plater::fff_print() const   { return p->fff_print; }

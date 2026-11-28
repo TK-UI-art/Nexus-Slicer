@@ -72,11 +72,23 @@ ButtonsListCtrl::ButtonsListCtrl(wxWindow *parent, wxBoxSizer* side_tools) :
         m_sizer->Add(side_tools, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, m_btn_margin);
     }
 
+#ifdef __WXOSX__
+    // Nexus: docked over the 3D view (Plater::priv::layout_floating), the bar shows the scene around its pill.
+    Bind(wxEVT_ERASE_BACKGROUND, [this](wxEraseEvent& e) {
+        if (GetParent() == m_owner)
+            e.Skip();
+    });
+#endif
     Bind(wxEVT_PAINT, [this](wxPaintEvent&) {
         wxPaintDC dc(this);
         // macOS leaves an unpainted control transparent, showing the window background behind the bar.
-        dc.SetBackground(wxBrush(GetBackgroundColour()));
-        dc.Clear();
+#ifdef __WXOSX__
+        if (GetParent() == m_owner)
+#endif
+        {
+            dc.SetBackground(wxBrush(GetBackgroundColour()));
+            dc.Clear();
+        }
         Slic3r::GUI::nexus_paint_cards(this, dc, {std::vector<wxWindow*>(m_pageButtons.begin(), m_pageButtons.end())}, TAB_PILL_RADIUS,
                                        TAB_PILL_PAD);
     });

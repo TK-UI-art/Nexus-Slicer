@@ -69,6 +69,8 @@ private:
     double m_gui_scale{ 1.0 };
 
     std::array<int, 4> m_viewport;
+    // Nexus: the parts of the viewport that windows floating over the 3D view cover (left, top, right), in viewport pixels.
+    std::array<double, 3> m_covered{ 0.0, 0.0, 0.0 };
     Transform3d m_view_matrix{ Transform3d::Identity() };
     // We are calculating the rotation part of the m_view_matrix from m_view_rotation.
     Eigen::Quaterniond m_view_rotation{ 1.0, 0.0, 0.0, 0.0 };
@@ -112,6 +114,9 @@ public:
     void select_view(const std::string& direction);
     void select_view(ViewAngleType type);
     const std::array<int, 4>& get_viewport() const { return m_viewport; }
+    // Nexus: the viewport stays the whole 3D view, which windows float over (the sidebar and the tab bar on macOS).
+    // The projection then puts the target in the middle of the part they leave free, and zooming to fit fills that part.
+    void set_covered_insets(double left, double top, double right) { m_covered = { left, top, right }; }
     const Transform3d& get_view_matrix() const { return m_view_matrix; }
     const Transform3d& get_projection_matrix() const { return m_projection_matrix; }
 

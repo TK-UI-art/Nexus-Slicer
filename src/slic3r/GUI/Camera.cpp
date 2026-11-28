@@ -204,7 +204,7 @@ double Camera::get_near_left() const
         return m_frustrum_zs.first * (m_projection_matrix.matrix()(0, 2) - 1.0) / m_projection_matrix.matrix()(0, 0);
     default:
     case EType::Ortho:
-        return -1.0 / m_projection_matrix.matrix()(0, 0) - 0.5 * m_projection_matrix.matrix()(0, 0) * m_projection_matrix.matrix()(0, 3);
+        return (-1.0 - m_projection_matrix.matrix()(0, 3)) / m_projection_matrix.matrix()(0, 0); // Nexus: also off-centre
     }
 }
 
@@ -216,7 +216,7 @@ double Camera::get_near_right() const
         return m_frustrum_zs.first * (m_projection_matrix.matrix()(0, 2) + 1.0) / m_projection_matrix.matrix()(0, 0);
     default:
     case EType::Ortho:
-        return 1.0 / m_projection_matrix.matrix()(0, 0) - 0.5 * m_projection_matrix.matrix()(0, 0) * m_projection_matrix.matrix()(0, 3);
+        return (1.0 - m_projection_matrix.matrix()(0, 3)) / m_projection_matrix.matrix()(0, 0);
     }
 }
 
@@ -228,7 +228,7 @@ double Camera::get_near_top() const
         return m_frustrum_zs.first * (m_projection_matrix.matrix()(1, 2) + 1.0) / m_projection_matrix.matrix()(1, 1);
     default:
     case EType::Ortho:
-        return 1.0 / m_projection_matrix.matrix()(1, 1) - 0.5 * m_projection_matrix.matrix()(1, 1) * m_projection_matrix.matrix()(1, 3);
+        return (1.0 - m_projection_matrix.matrix()(1, 3)) / m_projection_matrix.matrix()(1, 1);
     }
 }
 
@@ -240,7 +240,7 @@ double Camera::get_near_bottom() const
         return m_frustrum_zs.first * (m_projection_matrix.matrix()(1, 2) - 1.0) / m_projection_matrix.matrix()(1, 1);
     default:
     case EType::Ortho:
-        return -1.0 / m_projection_matrix.matrix()(1, 1) - 0.5 * m_projection_matrix.matrix()(1, 1) * m_projection_matrix.matrix()(1, 3);
+        return (-1.0 - m_projection_matrix.matrix()(1, 3)) / m_projection_matrix.matrix()(1, 1);
     }
 }
 
@@ -305,10 +305,15 @@ void Camera::apply_projection(const BoundingBoxf3& box, double near_z, double fa
 
     w = 0.5 * (double)m_viewport[2];
     h = 0.5 * (double)m_viewport[3];
+    // Nexus: the view's centre moves to the middle of the uncovered part, by half the covered widths (in pixels).
+    double shift_x = 0.5 * (m_covered[0] - m_covered[2]);
+    double shift_y = -0.5 * m_covered[1];
 
     const double inv_zoom = get_inv_zoom();
     w *= inv_zoom;
     h *= inv_zoom;
+    shift_x *= inv_zoom;
+    shift_y *= inv_zoom;
 
     switch (m_type)
     {
@@ -324,12 +329,14 @@ void Camera::apply_projection(const BoundingBoxf3& box, double near_z, double fa
         const double scale = m_frustrum_zs.first / m_distance;
         w *= scale;
         h *= scale;
+        shift_x *= scale;
+        shift_y *= scale;
         m_gui_scale = scale;
         break;
     }
     }
 
-    apply_projection(-w, w, -h, h, m_frustrum_zs.first, m_frustrum_zs.second);
+    apply_projection(-w - shift_x, w - shift_x, -h - shift_y, h - shift_y, m_frustrum_zs.first, m_frustrum_zs.second);
 }
 
 void Camera::apply_projection(double left, double right, double bottom, double top, double near_z, double far_z)
@@ -613,7 +620,10 @@ double Camera::calc_zoom_to_bounding_box_factor(const BoundingBoxf3& box, double
     dx *= margin_factor;
     dy *= margin_factor;
 
-    return std::min((double)m_viewport[2] / dx, (double)m_viewport[3] / dy);
+    // Nexus: the part of the viewport the floating windows leave free (set_covered_insets).
+    const double free_w = std::max(1.0, (double)m_viewport[2] - m_covered[0] - m_covered[2]);
+    const double free_h = std::max(1.0, (double)m_viewport[3] - m_covered[1]);
+    return std::min(free_w / dx, free_h / dy);
 }
 
 double Camera::calc_zoom_to_volumes_factor(const GLVolumePtrs& volumes, Vec3d& center, double margin_factor) const
@@ -671,7 +681,10 @@ double Camera::calc_zoom_to_volumes_factor(const GLVolumePtrs& volumes, Vec3d& c
     if (dx <= 0.0 || dy <= 0.0)
         return -1.0f;
 
-    return std::min((double)m_viewport[2] / dx, (double)m_viewport[3] / dy);
+    // Nexus: the part of the viewport the floating windows leave free (set_covered_insets).
+    const double free_w = std::max(1.0, (double)m_viewport[2] - m_covered[0] - m_covered[2]);
+    const double free_h = std::max(1.0, (double)m_viewport[3] - m_covered[1]);
+    return std::min(free_w / dx, free_h / dy);
 }
 
 void Camera::set_distance(double distance)

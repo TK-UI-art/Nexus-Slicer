@@ -3028,19 +3028,26 @@ void GLCanvas3D::update_volumes_colors_by_extruder()
         m_volumes.update_colors_by_extruder(m_config);
 }
 
+// Nexus: the Prepare and Preview views show no sidebar collapse button; View > Collapse/Expand the sidebar and
+// its shortcut fold the sidebar. Canvases with their own collapse toolbar (set_collapse_toolbar) keep it.
+bool GLCanvas3D::shows_collapse_toolbar() const
+{
+    return m_collapse_toolbar != nullptr && collapse_side() != CollapseSide::None;
+}
+
 bool GLCanvas3D::is_collapse_toolbar_on_left() const
 {
-    return collapse_side() == CollapseSide::Left;
+    return shows_collapse_toolbar() && collapse_side() == CollapseSide::Left;
 }
 
 float GLCanvas3D::get_collapse_toolbar_width() const
 {
-    return collapse_side() != CollapseSide::None ? collapse_toolbar().get_width() : 0;
+    return shows_collapse_toolbar() ? collapse_toolbar().get_width() : 0;
 }
 
 float GLCanvas3D::get_collapse_toolbar_height() const
 {
-    return collapse_side() != CollapseSide::None ? collapse_toolbar().get_height() : 0;
+    return shows_collapse_toolbar() ? collapse_toolbar().get_height() : 0;
 }
 
 // The bottom-left corner: the 3D navigator, then the column of round canvas buttons beside it, in
@@ -3114,7 +3121,7 @@ float GLCanvas3D::get_canvas_toolbar_right() const
     sc *= (float) get_dpi_for_window(wxGetApp().GetTopWindow()) / (float) DPI_DEFAULT;
 #endif // WIN32
     const float left = wxGetApp().show_3d_navigator() ? NAVIGATOR_SIZE : CANVAS_TOOLBAR_MARGIN;
-    return (left + 2.f * CANVAS_TOOLBAR_PADDING + CANVAS_TOOLBAR_BUTTON) * sc;
+    return covered_left() + (left + 2.f * CANVAS_TOOLBAR_PADDING + CANVAS_TOOLBAR_BUTTON) * sc;
 }
 
 GLToolbar& GLCanvas3D::collapse_toolbar() const
@@ -3212,6 +3219,7 @@ void GLCanvas3D::_render_frame(bool scene_dirty, bool only_init)
     Camera& camera = wxGetApp().plater()->get_camera();
     camera.set_viewport(0, 0, std::max(10u, (unsigned int)cnv_size.get_width()), std::max(10u, (unsigned int)cnv_size.get_height()));
     camera.apply_viewport();
+    apply_covered_insets(camera);
 
     if (camera.requires_zoom_to_bed) {
         zoom_to_bed();
@@ -6420,6 +6428,22 @@ Size GLCanvas3D::get_canvas_size() const
     return Size(w, h, factor);
 }
 
+void GLCanvas3D::set_covered_insets(int left, int top, int right)
+{
+    const std::array<int, 3> covered{ left, top, right };
+    if (covered == m_covered)
+        return;
+    m_covered = covered;
+    m_dirty   = true;
+    if (m_canvas != nullptr)
+        m_canvas->Refresh();
+}
+
+void GLCanvas3D::apply_covered_insets(Camera& camera) const
+{
+    camera.set_covered_insets(covered_left(), covered_top(), covered_right());
+}
+
 Vec2d GLCanvas3D::get_local_mouse_position() const
 {
     if (m_canvas == nullptr)
@@ -7592,7 +7616,7 @@ static const float cameraProjection[16] = {1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.
 void GLCanvas3D::_render_3d_navigator()
 {
     if (!wxGetApp().show_3d_navigator()) {
-        m_canvas_toolbar_pos[0] = 0;
+        m_canvas_toolbar_pos[0] = int(covered_left()); // Nexus: right of the floating sidebar
         m_navigator_dragging = false;
         m_navigator_animating = false;
         return;
@@ -7631,7 +7655,7 @@ void GLCanvas3D::_render_3d_navigator()
     sc *= (float) dpi / (float) DPI_DEFAULT;
 #endif // WIN32
 
-    const float viewManipulateLeft = 0;
+    const float viewManipulateLeft = covered_left(); // Nexus: right of the floating sidebar
     const float viewManipulateTop  = io.DisplaySize.y;
     const float camDistance        = 8.f;
 
@@ -7649,7 +7673,7 @@ void GLCanvas3D::_render_3d_navigator()
     }
 
     const float size  = NAVIGATOR_SIZE * sc;
-    m_canvas_toolbar_pos[0] = size;
+    m_canvas_toolbar_pos[0] = int(viewManipulateLeft + size);
     const auto result = ImGuizmo::ViewManipulate(cameraView, cameraProjection, ImGuizmo::OPERATION::ROTATE, ImGuizmo::MODE::WORLD, nullptr,
                                                  camDistance, ImVec2(viewManipulateLeft, viewManipulateTop - size), ImVec2(size, size),
                                                  0x00101010);
@@ -8793,6 +8817,7 @@ BoundingBoxf3 GLCanvas3D::_max_bounding_box(bool include_gizmos, bool include_be
 
 void GLCanvas3D::_zoom_to_box(const BoundingBoxf3& box, double margin_factor)
 {
+    apply_covered_insets(wxGetApp().plater()->get_camera());
     wxGetApp().plater()->get_camera().zoom_to_box(box, margin_factor);
     m_dirty = true;
 }
@@ -10935,7 +10960,7 @@ void GLCanvas3D::_check_and_update_toolbar_icon_scale()
 {
     // Update collapse toolbar
     GLToolbar& collapse_toolbar = this->collapse_toolbar();
-    collapse_toolbar.set_enabled(collapse_side() != CollapseSide::None);
+    collapse_toolbar.set_enabled(shows_collapse_toolbar());
 
     // Don't update a toolbar scale, when we are on a Preview. Asked of this canvas, not of the
     // plater: the Design tab's canvas is on screen while the plater's current view may be Preview.
@@ -10989,7 +11014,7 @@ void GLCanvas3D::_check_and_update_toolbar_icon_scale()
     float top_tb_width = m_main_toolbar.get_width() + m_gizmos.get_scaled_total_width() + m_assemble_view_toolbar.get_width() + m_separator_toolbar.get_width() + collapse_toolbar_width * 2;
     int   items_cnt = m_main_toolbar.get_visible_items_cnt() + m_gizmos.get_selectable_icons_cnt() + m_assemble_view_toolbar.get_visible_items_cnt() + m_separator_toolbar.get_visible_items_cnt() + (at_bottom ? 0 : collapse_toolbar.get_visible_items_cnt());
     float noitems_width = top_tb_width - size * items_cnt; // width of separators and borders in top toolbars
-    const float row_width = cnv_size.get_width() - (at_bottom ? get_canvas_toolbar_right() + 2.f * TOOLBAR_ROW_MARGIN * get_scale() +
+    const float row_width = cnv_size.get_width() - (at_bottom ? covered_right() + get_canvas_toolbar_right() + 2.f * TOOLBAR_ROW_MARGIN * get_scale() +
                                                                      get_toolbar_tools_button_width() : 0.f);
 
     // calculate scale needed for items in all top toolbars
@@ -11288,7 +11313,16 @@ void GLCanvas3D::_render_gizmos_overlay()
 
 float GLCanvas3D::get_top_toolbar_width() const
 {
+    // Nexus: without the assembly view button the bottom row ends with the gizmos, after the half-width separator
+    // between them and the main toolbar (_render_separator_toolbar_left, GLGizmosManager::do_render_overlay).
+    if (is_toolbar_at_bottom() && !is_assemble_view_on_toolbar_row())
+        return m_main_toolbar.get_width() + 0.5f * m_separator_toolbar.get_width() + m_gizmos.get_scaled_total_width();
     return m_main_toolbar.get_width() + m_separator_toolbar.get_width() + m_gizmos.get_scaled_total_width() + m_assemble_view_toolbar.get_width();
+}
+
+bool GLCanvas3D::is_assemble_view_on_toolbar_row() const
+{
+    return m_assemble_view_toolbar.is_enabled() && m_assemble_view_toolbar.get_visible_items_cnt() > 0;
 }
 
 float GLCanvas3D::get_top_toolbar_height() const
@@ -11299,7 +11333,7 @@ float GLCanvas3D::get_top_toolbar_height() const
 float GLCanvas3D::get_toolbar_row_top() const
 {
     if (!is_toolbar_at_bottom())
-        return 0.f;
+        return covered_top(); // Nexus: below the floating tab bar
     return float(get_canvas_size().get_height()) - get_top_toolbar_height() - TOOLBAR_ROW_MARGIN * get_scale();
 }
 
@@ -11341,8 +11375,9 @@ int GLCanvas3D::get_main_toolbar_offset() const
     if (is_toolbar_at_bottom()) {
         // Centred on the canvas, clear of the navigator and the canvas buttons in the bottom-left corner.
         const float left_min = get_canvas_toolbar_right() + TOOLBAR_ROW_MARGIN * get_scale();
-        // The plus button after the row is centred with it.
-        return int(std::max(left_min, 0.5f * (cnv_width - get_top_toolbar_width() - get_toolbar_tools_button_width())));
+        // The plus button after the row is centred with it, in the part of the canvas the floating windows leave free.
+        const float free_width = cnv_width - covered_left() - covered_right();
+        return int(std::max(left_min, covered_left() + 0.5f * (free_width - get_top_toolbar_width() - get_toolbar_tools_button_width())));
     }
     const float collapse_toolbar_width = get_collapse_toolbar_width() * 2;
     const float toolbar_total_width    = get_top_toolbar_width() + collapse_toolbar_width;
@@ -11512,7 +11547,8 @@ void GLCanvas3D::_render_imgui_select_plate_toolbar()
     float margin_size = 4.0f * f_scale;
     float button_margin = frame_padding;
 
-    const float y_offset = is_collapse_toolbar_on_left() ? (get_collapse_toolbar_height() + 5) : 0;
+    // Nexus: below the floating tab bar.
+    const float y_offset = covered_top() + (is_collapse_toolbar_on_left() ? (get_collapse_toolbar_height() + 5) : 0);
     // Make sure the window does not overlap the 3d navigator
     auto window_height_max = canvas_h - y_offset;
     if (wxGetApp().show_3d_navigator()) {
@@ -11555,7 +11591,7 @@ void GLCanvas3D::_render_imgui_select_plate_toolbar()
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, show_scroll ? (6.f * f_scale) : (button_radius + margin_size + frame_padding + ImGui::GetStyle().WindowPadding.x));
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, button_radius + margin_size);
 
-    imgui.set_next_window_pos(canvas_w * 0 + 5.0f * f_scale, canvas_h * 0 + y_offset, ImGuiCond_Always, 0, 0); // ORCA Add slight gap on left edge so toolbar looks like floating and it creates separation with sidebar
+    imgui.set_next_window_pos(covered_left() + 5.0f * f_scale, y_offset, ImGuiCond_Always, 0, 0); // ORCA Add slight gap on left edge so toolbar looks like floating and it creates separation with sidebar
     imgui.set_next_window_size(window_width, window_height, ImGuiCond_Always);
 
     if (show_scroll)
@@ -11859,7 +11895,7 @@ void GLCanvas3D::_render_plate_switcher()
     const float   spacing   = 8.f * sc;
     const float   rounding  = 4.f * sc;
     const float   scrollbar = PLATE_TOOLBAR_SCROLLBAR * sc;
-    const float   top       = (is_toolbar_at_bottom() ? get_collapse_toolbar_height() : std::max(m_main_toolbar.get_height(), m_gizmos.get_scaled_total_height())) + CANVAS_TOOLBAR_MARGIN * sc;
+    const float   top       = covered_top() + (is_toolbar_at_bottom() ? get_collapse_toolbar_height() : std::max(m_main_toolbar.get_height(), m_gizmos.get_scaled_total_height())) + CANVAS_TOOLBAR_MARGIN * sc;
     const float   content_h = plate_count * (btn_size.y + spacing) - spacing + 2.f * padding.y;
     const float   max_h     = std::max(btn_size.y + 2.f * padding.y, float(get_canvas_size().get_height()) - top - (canvas_corner_height() + CANVAS_TOOLBAR_MARGIN) * sc);
     // As in the Preview plate toolbar, the scrollbar shows only while the mouse is over the column.
@@ -11876,7 +11912,7 @@ void GLCanvas3D::_render_plate_switcher()
     ImGui::PushStyleColor(ImGuiCol_WindowBg, m_is_dark ? ImVec4(.13f, .13f, .15f, .5f) : ImVec4(1.f, 1.f, 1.f, .7f));
     push_plate_toolbar_scrollbar_style(m_is_dark, scrollbar);
 
-    imgui.set_next_window_pos(CANVAS_TOOLBAR_MARGIN * sc, top, ImGuiCond_Always, 0.f, 0.f);
+    imgui.set_next_window_pos(covered_left() + CANVAS_TOOLBAR_MARGIN * sc, top, ImGuiCond_Always, 0.f, 0.f);
     imgui.set_next_window_size(btn_size.x + 2.f * padding.x + (scroll ? scrollbar : 0.f), std::min(content_h, max_h), ImGuiCond_Always);
     imgui.begin(std::string("##PlateSwitcher"), ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar |
                                                 ImGuiWindowFlags_NoCollapse | (scroll ? 0 : ImGuiWindowFlags_NoScrollbar));
@@ -11928,7 +11964,8 @@ void GLCanvas3D::_render_plate_switcher()
 //when rendering, {0, 0} is at the center, {-0.5, 0.5} at the left-up
 void GLCanvas3D::_render_assemble_view_toolbar() const
 {
-    if (!m_assemble_view_toolbar.is_enabled())
+    // Nexus: an empty toolbar would draw its rounded end, narrower than its corners, after the row.
+    if (!is_assemble_view_on_toolbar_row())
         return;
 
     const Size cnv_size = get_canvas_size();
@@ -11957,8 +11994,8 @@ void GLCanvas3D::_render_return_toolbar() const
     auto canvas_h = float(cnv_size.get_height());
     float window_width = real_size.x + button_icon_size.x + imgui.scaled(2.0f);
     float window_height = button_icon_size.y + imgui.scaled(2.0f);
-    float window_pos_x = 30.0f + (is_collapse_toolbar_on_left() ? (get_collapse_toolbar_width() + 5.f) : 0);
-    float window_pos_y = 14.0f;
+    float window_pos_x = covered_left() + 30.0f + (is_collapse_toolbar_on_left() ? (get_collapse_toolbar_width() + 5.f) : 0);
+    float window_pos_y = covered_top() + 14.0f;
 
     imgui.set_next_window_pos(window_pos_x, window_pos_y, ImGuiCond_Always, 0, 0);
 #ifdef __WINDOWS__
@@ -12038,7 +12075,7 @@ void GLCanvas3D::_render_canvas_toolbar()
     #endif // WIN32
 
     ImVec2        btn_size = ImVec2(CANVAS_TOOLBAR_BUTTON, CANVAS_TOOLBAR_BUTTON) * sc;
-    ImVec2        margin   = ImVec2(m_canvas_toolbar_pos[0] > 0 ? 0.f : (CANVAS_TOOLBAR_MARGIN * sc), CANVAS_TOOLBAR_MARGIN * sc);
+    ImVec2        margin   = ImVec2(wxGetApp().show_3d_navigator() ? 0.f : (CANVAS_TOOLBAR_MARGIN * sc), CANVAS_TOOLBAR_MARGIN * sc);
     ImVec2        spacing  = ImVec2(CANVAS_TOOLBAR_SPACING, CANVAS_TOOLBAR_SPACING) * sc;
     ImVec2        padding  = ImVec2(CANVAS_TOOLBAR_PADDING, CANVAS_TOOLBAR_PADDING) * sc;
     Vec2i32       pos      = {
@@ -12384,7 +12421,7 @@ void GLCanvas3D::_render_section_view_panel(const ImVec2& bottom_left)
 void GLCanvas3D::_render_separator_toolbar_right() const
 {
     // Nexus: nothing to separate when the assembly view button is off the toolbar row.
-    if (!m_separator_toolbar.is_enabled() || m_assemble_view_toolbar.get_visible_items_cnt() == 0)
+    if (!m_separator_toolbar.is_enabled() || !is_assemble_view_on_toolbar_row())
         return;
 
     const Size cnv_size = get_canvas_size();
@@ -12420,7 +12457,7 @@ bool GLCanvas3D::_is_mouse_over_top_toolbar(const Vec2d& mouse_pos) const
         if (!m_gizmos.is_enabled() || m_gizmos.get_selectable_icons_cnt() == 0)
             return false;
         // same as GLGizmosManager::do_render_overlay()
-        left   = 0.5f * (float)get_canvas_size().get_width() + 0.5f * m_paint_toolbar_width;
+        left   = 0.5f * ((float)get_canvas_size().get_width() + covered_left() - covered_right()) + 0.5f * m_paint_toolbar_width;
         width  = m_gizmos.get_scaled_total_width();
         height = m_gizmos.get_scaled_total_height();
     } else {
@@ -12438,7 +12475,7 @@ bool GLCanvas3D::_is_mouse_over_top_toolbar(const Vec2d& mouse_pos) const
 
 void GLCanvas3D::_render_collapse_toolbar() const
 {
-    if (!m_collapse_toolbar_enabled)
+    if (!m_collapse_toolbar_enabled || !collapse_toolbar().is_enabled())
         return;
 
     const CollapseSide side = collapse_side();
@@ -12667,7 +12704,8 @@ void GLCanvas3D::_render_paint_toolbar() const
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(spacing, 0));
     ImGui::PushStyleColor(ImGuiCol_WindowBg, m_is_dark ? ImGuiWrapper::COL_TOOLBAR_BG_DARK : ImGuiWrapper::COL_TOOLBAR_BG); // ORCA Toolbar color
 
-    imgui.set_next_window_pos(0.5f * canvas_w, 0, ImGuiCond_Always, 0.5f, 0.0f);
+    // Nexus: centred below the floating tab bar, between the floating windows.
+    imgui.set_next_window_pos(covered_left() + 0.5f * (canvas_w - covered_left() - covered_right()), covered_top(), ImGuiCond_Always, 0.5f, 0.0f);
     float constraint_window_width = canvas_w - 2 * return_button_margin;
     ImGui::SetNextWindowSizeConstraints({ 0, 0 }, { constraint_window_width, FLT_MAX });
     imgui.begin(_L("Paint Toolbar"), ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
@@ -12825,7 +12863,7 @@ void GLCanvas3D::_render_assemble_control()
     const float item_spacing = imgui->get_item_spacing().x;
     ImVec2 window_padding = ImGui::GetStyle().WindowPadding;
 
-    imgui->set_next_window_pos(canvas_w / 2, canvas_h - 10.0f * get_scale(), ImGuiCond_Always, 0.5f, 1.0f);
+    imgui->set_next_window_pos(covered_left() + 0.5f * (canvas_w - covered_left() - covered_right()), canvas_h - 10.0f * get_scale(), ImGuiCond_Always, 0.5f, 1.0f);
     imgui->begin(_L("Assembly Control"), ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
 
     ImGui::AlignTextToFramePadding();
@@ -12924,7 +12962,7 @@ void GLCanvas3D::_render_assemble_info() const
     ImGui::PushFont(font);
     ImGui::PopFont();
     float margin = 10.0f * get_scale();
-    imgui->set_next_window_pos(canvas_w - margin, canvas_h - margin, ImGuiCond_Always, 1.0f, 1.0f);
+    imgui->set_next_window_pos(canvas_w - covered_right() - margin, canvas_h - margin, ImGuiCond_Always, 1.0f, 1.0f);
     ImGuiWrapper::push_common_window_style(get_scale()); // ORCA use window style for popups with title
     imgui->begin(_L("Assembly Info"), ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse);
     font->Scale = origScale;

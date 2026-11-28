@@ -380,7 +380,8 @@ private:
                      bool              alt_down       = false,
                      bool              control_down   = false);
     
-    void render_background(float left, float top, float right, float bottom, float border_w, float border_h) const;
+    // round_w: the width of a rounded right end (the end of the bottom toolbar row), 0 for a square one.
+    void render_background(float left, float top, float right, float bottom, float border_w, float border_h, float round_w = 0.f) const;
     
     void do_render_overlay(bool draw_icons) const;
 

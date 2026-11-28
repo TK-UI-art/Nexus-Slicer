@@ -743,6 +743,8 @@ private:
     std::vector<std::pair<wxString, wxString>> m_shortcuts_assembly_view;
 #if ENABLE_RETINA_GL
     std::unique_ptr<RetinaHelper> m_retina_helper;
+    // Nexus: the parts of the canvas that windows floating over it cover (left, top, right), in window pixels.
+    std::array<int, 3> m_covered{ 0, 0, 0 };
 #endif
     unsigned int m_last_w, m_last_h;
     bool m_in_render;
@@ -1277,6 +1279,9 @@ public:
     float get_assembly_paint_toolbar_width() const { return m_paint_toolbar_width; }
     float get_separator_toolbar_width() const { return m_separator_toolbar.get_width(); }
     float get_separator_toolbar_height() const { return m_separator_toolbar.get_height(); }
+    bool  shows_collapse_toolbar() const;
+    // The assembly view button shows at the end of the toolbar row.
+    bool  is_assemble_view_on_toolbar_row() const;
     bool  is_collapse_toolbar_on_left() const;
     float get_collapse_toolbar_width() const;
     float get_collapse_toolbar_height() const;
@@ -1438,6 +1443,16 @@ public:
     bool is_camera_pan(const wxMouseEvent& evt, const std::map<MouseButton, MouseAction>& mappings) const;
 
     Size get_canvas_size() const;
+    // Nexus: on macOS the sidebar and the tab bar float over the 3D view (Web-Slicer), covering parts of the canvas:
+    // `left`, `top` and `right` in window pixels. The camera centres the scene in the part left free and the overlays
+    // keep to it; elsewhere nothing covers the canvas.
+    void set_covered_insets(int left, int top, int right);
+    // The covered parts in canvas pixels (the units of get_canvas_size()).
+    float covered_left() const { return float(m_covered[0]) * get_canvas_size().get_scale_factor(); }
+    float covered_top() const { return float(m_covered[1]) * get_canvas_size().get_scale_factor(); }
+    float covered_right() const { return float(m_covered[2]) * get_canvas_size().get_scale_factor(); }
+    // The camera's covered insets, from this canvas.
+    void apply_covered_insets(Camera& camera) const;
     Vec2d get_local_mouse_position() const;
 
     // store opening position of menu

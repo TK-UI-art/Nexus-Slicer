@@ -389,6 +389,8 @@ public:
     // Nexus: where MainFrame docks the main tab bar on the Prepare and Preview pages (Notebook::DockTabBar).
     wxWindow* tab_bar_host() const;
     wxSizer*  tab_bar_sizer() const;
+    // Nexus: on macOS, places the 3D views under the docked sidebar and the tab bar over them (after the tab bar docks).
+    void      update_floating_layout();
     const Model& model() const;
     Model& model();
     const Print& fff_print() const;

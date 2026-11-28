@@ -696,10 +696,14 @@ void GLToolbar::calc_layout()
 float GLToolbar::get_width_horizontal() const
 {
     float size = 2.0f * m_layout.border;
+    // Nexus: a gap between two shown items only, as render_horizontal() places them; hidden items made the
+    // background longer than its icons.
+    int visible = 0;
     for (unsigned int i = 0; i < (unsigned int)m_items.size(); ++i)
     {
         if (!m_items[i]->is_visible())
             continue;
+        ++visible;
 
         if (m_items[i]->is_separator())
             size += m_layout.separator_size;
@@ -713,8 +717,8 @@ float GLToolbar::get_width_horizontal() const
         }
     }
 
-    if (m_items.size() > 1)
-        size += ((float)m_items.size() - 1.0f) * m_layout.gap_size;
+    if (visible > 1)
+        size += ((float)visible - 1.0f) * m_layout.gap_size;
 
     return size * m_layout.scale;
 }
@@ -754,10 +758,12 @@ float GLToolbar::get_height_vertical() const
 float GLToolbar::get_main_size() const
 {
     float size = 2.0f * m_layout.border;
+    int visible = 0; // Nexus: gaps between shown items only (get_width_horizontal)
     for (unsigned int i = 0; i < (unsigned int)m_items.size(); ++i)
     {
         if (!m_items[i]->is_visible())
             continue;
+        ++visible;
 
         if (m_items[i]->is_separator())
             size += m_layout.separator_size;
@@ -765,8 +771,8 @@ float GLToolbar::get_main_size() const
             size += (float)m_layout.icons_size;
     }
 
-    if (m_items.size() > 1)
-        size += ((float)m_items.size() - 1.0f) * m_layout.gap_size;
+    if (visible > 1)
+        size += ((float)visible - 1.0f) * m_layout.gap_size;
 
     return size * m_layout.scale;
 }

@@ -1,6 +1,8 @@
 #include "IMSlider.hpp"
 #include "slic3r/GUI/NexusTheme.hpp"
 #include "GUI_App.hpp"
+#include "GLCanvas3D.hpp"
+#include "Plater.hpp"
 #include "GUI.hpp"
 #include "NotificationManager.hpp"
 #include "Widgets/StateColor.hpp"
@@ -1275,9 +1277,19 @@ bool IMSlider::render(int canvas_width, int canvas_height)
 
     float scale = (float) wxGetApp().em_unit() / 10.0f;
 
+    // Nexus: in the part of the canvas the floating sidebar and tab bar leave free (GLCanvas3D::set_covered_insets).
+    float left = 0.f, top = 0.f, right = 0.f;
+    if (const GLCanvas3D* canvas = wxGetApp().plater() != nullptr ? wxGetApp().plater()->get_current_canvas3D() : nullptr) {
+        left  = canvas->covered_left();
+        top   = canvas->covered_top();
+        right = canvas->covered_right();
+    }
+    const float free_width  = std::max(1.f, float(canvas_width) - left - right);
+    const float free_height = std::max(1.f, float(canvas_height) - top);
+
     if (is_horizontal()) {
-        ImVec2 size  = ImVec2(canvas_width - 2 * std::max(LEFT_MARGIN * m_scale, 0.2f * canvas_width), HORIZONTAL_SLIDER_WINDOW_HEIGHT * m_scale);
-        imgui.set_next_window_pos(0.5f * static_cast<float>(canvas_width), canvas_height, ImGuiCond_Always, 0.5f, 1.0f);
+        ImVec2 size  = ImVec2(free_width - 2 * std::max(LEFT_MARGIN * m_scale, 0.2f * free_width), HORIZONTAL_SLIDER_WINDOW_HEIGHT * m_scale);
+        imgui.set_next_window_pos(left + 0.5f * free_width, canvas_height, ImGuiCond_Always, 0.5f, 1.0f);
         imgui.begin(std::string("moves_slider"), windows_flag);
         int value = GetHigherValue();
         if (horizontal_slider("moves_slider", &value, GetMinValue(), GetMaxValue(), size, scale)) {
@@ -1286,8 +1298,8 @@ bool IMSlider::render(int canvas_width, int canvas_height)
         }
         imgui.end();
     } else {
-        ImVec2 size = ImVec2(VERTICAL_SLIDER_WINDOW_WIDTH * m_scale, 0.8f * canvas_height);
-        imgui.set_next_window_pos(canvas_width, 0.5f * static_cast<float>(canvas_height), ImGuiCond_Always, 1.0f, 0.5f);
+        ImVec2 size = ImVec2(VERTICAL_SLIDER_WINDOW_WIDTH * m_scale, 0.8f * free_height);
+        imgui.set_next_window_pos(canvas_width - right, top + 0.5f * free_height, ImGuiCond_Always, 1.0f, 0.5f);
         imgui.begin(std::string("laysers_slider"), windows_flag);
 
         int higher_value = GetHigherValue();
@@ -1307,7 +1319,7 @@ bool IMSlider::render(int canvas_width, int canvas_height)
         render_menu();
         imgui.end();
 
-        imgui.set_next_window_pos(canvas_width, canvas_height, ImGuiCond_Always, 1.0f, 1.0f);
+        imgui.set_next_window_pos(canvas_width - right, canvas_height, ImGuiCond_Always, 1.0f, 1.0f);
         ImGui::SetNextWindowSize((ONE_LAYER_BUTTON_SIZE + ONE_LAYER_MARGIN) * m_scale, 0);
         imgui.begin(std::string("one_layer_button"), windows_flag);
         ImTextureID normal_id = m_is_dark ?

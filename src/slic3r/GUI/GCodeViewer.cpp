@@ -118,6 +118,27 @@ namespace Slic3r { class PrintBase; }
 namespace Slic3r {
 namespace GUI {
 
+namespace {
+// Nexus: the parts of the Preview canvas that the floating sidebar and tab bar cover (GLCanvas3D::set_covered_insets).
+struct CoveredInsets
+{
+    float left{ 0.f };
+    float top{ 0.f };
+    float right{ 0.f };
+};
+
+CoveredInsets covered_insets()
+{
+    CoveredInsets covered;
+    if (const GLCanvas3D* canvas = wxGetApp().plater() != nullptr ? wxGetApp().plater()->get_current_canvas3D() : nullptr) {
+        covered.left  = canvas->covered_left();
+        covered.top   = canvas->covered_top();
+        covered.right = canvas->covered_right();
+    }
+    return covered;
+}
+} // namespace
+
 //BBS translation of EViewType
 //const std::string EViewType_Map[(int) GCodeViewer::EViewType::Count] = {
 //        _u8L("Line Type"),
@@ -455,7 +476,7 @@ void GCodeViewer::SequentialView::Marker::render_position_window(const libvgcode
     if (viewer != nullptr) {
         ImGuiWrapper& imgui = *wxGetApp().imgui();
         // const Size cnv_size = wxGetApp().plater()->get_current_canvas3D()->get_canvas_size();
-        imgui.set_next_window_pos(0.5f * static_cast<float>(canvas_width), static_cast<float>(canvas_height), ImGuiCond_Always, 0.5f, 1.0f);
+        imgui.set_next_window_pos(covered_insets().left + 0.5f * (static_cast<float>(canvas_width) - covered_insets().left), static_cast<float>(canvas_height), ImGuiCond_Always, 0.5f, 1.0f);
         ImGui::PushStyleColor(ImGuiCol_Button, ImGuiWrapper::COL_BUTTON_BACKGROUND);
         ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImGuiWrapper::COL_BUTTON_ACTIVE);
         ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImGuiWrapper::COL_BUTTON_HOVERED);
@@ -857,7 +878,7 @@ void GCodeViewer::SequentialView::Marker::render_position_window(const libvgcode
         ImGuiWrapper& imgui = *wxGetApp().imgui();
         //const Size cnv_size = wxGetApp().plater()->get_current_canvas3D()->get_canvas_size();
         //imgui.set_next_window_pos(0.5f * static_cast<float>(cnv_size.get_width()), static_cast<float>(cnv_size.get_height()), ImGuiCond_Always, 0.5f, 1.0f);
-        imgui.set_next_window_pos(0.5f * static_cast<float>(canvas_width), static_cast<float>(canvas_height), ImGuiCond_Always, 0.5f, 1.0f);
+        imgui.set_next_window_pos(covered_insets().left + 0.5f * (static_cast<float>(canvas_width) - covered_insets().left), static_cast<float>(canvas_height), ImGuiCond_Always, 0.5f, 1.0f);
         ImGui::PushStyleColor(ImGuiCol_Border   , ImVec4(.0f,.0f,.0f,.0f));
         ImGui::PushStyleColor(ImGuiCol_Separator, ImVec4(1.f,1.f,1.f,.6f));
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 14.0f * m_scale);
@@ -2732,7 +2753,12 @@ void GCodeViewer::render_overlay(int canvas_width, int canvas_height, int right_
         return;
 
     float legend_height = 0.0f;
+    // Nexus: the overlays keep to the part the floating windows leave free; the sliders do so themselves.
+    const CoveredInsets covered      = covered_insets();
+    const int           slider_width = canvas_width;
+    canvas_width -= int(covered.right);
     render_legend(legend_height, canvas_width, canvas_height, right_margin);
+    legend_height += covered.top; // the G-code window starts below the legend, which starts below the tab bar
 
     if (m_user_mode != wxGetApp().get_mode()) {
         update_by_mode(wxGetApp().get_mode());
@@ -2777,7 +2803,7 @@ void GCodeViewer::render_overlay(int canvas_width, int canvas_height, int right_
 #endif // VGCODE_ENABLE_COG_AND_TOOL_MARKERS
 
     //BBS render slider
-    render_slider(canvas_width, canvas_height);
+    render_slider(slider_width, canvas_height);
 }
 
 int GCodeViewer::sequential_view_height(int canvas_height) const
@@ -4644,7 +4670,7 @@ void GCodeViewer::render_legend(float &legend_height, int canvas_width, int canv
     ImGuiWrapper& imgui = *wxGetApp().imgui();
 
     //BBS: GUI refactor: move to the right
-    imgui.set_next_window_pos(float(canvas_width - right_margin * m_scale), 4.0f * m_scale, ImGuiCond_Always, 1.0f, 0.0f); // ORCA add a small gap to top to create seperation with main toolbar
+    imgui.set_next_window_pos(float(canvas_width - right_margin * m_scale), covered_insets().top + 4.0f * m_scale, ImGuiCond_Always, 1.0f, 0.0f); // ORCA add a small gap to top to create seperation with main toolbar
     // Nexus: the legend is a Web-Slicer card: the card fill with ink text in the light theme, an outline and
     // the card shadow in both themes.
     const float legend_rounding = 14.0f * m_scale;
@@ -4661,7 +4687,7 @@ void GCodeViewer::render_legend(float &legend_height, int canvas_width, int canv
     ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(legend_line.Red() / 255.f, legend_line.Green() / 255.f, legend_line.Blue() / 255.f, 1.f));
     ImGui::PushStyleColor(ImGuiCol_WindowBg, m_is_dark ? ImGuiWrapper::COL_WINDOW_BG_DARK : ImGuiWrapper::COL_WINDOW_BG);
     ImGui::PushStyleColor(ImGuiCol_Text, m_is_dark ? ImVec4(1.0f, 1.0f, 1.0f, 1.0f) : ImVec4(NEXUS_ON_ACCENT_F, 1.0f));
-    const float max_height = 0.75f * static_cast<float>(cnv_size.get_height());
+    const float max_height = 0.75f * (static_cast<float>(cnv_size.get_height()) - covered_insets().top);
     const float child_height = 0.3333f * max_height;
     ImGui::SetNextWindowSizeConstraints({ 0.0f, 0.0f }, { -1.0f, max_height });
     // Nexus: no built-in scrollbar; ImGui puts it against the window edge, over the card's rounded corners and

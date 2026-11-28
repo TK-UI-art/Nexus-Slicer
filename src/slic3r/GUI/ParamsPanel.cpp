@@ -422,6 +422,11 @@ ParamsPanel::ParamsPanel( wxWindow* parent, wxWindowID id, const wxPoint& pos, c
         wxPaintDC dc(m_page_view);
         nexus_paint_group_frames(m_page_view, dc);
     });
+    // The frames span the page's width, so a new width moves their right edge.
+    m_page_view->Bind(wxEVT_SIZE, [this](wxSizeEvent& e) {
+        m_page_view->Refresh();
+        e.Skip();
+    });
     m_page_sizer = new wxBoxSizer(wxVERTICAL);
 
     m_page_view->SetSizer(m_page_sizer);

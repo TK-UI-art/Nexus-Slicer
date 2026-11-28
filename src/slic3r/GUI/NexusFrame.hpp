@@ -54,7 +54,11 @@ inline wxRect nexus_group_frame_rect(const StaticLine* title)
     const int pad = parent->FromDIP(NEXUS_FRAME_PAD);
     // The title's own line, after the text, runs at its vertical centre.
     const int top = t.y + t.height / 2;
-    return wxRect(wxPoint(rc.GetLeft() - pad, top), wxPoint(rc.GetRight() + pad, rc.GetBottom() + pad + parent->FromDIP(2)));
+    // The frame keeps the same distance to the left and right edge of the page (Web-Slicer fieldsets span
+    // the card), unless its fields reach further.
+    const int left  = rc.GetLeft() - pad;
+    const int right = std::max(rc.GetRight() + pad, parent->GetClientSize().x - 1 - left);
+    return wxRect(wxPoint(left, top), wxPoint(right, rc.GetBottom() + pad + parent->FromDIP(2)));
 }
 
 // Draws the outline `frame` with `dc`'s window as the painter.

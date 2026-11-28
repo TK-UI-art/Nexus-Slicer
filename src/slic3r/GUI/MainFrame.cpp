@@ -2431,6 +2431,9 @@ wxBoxSizer* MainFrame::create_side_tools()
         btn->SetBorderColor(StateColor(wxColour(NEXUS_CARD_LINE)));
         btn->SetMinSize(wxSize(FromDIP(36), FromDIP(36)));
         btn->SetCornerRadius(FromDIP(18));
+#ifdef __WXOSX__
+        btn->Bind(wxEVT_ERASE_BACKGROUND, [](wxEraseEvent&) {}); // round over the 3D view, where the tab bar floats
+#endif
         btn->SetToolTip(tooltip);
         btn->Bind(wxEVT_BUTTON, [action](wxCommandEvent&) { action(); });
         sizer->Add(btn, 0, wxLEFT | wxALIGN_CENTER_VERTICAL, FromDIP(8));
@@ -3636,6 +3639,14 @@ void MainFrame::init_menubar_as_editor()
             []() { return wxGetApp().app_config->get("show_imex_toolhead_boxes") != "false"; },
             this);
 
+        // Nexus: the 3D view's collapse button is gone; the sidebar folds from here or with its shortcut.
+        wxMenuItem* collapse_sidebar = append_menu_item(
+            viewMenu, wxID_ANY, shortcut_label(_L("Collapse/Expand the sidebar"), Shortcut::CollapseSidebar, false),
+            _L("Collapse/Expand the sidebar"),
+            [this](wxCommandEvent&) { m_plater->collapse_sidebar(!m_plater->is_sidebar_collapsed()); }, "", this,
+            [this]() { return is_prepare_or_preview_tab() && m_plater->is_sidebar_enabled(); }, this);
+        m_shortcut_menu_items.push_back({ collapse_sidebar, Shortcut::CollapseSidebar, _L("Collapse/Expand the sidebar"), false });
+
         append_menu_item(
             viewMenu, wxID_ANY, _L("Reset Window Layout"), _L("Reset to default window layout"),
             [this](wxCommandEvent&) { m_plater->reset_window_layout(); }, "", this,
@@ -4364,6 +4375,9 @@ void MainFrame::dock_tab_bar()
         m_tabpanel->DockTabBar(m_plater->tab_bar_host(), m_plater->tab_bar_sizer());
     else
         m_tabpanel->DockTabBar(nullptr, nullptr);
+    // On macOS the docked bar lies over the 3D view, which leaves room for it.
+    if (m_plater != nullptr)
+        m_plater->update_floating_layout();
 }
 
 // The book shows its first page as it is inserted, while the frame is hidden and nothing
