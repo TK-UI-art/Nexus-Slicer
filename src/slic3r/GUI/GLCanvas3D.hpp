@@ -12,6 +12,7 @@
 #include <cmath>
 #include "libslic3r/Geometry.hpp"
 #include "libslic3r/BoundingBox.hpp"
+#include <algorithm>
 #include <array>
 #include "libslic3r/Config.hpp"
 #include "libslic3r/Polygon.hpp"
@@ -765,6 +766,8 @@ private:
     mutable GLToolbar m_main_toolbar;
     mutable GLToolbar m_separator_toolbar;
     mutable IMToolbar m_sel_plate_toolbar;
+    // Nexus: the right edge of the Preview's plate column at the left of the canvas, 0 while it is hidden.
+    mutable float m_sel_plate_toolbar_right{ 0.f };
     // Thumbnails of the plate switcher (Focus mode), refreshed when the plater's version changes.
     std::vector<std::unique_ptr<IMToolbarItem>> m_plate_switcher_items;
     unsigned m_plate_switcher_version{ unsigned(-1) };
@@ -1451,6 +1454,8 @@ public:
     float covered_left() const { return float(m_covered[0]) * get_canvas_size().get_scale_factor(); }
     float covered_top() const { return float(m_covered[1]) * get_canvas_size().get_scale_factor(); }
     float covered_right() const { return float(m_covered[2]) * get_canvas_size().get_scale_factor(); }
+    // Nexus: where cards at the left of the canvas start: right of the floating sidebar and of the Preview's plate column.
+    float get_left_overlays_right() const { return std::max(covered_left(), m_sel_plate_toolbar_right); }
     // The camera's covered insets, from this canvas.
     void apply_covered_insets(Camera& camera) const;
     Vec2d get_local_mouse_position() const;

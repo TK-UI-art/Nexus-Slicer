@@ -11440,6 +11440,7 @@ static bool plate_toolbar_keeps_scrollbar(bool shown, float scrollbar_size)
 //when rendering, {0, 0} is at the center, {-0.5, 0.5} at the left-up
 void GLCanvas3D::_render_imgui_select_plate_toolbar()
 {
+    m_sel_plate_toolbar_right = 0.f;
     if (!m_sel_plate_toolbar.is_enabled()) {
         if (!m_render_preview)
             m_render_preview = true;
@@ -11858,6 +11859,7 @@ void GLCanvas3D::_render_imgui_select_plate_toolbar()
     ImGui::PopStyleVar(7);
 
     m_sel_plate_toolbar.is_display_scrollbar = plate_toolbar_keeps_scrollbar(show_scroll, scrollbar_size);
+    m_sel_plate_toolbar_right                = ImGui::GetWindowPos().x + ImGui::GetWindowWidth();
 
     imgui.end();
 }

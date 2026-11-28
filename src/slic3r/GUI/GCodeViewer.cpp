@@ -125,6 +125,7 @@ struct CoveredInsets
     float left{ 0.f };
     float top{ 0.f };
     float right{ 0.f };
+    float cards_left{ 0.f }; // where cards at the left start (GLCanvas3D::get_left_overlays_right)
 };
 
 CoveredInsets covered_insets()
@@ -134,6 +135,7 @@ CoveredInsets covered_insets()
         covered.left  = canvas->covered_left();
         covered.top   = canvas->covered_top();
         covered.right = canvas->covered_right();
+        covered.cards_left = canvas->get_left_overlays_right();
     }
     return covered;
 }
@@ -2758,7 +2760,8 @@ void GCodeViewer::render_overlay(int canvas_width, int canvas_height, int right_
     const int           slider_width = canvas_width;
     canvas_width -= int(covered.right);
     render_legend(legend_height, canvas_width, canvas_height, right_margin);
-    legend_height += covered.top; // the G-code window starts below the legend, which starts below the tab bar
+    // The G-code window at the right starts below the tab bar; the legend is at the left.
+    legend_height = covered.top;
 
     if (m_user_mode != wxGetApp().get_mode()) {
         update_by_mode(wxGetApp().get_mode());
@@ -4670,7 +4673,8 @@ void GCodeViewer::render_legend(float &legend_height, int canvas_width, int canv
     ImGuiWrapper& imgui = *wxGetApp().imgui();
 
     //BBS: GUI refactor: move to the right
-    imgui.set_next_window_pos(float(canvas_width - right_margin * m_scale), covered_insets().top + 4.0f * m_scale, ImGuiCond_Always, 1.0f, 0.0f); // ORCA add a small gap to top to create seperation with main toolbar
+    // Nexus: a card of its own at the top left of the scene, beside the sidebar (Web-Slicer legend).
+    imgui.set_next_window_pos(covered_insets().cards_left + 8.0f * m_scale, covered_insets().top + 8.0f * m_scale, ImGuiCond_Always, 0.0f, 0.0f);
     // Nexus: the legend is a Web-Slicer card: the card fill with ink text in the light theme, an outline and
     // the card shadow in both themes.
     const float legend_rounding = 14.0f * m_scale;
