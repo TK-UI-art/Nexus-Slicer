@@ -84,6 +84,7 @@ class ParamsPanel : public wxPanel
         StaticBox* m_top_panel{ nullptr };
         ScalableButton* m_process_icon{ nullptr };
         wxStaticText* m_title_label { nullptr };
+        wxWindow* m_step_check { nullptr };
         SwitchButton* m_mode_region { nullptr };
         ScalableButton *m_tips_arrow{nullptr};
         bool m_tips_arror_blink{false};
@@ -185,6 +186,8 @@ class ParamsPanel : public wxPanel
         StaticBox* get_top_panel() { return m_top_panel; }
         // Nexus: the Process card title, which names the chosen process (Sidebar::nexus_update_step_titles()).
         wxWindow* get_title_label() { return m_title_label; }
+        // Nexus: the card's step check at the right of the title, kept there when the title row is rebuilt.
+        void set_step_check(wxWindow* check);
 
         wxPanel* filament_panel() { return m_tab_filament; }
 

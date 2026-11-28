@@ -458,6 +458,8 @@ void ParamsPanel::create_layout()
         m_mode_sizer->Add(m_mode_view   , 0, wxALIGN_CENTER | wxRIGHT, FromDIP(SidebarProps::WideSpacing()));
         m_mode_sizer->Add(m_setting_btn , 0, wxALIGN_CENTER | wxRIGHT, FromDIP(SidebarProps::WideSpacing()));
         m_mode_sizer->Add(m_compare_btn , 0, wxALIGN_CENTER | wxRIGHT, FromDIP(SidebarProps::TitlebarMargin()));
+        if (m_step_check)
+            m_mode_sizer->Add(m_step_check, 0, wxALIGN_CENTER | wxRIGHT, FromDIP(SidebarProps::TitlebarMargin()));
         //m_mode_sizer->Add( m_search_btn, 0, wxALIGN_CENTER );
         //m_mode_sizer->AddSpacer(16);
         m_mode_sizer->SetMinSize(-1, FromDIP(NEXUS_CARD_TITLE_H));
@@ -803,6 +805,15 @@ void ParamsPanel::switch_to_object_if_has_object_configs()
     if (m_has_object_config)
         m_mode_region->SetValue(true);
     set_active_tab(nullptr);
+}
+
+void ParamsPanel::set_step_check(wxWindow* check)
+{
+    m_step_check = check;
+    if (m_mode_sizer) {
+        m_mode_sizer->Add(check, 0, wxALIGN_CENTER | wxRIGHT, FromDIP(SidebarProps::TitlebarMargin()));
+        m_top_panel->Layout();
+    }
 }
 
 void ParamsPanel::free_sizers()

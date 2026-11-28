@@ -3740,9 +3740,12 @@ Sidebar::Sidebar(Plater *parent)
         params_panel->Bind(wxEVT_IDLE, [params_panel](wxIdleEvent& e) {
             e.Skip();
             wxScrolledWindow* view = params_panel->get_paged_view();
-            if (!params_panel->IsShown() || view == nullptr || view->GetSizer() == nullptr || params_panel->GetSize().y <= 0)
+            if (!params_panel->IsShown() || view == nullptr || view->GetSizer() == nullptr)
                 return;
-            const int height = params_panel->GetSize().y - view->GetClientSize().y + view->GetSizer()->GetMinSize().y;
+            // The panel's own rows above and below the page. A panel not laid out yet has no height: it starts
+            // from the page alone, as a zero minimum would keep it at zero height for good.
+            const int chrome = params_panel->GetSize().y > 0 ? std::max(0, params_panel->GetSize().y - view->GetClientSize().y) : 0;
+            const int height = std::max(chrome + view->GetSizer()->GetMinSize().y, params_panel->FromDIP(1));
             if (height != params_panel->GetMinSize().y)
                 params_panel->SetMinSize(wxSize(-1, height));
         });
@@ -3763,8 +3766,7 @@ Sidebar::Sidebar(Plater *parent)
         p->toggle_process = [toggle_process_section] { wxMouseEvent e; toggle_process_section(e); };
         p->check_process  = nexus_step_indicator(process_title);
         p->check_process->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) { p->toggle_process(); });
-        if (wxSizer* title_sizer = process_title->GetSizer())
-            title_sizer->Add(p->check_process, 0, wxALIGN_CENTER | wxLEFT | wxRIGHT, FromDIP(SidebarProps::WideSpacing()));
+        params_panel->set_step_check(p->check_process);
         for (wxWindow* child : process_title->GetChildren())
             if (dynamic_cast<Label*>(child) != nullptr) {
                 child->Bind(wxEVT_LEFT_DOWN, toggle_process_section);
