@@ -744,9 +744,9 @@ private:
     std::vector<std::pair<wxString, wxString>> m_shortcuts_assembly_view;
 #if ENABLE_RETINA_GL
     std::unique_ptr<RetinaHelper> m_retina_helper;
+#endif
     // Nexus: the parts of the canvas that windows floating over it cover (left, top, right), in window pixels.
     std::array<int, 3> m_covered{ 0, 0, 0 };
-#endif
     unsigned int m_last_w, m_last_h;
     bool m_in_render;
     // How many canvases are inside _render_frame() right now - see is_frame_in_progress().
